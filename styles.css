@@ -795,29 +795,23 @@ a { color: var(--accent); text-decoration: none; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
 /* ============================================================
-   APP EDITOR (FULLSCREEN MODAL)
+   APP EDITOR (PAGE VIEW)
 ============================================================ */
-.appedit-backdrop{
-  position:fixed; inset:0;
-  background: rgba(0,0,0,.72);
-  display:none;
-  z-index: 200;
-}
-.appedit-backdrop.open{ display:block; }
+#viewAppEditor{ padding: 0; height: 100%; }
 .appedit-shell{
-  position:absolute; inset:14px;
+  height: 100%;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
+  border: 0;
+  border-radius: 0;
   overflow:hidden;
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
   display:grid;
   grid-template-rows: 56px 1fr;
 }
 .appedit-top{
   display:flex; align-items:center; justify-content:space-between;
   padding: 10px 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,.04), transparent);
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 .appedit-top .left{ display:flex; align-items:center; gap:10px; min-width: 260px; }
