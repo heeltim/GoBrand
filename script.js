@@ -136,15 +136,24 @@ const S = {
 const P = () => S.projects.find(p=>p.id===S.pid)||null;
 const $ = id => document.getElementById(id);
 
+function icon(name, size=16, cls=""){
+  const klass = cls ? ` class="${cls}"` : "";
+  return `<i data-lucide="${name}" data-size="${size}"${klass}></i>`;
+}
+function refreshIcons(){
+  if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{"stroke-width":1.9}});
+}
+
 /* ============================================================
    TOASTS
 ============================================================ */
 function toast(msg, type="info", dur=2800){
-  const icons={success:"✓",error:"✕",info:"·"};
+  const icons={success:"check-circle-2",error:"circle-x",info:"info"};
   const el=document.createElement("div");
   el.className=`toast ${type}`;
-  el.innerHTML=`<span class="toast-icon">${icons[type]||"·"}</span>${esc(msg)}`;
+  el.innerHTML=`<span class="toast-icon">${icon(icons[type]||"info",14)}</span>${esc(msg)}`;
   $("toastRoot").appendChild(el);
+  refreshIcons();
   setTimeout(()=>{
     el.classList.add("out");
     el.addEventListener("animationend",()=>el.remove(),{once:true});
@@ -243,13 +252,15 @@ function updateTopbar(view){
   // right actions (contextual)
   if(view==="editor"){
     right.innerHTML=`<button class="btn btn-primary" onclick="saveProject()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      ${icon("save",12)}
       Salvar
     </button>`;
   } else {
     right.innerHTML="";
   }
+  refreshIcons();
 }
+
 
 /* ============================================================
    HOME
@@ -313,7 +324,7 @@ function renderHome(){
           <div class="proj-card-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>
           <div class="proj-card-meta">${p.colors?.length||0} cores · ${p.typo?.length||0} estilos · ${appsCount} aplic.</div>
         </div>
-        <button class="proj-menu" data-pid="${p.id}">···</button>
+        <button class="proj-menu" data-pid="${p.id}">${icon('ellipsis',16)}</button>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
@@ -333,12 +344,14 @@ function renderHome(){
   const addCard=document.createElement("div");
   addCard.className="proj-add-card";
   addCard.innerHTML=`
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    ${icon("folder-plus",22)}
     <span style="font-size:13px;font-weight:600">Novo Projeto</span>
   `;
   addCard.onclick=createProject;
   grid.appendChild(addCard);
+  refreshIcons();
 }
+
 
 function createProject(){
   const p=mkProject(`Projeto ${S.projects.length+1}`);
@@ -698,7 +711,7 @@ function renderTypoList(){
         <div class="typo-item-name">${esc(s.key)}</div>
         <div class="typo-item-meta">${esc(famLabel(s.fam,p))} • ${s.wt} • ${s.sz}px</div>
       </div>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink3)"><polyline points="9 18 15 12 9 6"/></svg>
+      ${icon("chevron-right",12)}
     `;
     item.onclick=()=>{
       S.styleKey=S.styleKey===s.key?null:s.key;
@@ -716,6 +729,7 @@ function renderTypoList(){
     $("typoEditor").classList.remove("open");
     $("activeStyleBadge").style.display="none";
   }
+  refreshIcons();
 }
 
 function buildFamOptions(p){
@@ -883,7 +897,7 @@ function renderBoard(){
     }
     slot.classList.add("has");
   } else {
-    slot.innerHTML=`<div class="upload-hint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Logo</span></div>`;
+    slot.innerHTML=`<div class="upload-hint">${icon("image-plus",18)}<span>Logo</span></div>`;
     slot.classList.remove("has");
   }
 
@@ -915,6 +929,7 @@ function renderBoard(){
         </div>
       </div>`;
     }).join("");
+  refreshIcons();
 }
 
 function renderApps(){
@@ -1247,14 +1262,16 @@ ${p.colors.map((c,i)=>{
       </div>
       <div class="export-preview">${esc(card.preview)}</div>
       <button class="btn btn-ghost" onclick="copyExport(${i})" style="width:100%;justify-content:center">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        ${icon("copy",12)}
         Copiar ${esc(card.title)}
       </button>
     </div>
   `).join("");
 
   window._exportData=cards;
+  refreshIcons();
 }
+
 
 async function copyExport(i){
   const card=window._exportData?.[i];if(!card)return;
