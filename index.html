@@ -605,8 +605,8 @@
 <!-- =========================================================
      APP EDITOR (FULLSCREEN) — Embedded Advanced Editor
 ========================================================= -->
-<div id="appEditBackdrop" class="appedit-backdrop" aria-hidden="true">
-  <div class="appedit-shell" role="dialog" aria-modal="true">
+<div id="viewAppEditor" class="view">
+  <div class="appedit-shell">
     <div class="appedit-top">
       <div class="left">
         <button class="btn btn-ghost" onclick="closeAppEditor()" style="padding:10px 14px">
@@ -1165,6 +1165,7 @@ textarea.modal-textarea{
           Camadas
           &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
         &lt;/div&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;width:100%;justify-content:center;height:32px;margin:0 0 8px 0&quot;&gt;+ Nova layer&lt;/button&gt;
         &lt;div id=&quot;layersList&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
@@ -1241,7 +1242,24 @@ textarea.modal-textarea{
         &lt;/div&gt;
         &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Rot°&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pR&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Opac&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pO&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;1&quot; step=&quot;0.01&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Transp.&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pO&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;1&quot; step=&quot;0.01&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Blend mode&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;pBlend&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;source-over&quot;&gt;Normal&lt;/option&gt;
+              &lt;option value=&quot;multiply&quot;&gt;Multiply&lt;/option&gt;
+              &lt;option value=&quot;screen&quot;&gt;Screen&lt;/option&gt;
+              &lt;option value=&quot;overlay&quot;&gt;Overlay&lt;/option&gt;
+              &lt;option value=&quot;darken&quot;&gt;Darken&lt;/option&gt;
+              &lt;option value=&quot;lighten&quot;&gt;Lighten&lt;/option&gt;
+              &lt;option value=&quot;color-dodge&quot;&gt;Color Dodge&lt;/option&gt;
+              &lt;option value=&quot;color-burn&quot;&gt;Color Burn&lt;/option&gt;
+              &lt;option value=&quot;difference&quot;&gt;Difference&lt;/option&gt;
+              &lt;option value=&quot;exclusion&quot;&gt;Exclusion&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
@@ -1685,6 +1703,22 @@ function addLine() {
   canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
 }
 
+function addLayer() {
+  ensureArtboard();
+  const idx = canvas.getObjects().filter(o=>!isGuide(o)).length + 1;
+  const l = new fabric.Rect({
+    left: artboard.left + 100, top: artboard.top + 100,
+    width: 260, height: 160, rx: 12, ry: 12,
+    fill:'rgba(255,255,255,.08)', stroke:'rgba(255,255,255,.22)', strokeWidth:1,
+    opacity:1, globalCompositeOperation:'source-over'
+  });
+  l.dataName = `Layer ${idx}`;
+  canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
+  refreshLayers(); refreshProps();
+  setStatus('Nova layer criada');
+}
+
+
 // ─── History ─────────────────────────────────────────────
 const history = { stack:[], idx:-1, lock:false };
 function snapshot() {
@@ -1910,7 +1944,7 @@ function ungroupSelection() {
 // ─── Properties panel ────────────────────────────────────
 const UI = {
   x:$('pX'), y:$('pY'), w:$('pW'), h:$('pH'),
-  r:$('pR'), o:$('pO'),
+  r:$('pR'), o:$('pO'), blend:$('pBlend'),
   fill:$('pFill'), stroke:$('pStroke'), strokeW:$('pStrokeW'), rx:$('pRx'),
   font:$('pFont'), fontSize:$('pFontSize'),
   textColor:$('pTextColor'), align:null
@@ -1954,6 +1988,7 @@ function refreshProps() {
   if(UI.h) UI.h.value = Math.round(sh);
   if(UI.r) UI.r.value = Math.round(obj.angle??0);
   if(UI.o) UI.o.value = obj.opacity??1;
+  if(UI.blend) UI.blend.value = obj.globalCompositeOperation || 'source-over';
 
   const f = (typeof obj.fill==='string') ? obj.fill : '#111111';
   if(UI.fill) UI.fill.value = normalizeHex(f) || '#111111';
@@ -1979,7 +2014,8 @@ function applyProps(key) {
     left: num(UI.x?.value, obj.left||0),
     top:  num(UI.y?.value, obj.top||0),
     angle: num(UI.r?.value, obj.angle||0),
-    opacity: num(UI.o?.value, obj.opacity??1)
+    opacity: num(UI.o?.value, obj.opacity??1),
+    globalCompositeOperation: UI.blend?.value || obj.globalCompositeOperation || 'source-over'
   });
 
   const tw = num(UI.w?.value, obj.getScaledWidth());
@@ -2016,7 +2052,7 @@ function bindInput(el, k) {
   el.addEventListener('change', () =&gt; applyProps(k));
 }
 bindInput(UI.x,'pos'); bindInput(UI.y,'pos'); bindInput(UI.w,'size'); bindInput(UI.h,'size');
-bindInput(UI.r,'rot'); bindInput(UI.o,'op');
+bindInput(UI.r,'rot'); bindInput(UI.o,'op'); bindInput(UI.blend,'blend');
 bindInput(UI.fill,'fill'); bindInput(UI.stroke,'stroke'); bindInput(UI.strokeW,'strokeW'); bindInput(UI.rx,'rx');
 bindInput(UI.font,'font'); bindInput(UI.fontSize,'fontSize');
 bindInput(UI.textColor,'textColor');
@@ -2056,7 +2092,7 @@ function refreshLayers() {
     const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '');
-    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;`;
+    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}% • ${obj.globalCompositeOperation||'source-over'}&lt;/div&gt;`;
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
     list.appendChild(div);
   });
@@ -2236,6 +2272,7 @@ $('btnAddArtText')?.addEventListener('click', addArtText);
 $('btnAddTextBox')?.addEventListener('click', addTextBox);
 $('btnRect')?.addEventListener('click', addRect);
 $('btnCircle')?.addEventListener('click', addCircle);
+$('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', addLine);
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnFit')?.addEventListener('click', fitToArtboard);
