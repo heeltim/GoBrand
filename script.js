@@ -400,6 +400,7 @@ function saveProject(){
   p.fontSec=$("selSecondary").value;
   p.updatedAt=Date.now();
   save(S.projects);
+  gePushBrandData(p);
   updateTopbar("editor");
   renderHome();
   toast("Salvo!","success");
@@ -413,6 +414,7 @@ function saveProject(){
     p.fontSec=$("selSecondary").value;
     p.updatedAt=Date.now();
     save(S.projects);
+    gePushBrandData(p);
     renderTypoList();
     renderPreview();
   });
@@ -434,7 +436,7 @@ function triggerLogo(slot){ $("fileLogo"+cap(slot)).click(); }
 function clearLogo(slot,e){
   if(e){e.preventDefault();e.stopPropagation();}
   const p=P();if(!p)return;
-  p["logo"+cap(slot)]=null;save(S.projects);renderLogoSlot(slot,null);
+  p["logo"+cap(slot)]=null;save(S.projects);gePushBrandData(p);renderLogoSlot(slot,null);
 }
 
 function renderLogoSlot(slot,asset){
@@ -460,6 +462,7 @@ function renderLogoSlot(slot,asset){
     const key="logo"+s;
     p[key]=await readAsset(f);
     p.updatedAt=Date.now();save(S.projects);
+    gePushBrandData(p);
     renderLogoSlot(s.toLowerCase(),p[key]);
     fileInput.value="";
     toast("Logo carregado!","success");
@@ -529,6 +532,7 @@ function addColor(){
   p.colors.push(c);
   normalizePercents(p);
   p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   S.colorId=c.id;
   renderColors();
   openColorModal();
@@ -678,6 +682,7 @@ $("btnDeleteColor").onclick=()=>{
   if(!confirm("Excluir esta cor?"))return;
   p.colors=p.colors.filter(c=>c.id!==S.colorId);
   normalizePercents(p);p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   S.colorId=p.colors[0]?.id||null;
   closeColorModal();renderColors();
   toast("Cor excluída","error");
@@ -693,6 +698,7 @@ $("btnApplyColor").onclick=()=>{
   c.pct=clamp(parseInt($("mPct").value)||10,1,100);
   c.name=($("mName").value||"").trim();
   normalizePercents(p);p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   closeColorModal();renderColors();renderPreview();
   toast("Cor aplicada!","success");
 };
@@ -796,6 +802,7 @@ function saveStyle(){
   s.lh=+$("edLine").value;
   s.ls=+$("edTrack").value;
   p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   S.styleKey=null;
   renderTypoList();renderPreview();
   toast("Estilo salvo!","success");
@@ -1310,11 +1317,7 @@ function openAppEditor(appId){
       if((a.unit||"px")==="mm"){ const dpi=Number(a.dpi)||72; w=(w/25.4)*dpi; h=(h/25.4)*dpi; }
       gePost({type:"setDoc", w, h});
     }
-    try{
-      const colors=(p.colors||[]).filter(c=>c.hex);
-      const fonts=[p.fontPri,p.fontSec].filter(Boolean);
-      gePost({type:"setBrand", colors, fonts});
-    }catch(e){}
+    gePushBrandData(p);
   }, 400);
 }
 
@@ -1327,14 +1330,45 @@ function switchToFabricEditor(){
 
   // Send brand data to iframe
   const p=P();
-  if(p){
-    try{
-      const colors=(p.colors||[]).filter(c=>c.hex);
-      const fonts=[p.fontPri,p.fontSec,...(typeof FONTS!=="undefined"?FONTS:[])].filter(Boolean);
-      gePost({type:"setBrand", colors, fonts});
-    }catch(e){}
-  }
+  if(p) gePushBrandData(p);
   toast("Editor Avançado (Fabric.js) aberto","info");
+}
+
+function buildBrandLibrary(p){
+  if(!p) return [];
+  const items=[];
+  if(p.logoSq?.data) items.push({kind:"logo",name:"Logo quadrado",src:p.logoSq.data});
+  if(p.logoWd?.data) items.push({kind:"logo",name:"Logo horizontal",src:p.logoWd.data});
+  (p.colors||[]).forEach(c=>{
+    if(!c?.hex) return;
+    items.push({kind:"color",name:c.name||c.hex,color:c.hex,alpha:c.alpha??100});
+  });
+  (p.typo||[]).forEach(s=>{
+    items.push({
+      kind:"text-style",
+      name:s.key||"Texto",
+      font:resolveFont(p,s.fam),
+      weight:Number(s.wt)||400,
+      size:Number(s.sz)||24,
+      lineHeight:Number(s.lh)||1.2,
+      letterSpacing:Number(s.ls)||0,
+      italic:!!s.it,
+      uppercase:!!s.up,
+      align:s.al||"left"
+    });
+  });
+  return items;
+}
+
+function gePushBrandData(project=P()){
+  try{
+    const p=project||P();
+    if(!p) return;
+    const colors=(p.colors||[]).filter(c=>c?.hex);
+    const fonts=[p.fontPri,p.fontSec,...(typeof FONTS!=="undefined"?FONTS:[])].filter(Boolean);
+    const library=buildBrandLibrary(p);
+    gePost({type:"setBrand", colors, fonts, library});
+  }catch(e){}
 }
 
 function switchToSvgEditor(){

@@ -858,6 +858,21 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   text-align:center;padding:24px 0;
   font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace;
 }
+.lib-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 9px;border-radius:8px;
+  border:1px solid transparent;
+  cursor:pointer;transition:all .1s ease;
+  margin-bottom:3px;
+}
+.lib-item:hover{background:rgba(255,255,255,.04)}
+.lib-icon{
+  width:22px;height:22px;border-radius:5px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--ink3);font-size:11px
+}
+.lib-name{flex:1;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-meta{font-size:10px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace}
 
 /* ─── PROPS PANEL ─────────────────────────────────────── */
 .prop-row{margin-bottom:8px}
@@ -1151,6 +1166,19 @@ textarea.modal-textarea{
           &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
         &lt;/div&gt;
         &lt;div id=&quot;layersList&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- Library --&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
+          Biblioteca
+          &lt;span id=&quot;libCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;libraryList&quot;&gt;
+          &lt;div class=&quot;layer-empty&quot;&gt;Sem itens de identidade&lt;/div&gt;
+        &lt;/div&gt;
       &lt;/div&gt;
 
     &lt;/div&gt;
@@ -2035,6 +2063,82 @@ function refreshLayers() {
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
 }
 
+let brandLibrary=[];
+
+function refreshLibrary(){
+  const list=$('libraryList');
+  const cnt=$('libCount');
+  if(!list) return;
+  if(cnt) cnt.textContent=brandLibrary.length;
+  list.innerHTML='';
+  if(!brandLibrary.length){
+    list.innerHTML='&lt;div class=&quot;layer-empty&quot;&gt;Sem itens de identidade&lt;/div&gt;';
+    return;
+  }
+  brandLibrary.forEach((item,idx)=>{
+    const div=document.createElement('div');
+    div.className='lib-item';
+    const icon = item.kind==='logo' ? 'image' : item.kind==='color' ? 'droplets' : 'type';
+    const meta = item.kind==='logo' ? 'Logo' : item.kind==='color' ? (item.color||'Cor') : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
+    div.innerHTML=`&lt;div class=&quot;lib-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${meta}&lt;/div&gt;`;
+    div.addEventListener('click',()=>applyLibraryItem(idx));
+    list.appendChild(div);
+  });
+  if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
+}
+
+function applyLibraryItem(idx){
+  const item=brandLibrary[idx];
+  if(!item) return;
+  if(item.kind==='color'){
+    const obj=activeObj();
+    if(!obj){ setStatus('Selecione um objeto para aplicar a cor.'); return; }
+    obj.set({fill:item.color||'#000000'});
+    if(obj.type==='textbox'||obj.type==='text'||obj.type==='i-text'){
+      if(UI.textColor) UI.textColor.value=item.color||'#000000';
+    }else if(UI.fill){ UI.fill.value=item.color||'#000000'; }
+    canvas.requestRenderAll();
+    setStatus('Cor aplicada da biblioteca');
+    return;
+  }
+  if(item.kind==='text-style'){
+    const label = item.uppercase ? String(item.name||'Novo texto').toUpperCase() : (item.name||'Novo texto');
+    const text = new fabric.Textbox(label, {
+      left: artboard.left + Math.max(24, docW*0.1),
+      top: artboard.top + Math.max(24, docH*0.1),
+      width: Math.max(180, docW*0.4),
+      fontFamily: item.font || 'Outfit',
+      fontWeight: item.weight || 400,
+      fontSize: item.size || 24,
+      lineHeight: item.lineHeight || 1.2,
+      charSpacing: (item.letterSpacing||0) * 50,
+      fontStyle: item.italic ? 'italic' : 'normal',
+      fill: '#ffffff',
+      dataName: `Style: ${item.name||'Texto'}`
+    });
+    canvas.add(text); canvas.setActiveObject(text); canvas.requestRenderAll();
+    refreshLayers(); refreshProps();
+    setStatus('Estilo de texto adicionado da biblioteca');
+    return;
+  }
+  if(item.kind==='logo' && item.src){
+    fabric.Image.fromURL(item.src, img=>{
+      if(!img) return;
+      const maxW=docW*0.5, maxH=docH*0.35;
+      const sc=Math.min(maxW/img.width, maxH/img.height, 1);
+      img.set({
+        left: artboard.left + docW/2 - (img.width*sc)/2,
+        top: artboard.top + docH/2 - (img.height*sc)/2,
+        scaleX: sc, scaleY: sc,
+        dataName: item.name || 'Logo da biblioteca'
+      });
+      canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+      refreshLayers(); refreshProps();
+      setStatus('Logo inserido da biblioteca');
+    }, {crossOrigin:'anonymous'});
+  }
+}
+
 // ─── Modal ───────────────────────────────────────────────
 const modalBg = $('modalBg');
 function openModal(title, html) {
@@ -2214,6 +2318,10 @@ window.addEventListener('message', ev =&gt; {
   if (msg.type === 'fit') fitToArtboard();
   if (msg.type === 'exportPNG') exportPNG();
   if (msg.type === 'setBrand') {
+    if (Array.isArray(msg.library)) {
+      brandLibrary = msg.library.slice(0,80);
+      refreshLibrary();
+    }
     if (Array.isArray(msg.fonts) &amp;&amp; UI.font) {
       const existing = new Set(Array.from(UI.font.options).map(o=&gt;o.value));
       msg.fonts.forEach(f =&gt; {
@@ -2266,6 +2374,7 @@ function boot() {
     fitToArtboard();
     updateZoomLabel();
     updateArtboardPlusUI();
+    refreshLibrary();
 
     const ro = new ResizeObserver(() =&gt; {
       resizeCanvasToViewport();
