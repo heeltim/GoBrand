@@ -1016,9 +1016,13 @@ textarea.modal-textarea{
       &lt;div class=&quot;panel-section&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Adicionar&lt;/div&gt;
         &lt;div class=&quot;tool-grid&quot;&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddText&quot;&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddArtText&quot;&gt;
             &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;polyline points=&quot;4 7 4 4 20 4 20 7&quot;/&gt;&lt;line x1=&quot;9&quot; y1=&quot;20&quot; x2=&quot;15&quot; y2=&quot;20&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;4&quot; x2=&quot;12&quot; y2=&quot;20&quot;/&gt;&lt;/svg&gt;
-            TEXTO
+            T. ART
+          &lt;/button&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddTextBox&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;5&quot; width=&quot;18&quot; height=&quot;14&quot; rx=&quot;2&quot;/&gt;&lt;line x1=&quot;7&quot; y1=&quot;10&quot; x2=&quot;17&quot; y2=&quot;10&quot;/&gt;&lt;line x1=&quot;7&quot; y1=&quot;14&quot; x2=&quot;14&quot; y2=&quot;14&quot;/&gt;&lt;/svg&gt;
+            CAIXA T
           &lt;/button&gt;
           &lt;button class=&quot;tool-btn&quot; id=&quot;btnRect&quot;&gt;
             &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;3&quot;/&gt;&lt;/svg&gt;
@@ -1074,9 +1078,22 @@ textarea.modal-textarea{
 
       &lt;div class=&quot;panel-section&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Layout rápido&lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Referência&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
+              &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
         &lt;div class=&quot;field-row&quot;&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟸&lt;/button&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Centro ↔&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟹&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Base ⟱&lt;/button&gt;
         &lt;/div&gt;
         &lt;div class=&quot;field-row&quot;&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Topo ⟰&lt;/button&gt;
@@ -1210,6 +1227,13 @@ textarea.modal-textarea{
               &lt;option value=&quot;Roboto&quot;&gt;Roboto&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Google Font&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;pGoogleFont&quot; placeholder=&quot;Ex: Playfair Display&quot;&gt;
+          &lt;/div&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnLoadFont&quot; style=&quot;justify-content:center;height:32px;align-self:end&quot;&gt;Carregar&lt;/button&gt;
         &lt;/div&gt;
         &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Tamanho&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pFontSize&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;6&quot;&gt;&lt;/div&gt;
@@ -1431,15 +1455,27 @@ function setStatus(txt) {
 }
 
 // ─── Add objects ─────────────────────────────────────────
-function addText() {
+function addArtText() {
   ensureArtboard();
-  const t = new fabric.Textbox('Texto', {
+  const t = new fabric.IText('Texto artístico', {
     left: artboard.left + 60, top: artboard.top + 60,
-    width: 360, fontFamily: 'Outfit', fontSize: 42,
+    fontFamily: 'Outfit', fontSize: 42,
     fill: '#111', editable: true
   });
   canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
-  setStatus('Texto adicionado');
+  setStatus('Texto artístico adicionado');
+}
+
+function addTextBox() {
+  ensureArtboard();
+  const t = new fabric.Textbox('Caixa de texto', {
+    left: artboard.left + 60, top: artboard.top + 140,
+    width: 360, fontFamily: 'Outfit', fontSize: 32,
+    fill: '#111', editable: true,
+    textAlign: 'left'
+  });
+  canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
+  setStatus('Caixa de texto adicionada');
 }
 
 function addRect() {
@@ -1528,19 +1564,49 @@ function nudgeBy(obj, dx=0, dy=0) {
   obj.setCoords();
 }
 
+function getAlignReferenceRect(objs) {
+  ensureArtboard();
+  if(!artboard) return null;
+
+  const target = $('alignTarget')?.value || 'layout';
+  if(target !== 'object') {
+    return { left: artboard.left, top: artboard.top, width: docW, height: docH };
+  }
+
+  const active = canvas.getActiveObject();
+  if(!active || active.type !== 'activeSelection') {
+    setStatus('No modo objeto, selecione 2+ elementos');
+    return null;
+  }
+  const list = active.getObjects().filter(o =&gt; !isGuide(o));
+  if(list.length &lt; 2) {
+    setStatus('Selecione ao menos 2 elementos para alinhar por objeto');
+    return null;
+  }
+
+  const anchor = list[list.length - 1];
+  const b = anchor.getBoundingRect(true, true);
+  return { left: b.left, top: b.top, width: b.width, height: b.height, anchor };
+}
+
 function alignSelection(mode) {
   ensureArtboard();
   const objs = selectedObjects();
-  if(!objs.length || !artboard) return;
-  const L = artboard.left, T = artboard.top;
+  const ref = getAlignReferenceRect(objs);
+  if(!objs.length || !ref) return;
+  const L = ref.left, T = ref.top;
+  const R = L + ref.width, B = T + ref.height;
 
   objs.forEach(obj =&gt; {
+    if(ref.anchor &amp;&amp; obj === ref.anchor) return;
     const b = obj.getBoundingRect(true, true);
     let dx = 0, dy = 0;
     if(mode === 'left') dx = L - b.left;
-    if(mode === 'center') dx = (L + docW / 2) - (b.left + b.width / 2);
+    if(mode === 'center') dx = (L + ref.width / 2) - (b.left + b.width / 2);
+    if(mode === 'right') dx = R - (b.left + b.width);
     if(mode === 'top') dy = T - b.top;
-    if(mode === 'middle') dy = (T + docH / 2) - (b.top + b.height / 2);
+    if(mode === 'middle') dy = (T + ref.height / 2) - (b.top + b.height / 2);
+    if(mode === 'bottom') dy = B - (b.top + b.height);
     if(dx || dy) nudgeBy(obj, dx, dy);
   });
 
@@ -1548,6 +1614,56 @@ function alignSelection(mode) {
   refreshProps();
   refreshLayers();
   setStatus('Alinhamento aplicado');
+}
+
+async function syncTextStyleRender(obj) {
+  if(!obj || !(obj.type==='textbox'||obj.type==='text'||obj.type==='i-text')) return;
+  try {
+    if(document.fonts &amp;&amp; obj.fontFamily) {
+      const size = obj.fontSize || 16;
+      await document.fonts.load(`${size}px "${obj.fontFamily}"`);
+    }
+  } catch(_) {}
+  canvas.requestRenderAll();
+}
+
+function ensureGoogleFont(fontName) {
+  const font = (fontName || '').trim();
+  if(!font) return false;
+  const q = font.split(/\s+/).join('+');
+  const id = `gf-${q.toLowerCase()}`;
+  if(!document.getElementById(id)) {
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${q}:wght@300;400;500;600;700;800;900&amp;display=swap`;
+    document.head.appendChild(link);
+  }
+  return true;
+}
+
+async function loadGoogleFontForSelection() {
+  const input = $('pGoogleFont');
+  const font = (input?.value || '').trim();
+  if(!font) { setStatus('Informe o nome da fonte Google'); return; }
+  ensureGoogleFont(font);
+  const obj = activeObj();
+  if(obj &amp;&amp; (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text')) {
+    obj.set({ fontFamily: font });
+    if(UI.font) {
+      const hasOpt = [...UI.font.options].some(o =&gt; o.value === font);
+      if(!hasOpt) {
+        const opt = document.createElement('option');
+        opt.value = font; opt.textContent = font;
+        UI.font.appendChild(opt);
+      }
+      UI.font.value = font;
+    }
+    await syncTextStyleRender(obj);
+    setStatus(`Fonte carregada: ${font}`);
+    return;
+  }
+  setStatus(`Fonte carregada: ${font}. Selecione um texto para aplicar.`);
 }
 
 function distributeSelection(axis='x') {
@@ -1708,6 +1824,7 @@ function applyProps(key) {
     if(UI.font?.value) obj.set({ fontFamily: UI.font.value });
     if(UI.fontSize?.value) obj.set({ fontSize: clamp(num(UI.fontSize.value, obj.fontSize||16), 6, 512) });
     if(key==='textColor'||key==='fill') obj.set({ fill: UI.textColor?.value || obj.fill });
+    syncTextStyleRender(obj);
   }
 
   obj.setCoords(); canvas.requestRenderAll();
@@ -1858,7 +1975,8 @@ canvas.on('object:moving', opt =&gt; {
 });
 
 // ─── Bind toolbar buttons ─────────────────────────────────
-$('btnAddText')?.addEventListener('click', addText);
+$('btnAddArtText')?.addEventListener('click', addArtText);
+$('btnAddTextBox')?.addEventListener('click', addTextBox);
 $('btnRect')?.addEventListener('click', addRect);
 $('btnCircle')?.addEventListener('click', addCircle);
 $('btnLine')?.addEventListener('click', addLine);
@@ -1895,12 +2013,15 @@ $('btnCenterAll')?.addEventListener('click', () =&gt; {
 });
 $('btnAlignLeft')?.addEventListener('click', () =&gt; alignSelection('left'));
 $('btnAlignCenter')?.addEventListener('click', () =&gt; alignSelection('center'));
+$('btnAlignRight')?.addEventListener('click', () =&gt; alignSelection('right'));
 $('btnAlignTop')?.addEventListener('click', () =&gt; alignSelection('top'));
+$('btnAlignBottom')?.addEventListener('click', () =&gt; alignSelection('bottom'));
 $('btnAlignMiddle')?.addEventListener('click', () =&gt; alignSelection('middle'));
 $('btnDistributeX')?.addEventListener('click', () =&gt; distributeSelection('x'));
 $('btnDistributeY')?.addEventListener('click', () =&gt; distributeSelection('y'));
 $('btnGroup')?.addEventListener('click', groupSelection);
 $('btnUngroup')?.addEventListener('click', ungroupSelection);
+$('btnLoadFont')?.addEventListener('click', loadGoogleFontForSelection);
 $('btnHelp')?.addEventListener('click', () =&gt; {
   openModal('Atalhos de teclado', `
     &lt;div class=&quot;shortcuts-grid&quot; style=&quot;gap:8px 16px&quot;&gt;
