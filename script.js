@@ -206,7 +206,7 @@ ctx.querySelectorAll(".ctx-item").forEach(item=>{
    NAVIGATION
 ============================================================ */
 function nav(view, el){
-  ["home","board","apps","editor","export"].forEach(v=>{
+  ["home","board","apps","editor","export","appEditor"].forEach(v=>{
     $("view"+cap(v)).classList.toggle("active",v===view);
   });
   document.querySelectorAll(".sidebar-item").forEach(i=>i.classList.toggle("active",i.dataset.view===view));
@@ -216,6 +216,11 @@ function nav(view, el){
   if(view==="board") renderBoard();
   if(view==="apps") renderApps();
   if(view==="editor"){ loadEditor(); renderPreview(); }
+  if(view==="appEditor" && _appEdit.appId){
+    const p=P();
+    const a=(p?.applications||[]).find(x=>x.id===_appEdit.appId);
+    if(a) ensureAppEditorReady(a,p);
+  }
   if(view==="export") renderExport();
 }
 function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
@@ -246,6 +251,7 @@ function updateTopbar(view){
   if(view==="board") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Brand Board</span>`;
   else if(view==="apps") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Aplicações</span>`;
   else if(view==="editor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editar</span>`;
+  else if(view==="appEditor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editor da Aplicação</span>`;
   else if(view==="export") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Exportar</span>`;
   else bc.innerHTML=crumbBase;
 
@@ -1299,13 +1305,12 @@ function openAppEditor(appId){
 
   _appEdit.appId = appId;
   _appEdit.selId = null;
+  nav("appEditor");
+}
 
+function ensureAppEditorReady(a,p){
   if($("appEditName")) $("appEditName").textContent = a.name || "Aplicação";
   if($("appEditMeta")) $("appEditMeta").textContent = `${a.type==="print"?"Impressão":"Web"} • ${a.w}×${a.h}${a.unit} • ${a.dpi}dpi`;
-
-  $("appEditBackdrop").classList.add("open");
-  $("appEditBackdrop").setAttribute("aria-hidden","false");
-  document.addEventListener("keydown", appEditEsc, {once:true});
 
   // Load iframe content (defined in post-template script)
   if(typeof geEnsureIframeLoaded === "function") geEnsureIframeLoaded();
@@ -1384,8 +1389,7 @@ function appEditEsc(e){
 }
 
 function closeAppEditor(){
-  $("appEditBackdrop").classList.remove("open");
-  $("appEditBackdrop").setAttribute("aria-hidden","true");
+  nav("apps");
   _appEdit = { appId:null, selId:null, svgEl:null, guideVisible:true };
 }
 
@@ -1945,7 +1949,7 @@ document.addEventListener("mouseup",()=>{ if(_resize.on) endResize(); endDrag();
 
 // Nudge with arrows (Shift = 10)
 document.addEventListener("keydown",(e)=>{
-  if(!$("appEditBackdrop")?.classList.contains("open")) return;
+  if(!$("viewAppEditor")?.classList.contains("active")) return;
   if(e.target.matches("input,select,textarea")) return;
   const svg=_appEdit.svgEl; if(!svg) return;
   if(!_appEdit.selId) return;
