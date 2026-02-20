@@ -1072,6 +1072,28 @@ textarea.modal-textarea{
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Layout rápido&lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟸&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Centro ↔&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Topo ⟰&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Meio ↕&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeX&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir X&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeY&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir Y&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Agrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Desagrupar&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
       &lt;!-- JSON --&gt;
       &lt;div class=&quot;panel-section&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Projeto&lt;/div&gt;
@@ -1394,6 +1416,8 @@ window.addEventListener('keydown', e =&gt; {
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; !e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); groupSelection(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); ungroupSelection(); }
   if ((e.key === 'Delete' || e.key === 'Backspace') &amp;&amp; !e.target.matches('input,textarea')) { del(); }
 }, {passive:false});
 
@@ -1487,6 +1511,104 @@ function duplicate() {
     canvas.add(cl); canvas.setActiveObject(cl);
     canvas.requestRenderAll(); refreshProps(); refreshLayers();
   });
+}
+
+
+function selectedObjects() {
+  const active = canvas.getActiveObject();
+  if(!active || isGuide(active)) return [];
+  if(active.type === 'activeSelection') {
+    return active.getObjects().filter(o =&gt; !isGuide(o));
+  }
+  return [active];
+}
+
+function nudgeBy(obj, dx=0, dy=0) {
+  obj.set({ left: (obj.left||0) + dx, top: (obj.top||0) + dy });
+  obj.setCoords();
+}
+
+function alignSelection(mode) {
+  ensureArtboard();
+  const objs = selectedObjects();
+  if(!objs.length || !artboard) return;
+  const L = artboard.left, T = artboard.top;
+
+  objs.forEach(obj =&gt; {
+    const b = obj.getBoundingRect(true, true);
+    let dx = 0, dy = 0;
+    if(mode === 'left') dx = L - b.left;
+    if(mode === 'center') dx = (L + docW / 2) - (b.left + b.width / 2);
+    if(mode === 'top') dy = T - b.top;
+    if(mode === 'middle') dy = (T + docH / 2) - (b.top + b.height / 2);
+    if(dx || dy) nudgeBy(obj, dx, dy);
+  });
+
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
+  setStatus('Alinhamento aplicado');
+}
+
+function distributeSelection(axis='x') {
+  const objs = selectedObjects();
+  if(objs.length &lt; 3) {
+    setStatus('Selecione 3+ elementos para distribuir');
+    return;
+  }
+
+  const sorted = objs.slice().sort((a,b) =&gt; {
+    const ba = a.getBoundingRect(true, true);
+    const bb = b.getBoundingRect(true, true);
+    return axis === 'x' ? ba.left - bb.left : ba.top - bb.top;
+  });
+
+  const centers = sorted.map(obj =&gt; {
+    const b = obj.getBoundingRect(true, true);
+    return axis === 'x' ? (b.left + b.width / 2) : (b.top + b.height / 2);
+  });
+
+  const first = centers[0];
+  const last = centers[centers.length - 1];
+  if(Math.abs(last - first) &lt; 1) return;
+  const step = (last - first) / (sorted.length - 1);
+
+  sorted.forEach((obj, i) =&gt; {
+    if(i === 0 || i === sorted.length - 1) return;
+    const b = obj.getBoundingRect(true, true);
+    const current = axis === 'x' ? (b.left + b.width / 2) : (b.top + b.height / 2);
+    const target = first + step * i;
+    const delta = target - current;
+    if(axis === 'x') nudgeBy(obj, delta, 0);
+    else nudgeBy(obj, 0, delta);
+  });
+
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
+  setStatus(axis === 'x' ? 'Distribuição horizontal aplicada' : 'Distribuição vertical aplicada');
+}
+
+function groupSelection() {
+  const active = canvas.getActiveObject();
+  if(active &amp;&amp; active.type === 'activeSelection') {
+    active.toGroup();
+    canvas.requestRenderAll();
+    refreshLayers();
+    setStatus('Grupo criado');
+    return;
+  }
+  setStatus('Selecione 2+ elementos para agrupar');
+}
+
+function ungroupSelection() {
+  const active = canvas.getActiveObject();
+  if(active &amp;&amp; active.type === 'group') {
+    active.toActiveSelection();
+    canvas.requestRenderAll();
+    refreshLayers();
+    setStatus('Grupo desfeito');
+  }
 }
 
 // ─── Properties panel ────────────────────────────────────
@@ -1771,12 +1893,22 @@ $('btnCenterAll')?.addEventListener('click', () =&gt; {
   obj.set({ left:artboard.left+docW/2-obj.getScaledWidth()/2, top:artboard.top+docH/2-obj.getScaledHeight()/2 });
   obj.setCoords(); canvas.requestRenderAll();
 });
+$('btnAlignLeft')?.addEventListener('click', () =&gt; alignSelection('left'));
+$('btnAlignCenter')?.addEventListener('click', () =&gt; alignSelection('center'));
+$('btnAlignTop')?.addEventListener('click', () =&gt; alignSelection('top'));
+$('btnAlignMiddle')?.addEventListener('click', () =&gt; alignSelection('middle'));
+$('btnDistributeX')?.addEventListener('click', () =&gt; distributeSelection('x'));
+$('btnDistributeY')?.addEventListener('click', () =&gt; distributeSelection('y'));
+$('btnGroup')?.addEventListener('click', groupSelection);
+$('btnUngroup')?.addEventListener('click', ungroupSelection);
 $('btnHelp')?.addEventListener('click', () =&gt; {
   openModal('Atalhos de teclado', `
     &lt;div class=&quot;shortcuts-grid&quot; style=&quot;gap:8px 16px&quot;&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Z&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Desfazer&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Y&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Refazer&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Ctrl+D&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Duplicar&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+G&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Agrupar seleção&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Shift+G&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Desagrupar seleção&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Del&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Apagar seleção&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Espaço&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Arrastar viewport&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Scroll&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Zoom suave&lt;/span&gt;
