@@ -206,7 +206,7 @@ ctx.querySelectorAll(".ctx-item").forEach(item=>{
    NAVIGATION
 ============================================================ */
 function nav(view, el){
-  ["home","board","apps","editor","export"].forEach(v=>{
+  ["home","board","apps","editor","export","appEditor"].forEach(v=>{
     $("view"+cap(v)).classList.toggle("active",v===view);
   });
   document.querySelectorAll(".sidebar-item").forEach(i=>i.classList.toggle("active",i.dataset.view===view));
@@ -216,6 +216,11 @@ function nav(view, el){
   if(view==="board") renderBoard();
   if(view==="apps") renderApps();
   if(view==="editor"){ loadEditor(); renderPreview(); }
+  if(view==="appEditor" && _appEdit.appId){
+    const p=P();
+    const a=(p?.applications||[]).find(x=>x.id===_appEdit.appId);
+    if(a) ensureAppEditorReady(a,p);
+  }
   if(view==="export") renderExport();
 }
 function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
@@ -246,6 +251,7 @@ function updateTopbar(view){
   if(view==="board") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Brand Board</span>`;
   else if(view==="apps") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Aplicações</span>`;
   else if(view==="editor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editar</span>`;
+  else if(view==="appEditor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editor da Aplicação</span>`;
   else if(view==="export") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Exportar</span>`;
   else bc.innerHTML=crumbBase;
 
@@ -400,6 +406,7 @@ function saveProject(){
   p.fontSec=$("selSecondary").value;
   p.updatedAt=Date.now();
   save(S.projects);
+  gePushBrandData(p);
   updateTopbar("editor");
   renderHome();
   toast("Salvo!","success");
@@ -413,6 +420,7 @@ function saveProject(){
     p.fontSec=$("selSecondary").value;
     p.updatedAt=Date.now();
     save(S.projects);
+    gePushBrandData(p);
     renderTypoList();
     renderPreview();
   });
@@ -434,7 +442,7 @@ function triggerLogo(slot){ $("fileLogo"+cap(slot)).click(); }
 function clearLogo(slot,e){
   if(e){e.preventDefault();e.stopPropagation();}
   const p=P();if(!p)return;
-  p["logo"+cap(slot)]=null;save(S.projects);renderLogoSlot(slot,null);
+  p["logo"+cap(slot)]=null;save(S.projects);gePushBrandData(p);renderLogoSlot(slot,null);
 }
 
 function renderLogoSlot(slot,asset){
@@ -460,6 +468,7 @@ function renderLogoSlot(slot,asset){
     const key="logo"+s;
     p[key]=await readAsset(f);
     p.updatedAt=Date.now();save(S.projects);
+    gePushBrandData(p);
     renderLogoSlot(s.toLowerCase(),p[key]);
     fileInput.value="";
     toast("Logo carregado!","success");
@@ -529,6 +538,7 @@ function addColor(){
   p.colors.push(c);
   normalizePercents(p);
   p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   S.colorId=c.id;
   renderColors();
   openColorModal();
@@ -545,6 +555,7 @@ function openColorModal(){
   $("mHex").value=c.hex.toUpperCase();
   $("mRgb").value=`${rgb.r}, ${rgb.g}, ${rgb.b}`;
   $("mAlpha").value=c.alpha??100;
+  if($("mAlphaRange")) $("mAlphaRange").value=c.alpha??100;
   $("mPct").value=c.pct??10;
   $("mName").value=c.name||"";
   syncPicker();
@@ -634,7 +645,12 @@ document.addEventListener("touchmove",e=>{if(!S.dragging)return;
 function handlePickerMove(id,x,y,w,h){
   if(id==="pickerCanvas"){ S.hsv.s=(x/w)*100; S.hsv.v=(1-(y/h))*100; syncPicker(); }
   else if(id==="hueStrip"){ S.hsv.h=(x/w)*360; syncPicker(); }
-  else if(id==="alphaStrip"){ $("mAlpha").value=Math.round((x/w)*100); syncPicker(); }
+  else if(id==="alphaStrip"){
+    const alpha=Math.round((x/w)*100);
+    $("mAlpha").value=alpha;
+    if($("mAlphaRange")) $("mAlphaRange").value=alpha;
+    syncPicker();
+  }
 }
 
 pickerDrag($("pickerCanvas"),(x,y,w,h)=>handlePickerMove("pickerCanvas",x,y,w,h));
@@ -650,7 +666,17 @@ $("mRgb").addEventListener("input",()=>{
   if(!m)return;
   S.hsv=rgbToHsv(+m[1],+m[2],+m[3]);syncPicker();
 });
-$("mAlpha").addEventListener("input",syncPicker);
+$("mAlpha").addEventListener("input",()=>{
+  const alpha=clamp(parseFloat($("mAlpha").value)||100,0,100);
+  $("mAlpha").value=alpha;
+  if($("mAlphaRange")) $("mAlphaRange").value=alpha;
+  syncPicker();
+});
+$("mAlphaRange")?.addEventListener("input",()=>{
+  const alpha=clamp(parseFloat($("mAlphaRange").value)||100,0,100);
+  $("mAlpha").value=alpha;
+  syncPicker();
+});
 
 $("btnCopyColor").onclick=async()=>{
   const mode=$("mCopyMode").value;
@@ -678,6 +704,7 @@ $("btnDeleteColor").onclick=()=>{
   if(!confirm("Excluir esta cor?"))return;
   p.colors=p.colors.filter(c=>c.id!==S.colorId);
   normalizePercents(p);p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   S.colorId=p.colors[0]?.id||null;
   closeColorModal();renderColors();
   toast("Cor excluída","error");
@@ -693,6 +720,7 @@ $("btnApplyColor").onclick=()=>{
   c.pct=clamp(parseInt($("mPct").value)||10,1,100);
   c.name=($("mName").value||"").trim();
   normalizePercents(p);p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   closeColorModal();renderColors();renderPreview();
   toast("Cor aplicada!","success");
 };
@@ -745,9 +773,40 @@ function buildFamOptions(p){
   return opts;
 }
 
+function buildBaseStyleOptions(p,currentKey){
+  return (p.typo||[])
+    .filter(x=>x.key!==currentKey)
+    .map(x=>({l:x.key,v:x.key}));
+}
+
+function applyBaseStyle(){
+  const p=P();if(!p)return;
+  const s=p.typo.find(x=>x.key===S.styleKey);if(!s)return;
+  const baseKey=$("edBaseStyle")?.value;
+  if(!baseKey||baseKey==="__none__") return;
+  const base=(p.typo||[]).find(x=>x.key===baseKey);
+  if(!base) return;
+  s.fam=base.fam;
+  s.wt=base.wt;
+  s.sz=base.sz;
+  s.lh=base.lh;
+  s.ls=base.ls;
+  s.al=base.al;
+  s.va=base.va;
+  s.up=!!base.up;
+  s.it=!!base.it;
+  openStyleEditor(p,s);
+  renderPreview();
+}
+
 function openStyleEditor(p,s){
   const editor=$("typoEditor");
   editor.classList.add("open");
+
+  // base style
+  const baseOpts=buildBaseStyleOptions(p,s.key);
+  $("edBaseStyle").innerHTML=[`<option value="__none__">Selecione…</option>`,...baseOpts.map(o=>`<option value="${esc(o.v)}">${esc(o.l)}</option>`)].join("");
+  $("edBaseStyle").value="__none__";
 
   // family
   const famOpts=buildFamOptions(p);
@@ -796,12 +855,14 @@ function saveStyle(){
   s.lh=+$("edLine").value;
   s.ls=+$("edTrack").value;
   p.updatedAt=Date.now();save(S.projects);
+  gePushBrandData(p);
   S.styleKey=null;
   renderTypoList();renderPreview();
   toast("Estilo salvo!","success");
 }
 
 $("chkRestrict")?.addEventListener("change",()=>{ const p=P();if(p){const s=p.typo.find(x=>x.key===S.styleKey);if(s)openStyleEditor(p,s);} });
+$("edBaseStyle")?.addEventListener("change",applyBaseStyle);
 
 /* ============================================================
    LIVE PREVIEW
@@ -1292,13 +1353,12 @@ function openAppEditor(appId){
 
   _appEdit.appId = appId;
   _appEdit.selId = null;
+  nav("appEditor");
+}
 
+function ensureAppEditorReady(a,p){
   if($("appEditName")) $("appEditName").textContent = a.name || "Aplicação";
   if($("appEditMeta")) $("appEditMeta").textContent = `${a.type==="print"?"Impressão":"Web"} • ${a.w}×${a.h}${a.unit} • ${a.dpi}dpi`;
-
-  $("appEditBackdrop").classList.add("open");
-  $("appEditBackdrop").setAttribute("aria-hidden","false");
-  document.addEventListener("keydown", appEditEsc, {once:true});
 
   // Load iframe content (defined in post-template script)
   if(typeof geEnsureIframeLoaded === "function") geEnsureIframeLoaded();
@@ -1310,11 +1370,7 @@ function openAppEditor(appId){
       if((a.unit||"px")==="mm"){ const dpi=Number(a.dpi)||72; w=(w/25.4)*dpi; h=(h/25.4)*dpi; }
       gePost({type:"setDoc", w, h});
     }
-    try{
-      const colors=(p.colors||[]).filter(c=>c.hex);
-      const fonts=[p.fontPri,p.fontSec].filter(Boolean);
-      gePost({type:"setBrand", colors, fonts});
-    }catch(e){}
+    gePushBrandData(p);
   }, 400);
 }
 
@@ -1327,14 +1383,45 @@ function switchToFabricEditor(){
 
   // Send brand data to iframe
   const p=P();
-  if(p){
-    try{
-      const colors=(p.colors||[]).filter(c=>c.hex);
-      const fonts=[p.fontPri,p.fontSec,...(typeof FONTS!=="undefined"?FONTS:[])].filter(Boolean);
-      gePost({type:"setBrand", colors, fonts});
-    }catch(e){}
-  }
+  if(p) gePushBrandData(p);
   toast("Editor Avançado (Fabric.js) aberto","info");
+}
+
+function buildBrandLibrary(p){
+  if(!p) return [];
+  const items=[];
+  if(p.logoSq?.data) items.push({kind:"logo",name:"Logo quadrado",src:p.logoSq.data});
+  if(p.logoWd?.data) items.push({kind:"logo",name:"Logo horizontal",src:p.logoWd.data});
+  (p.colors||[]).forEach(c=>{
+    if(!c?.hex) return;
+    items.push({kind:"color",name:c.name||c.hex,color:c.hex,alpha:c.alpha??100});
+  });
+  (p.typo||[]).forEach(s=>{
+    items.push({
+      kind:"text-style",
+      name:s.key||"Texto",
+      font:resolveFont(p,s.fam),
+      weight:Number(s.wt)||400,
+      size:Number(s.sz)||24,
+      lineHeight:Number(s.lh)||1.2,
+      letterSpacing:Number(s.ls)||0,
+      italic:!!s.it,
+      uppercase:!!s.up,
+      align:s.al||"left"
+    });
+  });
+  return items;
+}
+
+function gePushBrandData(project=P()){
+  try{
+    const p=project||P();
+    if(!p) return;
+    const colors=(p.colors||[]).filter(c=>c?.hex);
+    const fonts=[p.fontPri,p.fontSec,...(typeof FONTS!=="undefined"?FONTS:[])].filter(Boolean);
+    const library=buildBrandLibrary(p);
+    gePost({type:"setBrand", colors, fonts, library});
+  }catch(e){}
 }
 
 function switchToSvgEditor(){
@@ -1350,8 +1437,7 @@ function appEditEsc(e){
 }
 
 function closeAppEditor(){
-  $("appEditBackdrop").classList.remove("open");
-  $("appEditBackdrop").setAttribute("aria-hidden","true");
+  nav("apps");
   _appEdit = { appId:null, selId:null, svgEl:null, guideVisible:true };
 }
 
@@ -1911,7 +1997,7 @@ document.addEventListener("mouseup",()=>{ if(_resize.on) endResize(); endDrag();
 
 // Nudge with arrows (Shift = 10)
 document.addEventListener("keydown",(e)=>{
-  if(!$("appEditBackdrop")?.classList.contains("open")) return;
+  if(!$("viewAppEditor")?.classList.contains("active")) return;
   if(e.target.matches("input,select,textarea")) return;
   const svg=_appEdit.svgEl; if(!svg) return;
   if(!_appEdit.selId) return;

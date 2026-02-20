@@ -63,6 +63,10 @@
           <input id="mAlpha" class="modal-inp" type="number" min="0" max="100">
         </div>
         <div class="modal-field">
+          <label>Transparência</label>
+          <input id="mAlphaRange" class="modal-inp" type="range" min="0" max="100" value="100">
+        </div>
+        <div class="modal-field">
           <label>% Uso</label>
           <input id="mPct" class="modal-inp" type="number" min="1" max="100">
         </div>
@@ -405,7 +409,11 @@
               <div id="typoList"></div>
               <div id="typoEditor" class="typo-editor">
                 <div class="stack" style="margin-top:0">
-                  <div class="row2">
+                  <div class="row3">
+                    <div class="field">
+                      <label class="field-label">Estilo base</label>
+                      <select class="sel" id="edBaseStyle"></select>
+                    </div>
                     <div class="field">
                       <label class="field-label">Família</label>
                       <select class="sel" id="edFamily"></select>
@@ -605,8 +613,8 @@
 <!-- =========================================================
      APP EDITOR (FULLSCREEN) — Embedded Advanced Editor
 ========================================================= -->
-<div id="appEditBackdrop" class="appedit-backdrop" aria-hidden="true">
-  <div class="appedit-shell" role="dialog" aria-modal="true">
+<div id="viewAppEditor" class="view">
+  <div class="appedit-shell">
     <div class="appedit-top">
       <div class="left">
         <button class="btn btn-ghost" onclick="closeAppEditor()" style="padding:10px 14px">
@@ -858,6 +866,21 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   text-align:center;padding:24px 0;
   font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace;
 }
+.lib-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 9px;border-radius:8px;
+  border:1px solid transparent;
+  cursor:pointer;transition:all .1s ease;
+  margin-bottom:3px;
+}
+.lib-item:hover{background:rgba(255,255,255,.04)}
+.lib-icon{
+  width:22px;height:22px;border-radius:5px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--ink3);font-size:11px
+}
+.lib-name{flex:1;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-meta{font-size:10px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace}
 
 /* ─── PROPS PANEL ─────────────────────────────────────── */
 .prop-row{margin-bottom:8px}
@@ -1150,7 +1173,21 @@ textarea.modal-textarea{
           Camadas
           &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
         &lt;/div&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;width:100%;justify-content:center;height:32px;margin:0 0 8px 0&quot;&gt;+ Nova layer&lt;/button&gt;
         &lt;div id=&quot;layersList&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- Library --&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
+          Biblioteca
+          &lt;span id=&quot;libCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;libraryList&quot;&gt;
+          &lt;div class=&quot;layer-empty&quot;&gt;Sem itens de identidade&lt;/div&gt;
+        &lt;/div&gt;
       &lt;/div&gt;
 
     &lt;/div&gt;
@@ -1213,7 +1250,24 @@ textarea.modal-textarea{
         &lt;/div&gt;
         &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Rot°&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pR&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Opac&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pO&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;1&quot; step=&quot;0.01&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Transp.&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pO&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;1&quot; step=&quot;0.01&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Blend mode&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;pBlend&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;source-over&quot;&gt;Normal&lt;/option&gt;
+              &lt;option value=&quot;multiply&quot;&gt;Multiply&lt;/option&gt;
+              &lt;option value=&quot;screen&quot;&gt;Screen&lt;/option&gt;
+              &lt;option value=&quot;overlay&quot;&gt;Overlay&lt;/option&gt;
+              &lt;option value=&quot;darken&quot;&gt;Darken&lt;/option&gt;
+              &lt;option value=&quot;lighten&quot;&gt;Lighten&lt;/option&gt;
+              &lt;option value=&quot;color-dodge&quot;&gt;Color Dodge&lt;/option&gt;
+              &lt;option value=&quot;color-burn&quot;&gt;Color Burn&lt;/option&gt;
+              &lt;option value=&quot;difference&quot;&gt;Difference&lt;/option&gt;
+              &lt;option value=&quot;exclusion&quot;&gt;Exclusion&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
@@ -1657,6 +1711,22 @@ function addLine() {
   canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
 }
 
+function addLayer() {
+  ensureArtboard();
+  const idx = canvas.getObjects().filter(o=>!isGuide(o)).length + 1;
+  const l = new fabric.Rect({
+    left: artboard.left + 100, top: artboard.top + 100,
+    width: 260, height: 160, rx: 12, ry: 12,
+    fill:'rgba(255,255,255,.08)', stroke:'rgba(255,255,255,.22)', strokeWidth:1,
+    opacity:1, globalCompositeOperation:'source-over'
+  });
+  l.dataName = `Layer ${idx}`;
+  canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
+  refreshLayers(); refreshProps();
+  setStatus('Nova layer criada');
+}
+
+
 // ─── History ─────────────────────────────────────────────
 const history = { stack:[], idx:-1, lock:false };
 function snapshot() {
@@ -1882,7 +1952,7 @@ function ungroupSelection() {
 // ─── Properties panel ────────────────────────────────────
 const UI = {
   x:$('pX'), y:$('pY'), w:$('pW'), h:$('pH'),
-  r:$('pR'), o:$('pO'),
+  r:$('pR'), o:$('pO'), blend:$('pBlend'),
   fill:$('pFill'), stroke:$('pStroke'), strokeW:$('pStrokeW'), rx:$('pRx'),
   font:$('pFont'), fontSize:$('pFontSize'),
   textColor:$('pTextColor'), align:null
@@ -1926,6 +1996,7 @@ function refreshProps() {
   if(UI.h) UI.h.value = Math.round(sh);
   if(UI.r) UI.r.value = Math.round(obj.angle??0);
   if(UI.o) UI.o.value = obj.opacity??1;
+  if(UI.blend) UI.blend.value = obj.globalCompositeOperation || 'source-over';
 
   const f = (typeof obj.fill==='string') ? obj.fill : '#111111';
   if(UI.fill) UI.fill.value = normalizeHex(f) || '#111111';
@@ -1951,7 +2022,8 @@ function applyProps(key) {
     left: num(UI.x?.value, obj.left||0),
     top:  num(UI.y?.value, obj.top||0),
     angle: num(UI.r?.value, obj.angle||0),
-    opacity: num(UI.o?.value, obj.opacity??1)
+    opacity: num(UI.o?.value, obj.opacity??1),
+    globalCompositeOperation: UI.blend?.value || obj.globalCompositeOperation || 'source-over'
   });
 
   const tw = num(UI.w?.value, obj.getScaledWidth());
@@ -1988,7 +2060,7 @@ function bindInput(el, k) {
   el.addEventListener('change', () =&gt; applyProps(k));
 }
 bindInput(UI.x,'pos'); bindInput(UI.y,'pos'); bindInput(UI.w,'size'); bindInput(UI.h,'size');
-bindInput(UI.r,'rot'); bindInput(UI.o,'op');
+bindInput(UI.r,'rot'); bindInput(UI.o,'op'); bindInput(UI.blend,'blend');
 bindInput(UI.fill,'fill'); bindInput(UI.stroke,'stroke'); bindInput(UI.strokeW,'strokeW'); bindInput(UI.rx,'rx');
 bindInput(UI.font,'font'); bindInput(UI.fontSize,'fontSize');
 bindInput(UI.textColor,'textColor');
@@ -2028,11 +2100,87 @@ function refreshLayers() {
     const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '');
-    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;`;
+    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}% • ${obj.globalCompositeOperation||'source-over'}&lt;/div&gt;`;
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
+}
+
+let brandLibrary=[];
+
+function refreshLibrary(){
+  const list=$('libraryList');
+  const cnt=$('libCount');
+  if(!list) return;
+  if(cnt) cnt.textContent=brandLibrary.length;
+  list.innerHTML='';
+  if(!brandLibrary.length){
+    list.innerHTML='&lt;div class=&quot;layer-empty&quot;&gt;Sem itens de identidade&lt;/div&gt;';
+    return;
+  }
+  brandLibrary.forEach((item,idx)=>{
+    const div=document.createElement('div');
+    div.className='lib-item';
+    const icon = item.kind==='logo' ? 'image' : item.kind==='color' ? 'droplets' : 'type';
+    const meta = item.kind==='logo' ? 'Logo' : item.kind==='color' ? (item.color||'Cor') : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
+    div.innerHTML=`&lt;div class=&quot;lib-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${meta}&lt;/div&gt;`;
+    div.addEventListener('click',()=>applyLibraryItem(idx));
+    list.appendChild(div);
+  });
+  if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
+}
+
+function applyLibraryItem(idx){
+  const item=brandLibrary[idx];
+  if(!item) return;
+  if(item.kind==='color'){
+    const obj=activeObj();
+    if(!obj){ setStatus('Selecione um objeto para aplicar a cor.'); return; }
+    obj.set({fill:item.color||'#000000'});
+    if(obj.type==='textbox'||obj.type==='text'||obj.type==='i-text'){
+      if(UI.textColor) UI.textColor.value=item.color||'#000000';
+    }else if(UI.fill){ UI.fill.value=item.color||'#000000'; }
+    canvas.requestRenderAll();
+    setStatus('Cor aplicada da biblioteca');
+    return;
+  }
+  if(item.kind==='text-style'){
+    const label = item.uppercase ? String(item.name||'Novo texto').toUpperCase() : (item.name||'Novo texto');
+    const text = new fabric.Textbox(label, {
+      left: artboard.left + Math.max(24, docW*0.1),
+      top: artboard.top + Math.max(24, docH*0.1),
+      width: Math.max(180, docW*0.4),
+      fontFamily: item.font || 'Outfit',
+      fontWeight: item.weight || 400,
+      fontSize: item.size || 24,
+      lineHeight: item.lineHeight || 1.2,
+      charSpacing: (item.letterSpacing||0) * 50,
+      fontStyle: item.italic ? 'italic' : 'normal',
+      fill: '#ffffff',
+      dataName: `Style: ${item.name||'Texto'}`
+    });
+    canvas.add(text); canvas.setActiveObject(text); canvas.requestRenderAll();
+    refreshLayers(); refreshProps();
+    setStatus('Estilo de texto adicionado da biblioteca');
+    return;
+  }
+  if(item.kind==='logo' && item.src){
+    fabric.Image.fromURL(item.src, img=>{
+      if(!img) return;
+      const maxW=docW*0.5, maxH=docH*0.35;
+      const sc=Math.min(maxW/img.width, maxH/img.height, 1);
+      img.set({
+        left: artboard.left + docW/2 - (img.width*sc)/2,
+        top: artboard.top + docH/2 - (img.height*sc)/2,
+        scaleX: sc, scaleY: sc,
+        dataName: item.name || 'Logo da biblioteca'
+      });
+      canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+      refreshLayers(); refreshProps();
+      setStatus('Logo inserido da biblioteca');
+    }, {crossOrigin:'anonymous'});
+  }
 }
 
 // ─── Modal ───────────────────────────────────────────────
@@ -2132,6 +2280,7 @@ $('btnAddArtText')?.addEventListener('click', addArtText);
 $('btnAddTextBox')?.addEventListener('click', addTextBox);
 $('btnRect')?.addEventListener('click', addRect);
 $('btnCircle')?.addEventListener('click', addCircle);
+$('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', addLine);
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnFit')?.addEventListener('click', fitToArtboard);
@@ -2214,6 +2363,10 @@ window.addEventListener('message', ev =&gt; {
   if (msg.type === 'fit') fitToArtboard();
   if (msg.type === 'exportPNG') exportPNG();
   if (msg.type === 'setBrand') {
+    if (Array.isArray(msg.library)) {
+      brandLibrary = msg.library.slice(0,80);
+      refreshLibrary();
+    }
     if (Array.isArray(msg.fonts) &amp;&amp; UI.font) {
       const existing = new Set(Array.from(UI.font.options).map(o=&gt;o.value));
       msg.fonts.forEach(f =&gt; {
@@ -2266,6 +2419,7 @@ function boot() {
     fitToArtboard();
     updateZoomLabel();
     updateArtboardPlusUI();
+    refreshLibrary();
 
     const ro = new ResizeObserver(() =&gt; {
       resizeCanvasToViewport();

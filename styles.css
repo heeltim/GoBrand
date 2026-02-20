@@ -795,17 +795,11 @@ a { color: var(--accent); text-decoration: none; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
 /* ============================================================
-   APP EDITOR (FULLSCREEN MODAL)
+   APP EDITOR (PAGE VIEW)
 ============================================================ */
-.appedit-backdrop{
-  position:fixed; inset:0;
-  background: rgba(0,0,0,.72);
-  display:none;
-  z-index: 200;
-}
-.appedit-backdrop.open{ display:block; }
+#viewAppEditor{ padding: 14px; height: 100%; }
 .appedit-shell{
-  position:absolute; inset:14px;
+  height: 100%;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
