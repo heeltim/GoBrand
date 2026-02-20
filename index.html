@@ -661,7 +661,7 @@
 &lt;meta charset=&quot;utf-8&quot;/&gt;
 &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;/&gt;
 &lt;title&gt;Studio&lt;/title&gt;
-&lt;script src=&quot;https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/fabric@5.3.0/dist/fabric.min.js&quot;&gt;&lt;/script&gt;
 &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
 &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
 &lt;link href=&quot;https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;family=Syne:wght@400;500;600;700;800&amp;family=Outfit:wght@300;400;500;600;700;800;900&amp;family=Sora:wght@300;400;600;700;800&amp;family=DM+Sans:wght@300;400;500;600;700&amp;family=Nunito:wght@300;400;600;700;800&amp;family=Poppins:wght@300;400;600;700;800&amp;family=Montserrat:wght@300;400;600;700;800&amp;family=IBM+Plex+Sans:wght@300;400;600;700&amp;family=Raleway:wght@300;400;600;700;800&amp;family=Manrope:wght@300;400;600;700;800&amp;family=Inter:wght@300;400;600;800&amp;family=Roboto:wght@300;400;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
@@ -1227,6 +1227,10 @@ textarea.modal-textarea{
 &lt;/div&gt;
 
 &lt;script&gt;
+if(!window.fabric){
+  document.body.innerHTML = "&lt;div style=\"min-height:100vh;display:grid;place-items:center;background:#0e0e11;color:#f0eff4;font-family:Outfit,system-ui;padding:24px;text-align:center\"&gt;&lt;div&gt;&lt;b&gt;Editor indisponível&lt;/b&gt;&lt;br/&gt;&lt;span style=\"opacity:.75\"&gt;Não foi possível carregar o Fabric.js. Verifique a conexão e tente novamente.&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;";
+  throw new Error("Fabric.js failed to load");
+}
 const $ = id =&gt; document.getElementById(id);
 const clamp = (n,a,b) =&gt; Math.max(a, Math.min(b, n));
 
@@ -1864,7 +1868,6 @@ boot();
   .ge-iframeWrap iframe{ flex:1; min-height:0; width:100%; border:0; display:block; }
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
