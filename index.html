@@ -7,16 +7,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- CONTEXT MENU -->
 <div id="ctxMenu" class="ctx-menu">
-  <div class="ctx-item" data-action="rename">✏️ Renomear</div>
-  <div class="ctx-item" data-action="duplicate">⧉ Duplicar</div>
+  <div class="ctx-item" data-action="rename"><i data-lucide="pencil-line"></i> Renomear</div>
+  <div class="ctx-item" data-action="duplicate"><i data-lucide="copy"></i> Duplicar</div>
   <div class="ctx-divider"></div>
-  <div class="ctx-item danger" data-action="delete">🗑 Excluir</div>
+  <div class="ctx-item danger" data-action="delete"><i data-lucide="trash-2"></i> Excluir</div>
 </div>
 
 <!-- TOAST ROOT -->
@@ -661,7 +662,7 @@
 &lt;meta charset=&quot;utf-8&quot;/&gt;
 &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;/&gt;
 &lt;title&gt;Studio&lt;/title&gt;
-&lt;script src=&quot;https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/fabric@5.3.0/dist/fabric.min.js&quot;&gt;&lt;/script&gt;
 &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
 &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
 &lt;link href=&quot;https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;family=Syne:wght@400;500;600;700;800&amp;family=Outfit:wght@300;400;500;600;700;800;900&amp;family=Sora:wght@300;400;600;700;800&amp;family=DM+Sans:wght@300;400;500;600;700&amp;family=Nunito:wght@300;400;600;700;800&amp;family=Poppins:wght@300;400;600;700;800&amp;family=Montserrat:wght@300;400;600;700;800&amp;family=IBM+Plex+Sans:wght@300;400;600;700&amp;family=Raleway:wght@300;400;600;700;800&amp;family=Manrope:wght@300;400;600;700;800&amp;family=Inter:wght@300;400;600;800&amp;family=Roboto:wght@300;400;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
@@ -890,20 +891,29 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 /* ─── CANVAS AREA ─────────────────────────────────────── */
 .canvas-area{
   position:relative;overflow:hidden;
-  background:
+  background:var(--desk-bg,
     radial-gradient(ellipse 60% 50% at 25% 20%, rgba(127,90,240,.12), transparent),
     radial-gradient(ellipse 50% 60% at 75% 80%, rgba(44,182,125,.08), transparent),
-    var(--bg);
+    var(--bg)
+  );
 }
 /* dot grid */
 .canvas-area::before{
   content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-image:radial-gradient(circle, var(--desk-dot, rgba(255,255,255,.08)) 1px, transparent 1px);
   background-size:28px 28px;
   pointer-events:none;z-index:0;
 }
 #fabricCanvas{position:absolute;inset:0;z-index:1}
 #fabricCanvas canvas{display:block}
+.artboard-plus-ui{position:absolute;inset:0;pointer-events:none;z-index:6;display:none}
+.ab-plus{
+  position:absolute;width:28px;height:28px;border-radius:999px;
+  border:1px solid var(--border2);background:rgba(14,14,17,.9);color:#fff;
+  display:grid;place-items:center;font-size:18px;line-height:1;
+  box-shadow:0 8px 22px rgba(0,0,0,.35);pointer-events:auto;
+}
+.ab-plus:hover{background:var(--accent);border-color:rgba(255,255,255,.35)}
 
 /* ─── ZOOM BAR ────────────────────────────────────────── */
 .zoom-bar{
@@ -1016,9 +1026,13 @@ textarea.modal-textarea{
       &lt;div class=&quot;panel-section&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Adicionar&lt;/div&gt;
         &lt;div class=&quot;tool-grid&quot;&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddText&quot;&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddArtText&quot;&gt;
             &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;polyline points=&quot;4 7 4 4 20 4 20 7&quot;/&gt;&lt;line x1=&quot;9&quot; y1=&quot;20&quot; x2=&quot;15&quot; y2=&quot;20&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;4&quot; x2=&quot;12&quot; y2=&quot;20&quot;/&gt;&lt;/svg&gt;
-            TEXTO
+            T. ART
+          &lt;/button&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddTextBox&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;5&quot; width=&quot;18&quot; height=&quot;14&quot; rx=&quot;2&quot;/&gt;&lt;line x1=&quot;7&quot; y1=&quot;10&quot; x2=&quot;17&quot; y2=&quot;10&quot;/&gt;&lt;line x1=&quot;7&quot; y1=&quot;14&quot; x2=&quot;14&quot; y2=&quot;14&quot;/&gt;&lt;/svg&gt;
+            CAIXA T
           &lt;/button&gt;
           &lt;button class=&quot;tool-btn&quot; id=&quot;btnRect&quot;&gt;
             &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;3&quot;/&gt;&lt;/svg&gt;
@@ -1064,9 +1078,56 @@ textarea.modal-textarea{
             &lt;input class=&quot;field-input&quot; id=&quot;docBg&quot; type=&quot;color&quot; value=&quot;#0f1626&quot;&gt;
           &lt;/div&gt;
         &lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Tema da mesa&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;deskTheme&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;nebula&quot; selected&gt;Nebula&lt;/option&gt;
+              &lt;option value=&quot;clean&quot;&gt;Clean&lt;/option&gt;
+              &lt;option value=&quot;paper&quot;&gt;Paper&lt;/option&gt;
+              &lt;option value=&quot;mint&quot;&gt;Mint&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
         &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Layout rápido&lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Referência&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
+              &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟸&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Centro ↔&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟹&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Base ⟱&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Topo ⟰&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Meio ↕&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeX&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir X&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeY&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir Y&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Agrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Desagrupar&lt;/button&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
@@ -1100,6 +1161,12 @@ textarea.modal-textarea{
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
     &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;artboard-plus-ui&quot; id=&quot;artboardPlusUI&quot;&gt;
+      &lt;button class=&quot;ab-plus top&quot; id=&quot;btnAddArtTop&quot; title=&quot;Adicionar acima&quot;&gt;+&lt;/button&gt;
+      &lt;button class=&quot;ab-plus right&quot; id=&quot;btnAddArtRight&quot; title=&quot;Adicionar à direita&quot;&gt;+&lt;/button&gt;
+      &lt;button class=&quot;ab-plus bottom&quot; id=&quot;btnAddArtBottom&quot; title=&quot;Adicionar abaixo&quot;&gt;+&lt;/button&gt;
+      &lt;button class=&quot;ab-plus left&quot; id=&quot;btnAddArtLeft&quot; title=&quot;Adicionar à esquerda&quot;&gt;+&lt;/button&gt;
+    &lt;/div&gt;
 
     &lt;div class=&quot;zoom-bar&quot;&gt;
       &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomOut&quot;&gt;−&lt;/button&gt;
@@ -1190,6 +1257,13 @@ textarea.modal-textarea{
           &lt;/div&gt;
         &lt;/div&gt;
         &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Google Font&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;pGoogleFont&quot; placeholder=&quot;Ex: Playfair Display&quot;&gt;
+          &lt;/div&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnLoadFont&quot; style=&quot;justify-content:center;height:32px;align-self:end&quot;&gt;Carregar&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Tamanho&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pFontSize&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;6&quot;&gt;&lt;/div&gt;
           &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pTextColor&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
         &lt;/div&gt;
@@ -1227,6 +1301,24 @@ textarea.modal-textarea{
 &lt;/div&gt;
 
 &lt;script&gt;
+if(!window.fabric){
+  document.body.innerHTML = "&lt;div style=\"min-height:100vh;display:grid;place-items:center;background:#0e0e11;color:#f0eff4;font-family:Outfit,system-ui;padding:24px;text-align:center\"&gt;&lt;div&gt;&lt;b&gt;Editor indisponível&lt;/b&gt;&lt;br/&gt;&lt;span style=\"opacity:.75\"&gt;Não foi possível carregar o Fabric.js. Verifique a conexão e tente novamente.&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;";
+  throw new Error("Fabric.js failed to load");
+}
+
+const textBaselineDescriptor = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'textBaseline');
+if (textBaselineDescriptor?.set &amp;&amp; textBaselineDescriptor.configurable) {
+  Object.defineProperty(CanvasRenderingContext2D.prototype, 'textBaseline', {
+    configurable: true,
+    enumerable: textBaselineDescriptor.enumerable,
+    get: textBaselineDescriptor.get,
+    set(value) {
+      const normalized = value === 'alphabetical' ? 'alphabetic' : value;
+      textBaselineDescriptor.set.call(this, normalized);
+    }
+  });
+}
+
 const $ = id =&gt; document.getElementById(id);
 const clamp = (n,a,b) =&gt; Math.max(a, Math.min(b, n));
 
@@ -1251,9 +1343,13 @@ let deskBg = '#0f1626';
 let zoom = 1;
 let isPanning = false, isSpaceDown = false;
 let lastX = 0, lastY = 0;
+let artboardMode = false;
 
 // Artboard objects
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
+const artboards = [];
+let activeArtboardId = null;
+const ART_GAP = 120;
 const GUIDES = { bleed: 0, safe: 24 };
 
 // ─── Canvas sizing ──────────────────────────────────────
@@ -1274,57 +1370,126 @@ function resizeCanvasToViewport() {
 function setDeskBg(color) {
   deskBg = color;
   stageEl.style.setProperty('--desk-color', color);
-  // paint directly onto Fabric background
   canvas.backgroundColor = 'transparent';
 }
 
-// ─── Artboard ────────────────────────────────────────────
-function isGuide(o) { return o===artboard||o===artboardShadow||o===bleedRect||o===safeRect; }
+function setDeskTheme(theme) {
+  const map = {
+    nebula: {
+      bg: `radial-gradient(ellipse 60% 50% at 25% 20%, rgba(127,90,240,.16), transparent), radial-gradient(ellipse 50% 60% at 75% 80%, rgba(44,182,125,.10), transparent), ${deskBg}`,
+      dot: 'rgba(255,255,255,.08)'
+    },
+    clean: { bg: `${deskBg}`, dot: 'rgba(255,255,255,.06)' },
+    paper: {
+      bg: `linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), ${deskBg}`,
+      dot: 'rgba(0,0,0,.10)'
+    },
+    mint: {
+      bg: `radial-gradient(circle at 15% 15%, rgba(44,182,125,.24), transparent 35%), radial-gradient(circle at 85% 80%, rgba(127,90,240,.2), transparent 35%), ${deskBg}`,
+      dot: 'rgba(255,255,255,.07)'
+    }
+  };
+  const t = map[theme] || map.nebula;
+  stageEl.style.setProperty('--desk-bg', t.bg);
+  stageEl.style.setProperty('--desk-dot', t.dot);
+}
 
-function ensureArtboard() {
-  if (artboard) return;
-  artboardShadow = new fabric.Rect({
-    left:0, top:0, width:docW, height:docH,
+// ─── Artboard ────────────────────────────────────────────
+function isGuide(o) {
+  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+}
+
+function getActiveArtboard() {
+  return artboards.find(a =&gt; a.id === activeArtboardId) || null;
+}
+
+function syncActiveArtboardRefs() {
+  const current = getActiveArtboard();
+  if (!current) return;
+  artboard = current.board;
+  artboardShadow = current.shadow;
+  bleedRect = current.bleed;
+  safeRect = current.safe;
+  docW = current.w;
+  docH = current.h;
+  $('docW').value = docW;
+  $('docH').value = docH;
+}
+
+function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
+  const id = 'ab_' + Math.random().toString(36).slice(2, 9);
+  const shadow = new fabric.Rect({
+    left:left+8, top:top+12, width:w, height:h,
     fill:'rgba(0,0,0,.28)', rx:2, ry:2,
     selectable:false, evented:false, excludeFromExport:true,
     shadow: new fabric.Shadow({color:'rgba(0,0,0,.6)', blur:30, offsetX:0, offsetY:18})
   });
-  artboard = new fabric.Rect({
-    left:0, top:0, width:docW, height:docH,
+  const board = new fabric.Rect({
+    left, top, width:w, height:h,
     fill:'#ffffff', stroke:'rgba(0,0,0,.15)', strokeWidth:1,
     rx:2, ry:2, selectable:false, evented:false, excludeFromExport:false
   });
-  bleedRect = new fabric.Rect({
-    left:0, top:0, width:docW, height:docH,
-    fill:'transparent', stroke:'rgba(241,58,161,.5)',
-    strokeDashArray:[6,6], strokeWidth:1,
-    selectable:false, evented:false, excludeFromExport:true,
-    opacity: GUIDES.bleed &gt; 0 ? 1 : 0
+  const bleed = new fabric.Rect({
+    left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:w+2*GUIDES.bleed, height:h+2*GUIDES.bleed,
+    fill:'transparent', stroke:'rgba(241,58,161,.5)', strokeDashArray:[6,6], strokeWidth:1,
+    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed &gt; 0 ? 1 : 0
   });
-  safeRect = new fabric.Rect({
-    left:0, top:0, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe,
-    fill:'transparent', stroke:'rgba(59,109,243,.5)',
-    strokeDashArray:[6,6], strokeWidth:1,
+  const safe = new fabric.Rect({
+    left:left+GUIDES.safe, top:top+GUIDES.safe, width:w-2*GUIDES.safe, height:h-2*GUIDES.safe,
+    fill:'transparent', stroke:'rgba(59,109,243,.5)', strokeDashArray:[6,6], strokeWidth:1,
     selectable:false, evented:false, excludeFromExport:true
   });
-  canvas.add(artboardShadow, artboard, bleedRect, safeRect);
-  positionArtboard();
+  const bundle = { id, w, h, board, shadow, bleed, safe };
+  artboards.push(bundle);
+  canvas.add(shadow, board, bleed, safe);
+  activeArtboardId = id;
+  syncActiveArtboardRefs();
   orderArtboard();
+  return bundle;
+}
+
+function ensureArtboard() {
+  if (artboards.length) return;
+  createArtboard();
+  positionArtboard();
+}
+
+function addAdjacentArtboard(dir) {
+  const current = getActiveArtboard();
+  if (!current) return;
+  const left = current.board.left;
+  const top = current.board.top;
+  let nextLeft = left;
+  let nextTop = top;
+  if (dir === 'right') nextLeft = left + current.w + ART_GAP;
+  if (dir === 'left') nextLeft = left - current.w - ART_GAP;
+  if (dir === 'bottom') nextTop = top + current.h + ART_GAP;
+  if (dir === 'top') nextTop = top - current.h - ART_GAP;
+  createArtboard(nextLeft, nextTop, current.w, current.h);
+  fitToArtboard();
+  updateArtboardPlusUI();
 }
 
 function orderArtboard() {
-  [artboardShadow, artboard, bleedRect, safeRect].forEach(o =&gt; {
-    if(o) { canvas.sendToBack(o); canvas.bringToFront(o); }
+  artboards.forEach(a =&gt; {
+    [a.shadow, a.board, a.bleed, a.safe].forEach(o =&gt; {
+      if(o) { canvas.sendToBack(o); canvas.bringToFront(o); }
+    });
   });
 }
 
 function positionArtboard() {
-  if (!artboard) return;
-  artboard.set({ left:-docW/2, top:-docH/2, width:docW, height:docH });
-  artboardShadow.set({ left:artboard.left+8, top:artboard.top+12, width:docW, height:docH });
-  bleedRect.set({ left:artboard.left-GUIDES.bleed, top:artboard.top-GUIDES.bleed, width:docW+2*GUIDES.bleed, height:docH+2*GUIDES.bleed });
-  safeRect.set({ left:artboard.left+GUIDES.safe, top:artboard.top+GUIDES.safe, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe });
+  const current = getActiveArtboard();
+  if (!current) return;
+  current.board.set({ width:docW, height:docH });
+  current.shadow.set({ left:current.board.left+8, top:current.board.top+12, width:docW, height:docH });
+  current.bleed.set({ left:current.board.left-GUIDES.bleed, top:current.board.top-GUIDES.bleed, width:docW+2*GUIDES.bleed, height:docH+2*GUIDES.bleed });
+  current.safe.set({ left:current.board.left+GUIDES.safe, top:current.board.top+GUIDES.safe, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe });
+  current.w = docW;
+  current.h = docH;
+  syncActiveArtboardRefs();
   canvas.requestRenderAll();
+  updateArtboardPlusUI();
 }
 
 function fitToArtboard() {
@@ -1337,6 +1502,7 @@ function fitToArtboard() {
   canvas.setViewportTransform([newZoom, 0, 0, newZoom, cw/2 - artCx*newZoom, ch/2 - artCy*newZoom]);
   zoom = newZoom;
   updateZoomLabel();
+  updateArtboardPlusUI();
 }
 
 function setArtboardSize(w, h) {
@@ -1347,6 +1513,30 @@ function setArtboardSize(w, h) {
   if (!artboard) ensureArtboard();
   positionArtboard();
   fitToArtboard();
+}
+
+function updateArtboardPlusUI() {
+  const ui = $('artboardPlusUI');
+  if (!ui) return;
+  if (!artboardMode || !artboard) {
+    ui.style.display = 'none';
+    return;
+  }
+  const vpt = canvas.viewportTransform || [1,0,0,1,0,0];
+  const x1 = artboard.left * vpt[0] + vpt[4];
+  const y1 = artboard.top * vpt[3] + vpt[5];
+  const x2 = (artboard.left + docW) * vpt[0] + vpt[4];
+  const y2 = (artboard.top + docH) * vpt[3] + vpt[5];
+  const m = 16;
+  $('btnAddArtTop').style.left = ((x1+x2)/2 - 14) + 'px';
+  $('btnAddArtTop').style.top = (y1 - m - 14) + 'px';
+  $('btnAddArtBottom').style.left = ((x1+x2)/2 - 14) + 'px';
+  $('btnAddArtBottom').style.top = (y2 + m - 14) + 'px';
+  $('btnAddArtLeft').style.left = (x1 - m - 14) + 'px';
+  $('btnAddArtLeft').style.top = ((y1+y2)/2 - 14) + 'px';
+  $('btnAddArtRight').style.left = (x2 + m - 14) + 'px';
+  $('btnAddArtRight').style.top = ((y1+y2)/2 - 14) + 'px';
+  ui.style.display = 'block';
 }
 
 function updateZoomLabel() {
@@ -1360,6 +1550,7 @@ canvas.on('mouse:wheel', opt =&gt; {
   const newZoom = clamp(zoom * Math.pow(0.999, e.deltaY), 0.05, 10);
   canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), newZoom);
   zoom = newZoom; updateZoomLabel();
+  updateArtboardPlusUI();
 });
 
 canvas.on('mouse:down', opt =&gt; {
@@ -1379,9 +1570,20 @@ canvas.on('mouse:move', opt =&gt; {
   vpt[5] += e.clientY - lastY;
   canvas.setViewportTransform(vpt);
   lastX = e.clientX; lastY = e.clientY;
+  updateArtboardPlusUI();
 });
 
 canvas.on('mouse:up', () =&gt; { if (isPanning) { isPanning = false; canvas.setCursor('default'); } });
+canvas.on('mouse:down', opt =&gt; {
+  const target = opt.target;
+  if (!target) return;
+  const ab = artboards.find(a =&gt; a.board === target || a.shadow === target || a.bleed === target || a.safe === target);
+  if (!ab) return;
+  activeArtboardId = ab.id;
+  syncActiveArtboardRefs();
+  updateArtboardPlusUI();
+  setStatus('Prancheta ativa selecionada');
+});
 
 window.addEventListener('keydown', e =&gt; {
   if (e.code === 'Space' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; !isSpaceDown) {
@@ -1390,6 +1592,8 @@ window.addEventListener('keydown', e =&gt; {
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; !e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); groupSelection(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); ungroupSelection(); }
   if ((e.key === 'Delete' || e.key === 'Backspace') &amp;&amp; !e.target.matches('input,textarea')) { del(); }
 }, {passive:false});
 
@@ -1403,15 +1607,27 @@ function setStatus(txt) {
 }
 
 // ─── Add objects ─────────────────────────────────────────
-function addText() {
+function addArtText() {
   ensureArtboard();
-  const t = new fabric.Textbox('Texto', {
+  const t = new fabric.IText('Texto artístico', {
     left: artboard.left + 60, top: artboard.top + 60,
-    width: 360, fontFamily: 'Outfit', fontSize: 42,
+    fontFamily: 'Outfit', fontSize: 42,
     fill: '#111', editable: true
   });
   canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
-  setStatus('Texto adicionado');
+  setStatus('Texto artístico adicionado');
+}
+
+function addTextBox() {
+  ensureArtboard();
+  const t = new fabric.Textbox('Caixa de texto', {
+    left: artboard.left + 60, top: artboard.top + 140,
+    width: 360, fontFamily: 'Outfit', fontSize: 32,
+    fill: '#111', editable: true,
+    textAlign: 'left'
+  });
+  canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
+  setStatus('Caixa de texto adicionada');
 }
 
 function addRect() {
@@ -1483,6 +1699,184 @@ function duplicate() {
     canvas.add(cl); canvas.setActiveObject(cl);
     canvas.requestRenderAll(); refreshProps(); refreshLayers();
   });
+}
+
+
+function selectedObjects() {
+  const active = canvas.getActiveObject();
+  if(!active || isGuide(active)) return [];
+  if(active.type === 'activeSelection') {
+    return active.getObjects().filter(o =&gt; !isGuide(o));
+  }
+  return [active];
+}
+
+function nudgeBy(obj, dx=0, dy=0) {
+  obj.set({ left: (obj.left||0) + dx, top: (obj.top||0) + dy });
+  obj.setCoords();
+}
+
+function getAlignReferenceRect(objs) {
+  ensureArtboard();
+  if(!artboard) return null;
+
+  const target = $('alignTarget')?.value || 'layout';
+  if(target !== 'object') {
+    return { left: artboard.left, top: artboard.top, width: docW, height: docH };
+  }
+
+  const active = canvas.getActiveObject();
+  if(!active || active.type !== 'activeSelection') {
+    setStatus('No modo objeto, selecione 2+ elementos');
+    return null;
+  }
+  const list = active.getObjects().filter(o =&gt; !isGuide(o));
+  if(list.length &lt; 2) {
+    setStatus('Selecione ao menos 2 elementos para alinhar por objeto');
+    return null;
+  }
+
+  const anchor = list[list.length - 1];
+  const b = anchor.getBoundingRect(true, true);
+  return { left: b.left, top: b.top, width: b.width, height: b.height, anchor };
+}
+
+function alignSelection(mode) {
+  ensureArtboard();
+  const objs = selectedObjects();
+  const ref = getAlignReferenceRect(objs);
+  if(!objs.length || !ref) return;
+  const L = ref.left, T = ref.top;
+  const R = L + ref.width, B = T + ref.height;
+
+  objs.forEach(obj =&gt; {
+    if(ref.anchor &amp;&amp; obj === ref.anchor) return;
+    const b = obj.getBoundingRect(true, true);
+    let dx = 0, dy = 0;
+    if(mode === 'left') dx = L - b.left;
+    if(mode === 'center') dx = (L + ref.width / 2) - (b.left + b.width / 2);
+    if(mode === 'right') dx = R - (b.left + b.width);
+    if(mode === 'top') dy = T - b.top;
+    if(mode === 'middle') dy = (T + ref.height / 2) - (b.top + b.height / 2);
+    if(mode === 'bottom') dy = B - (b.top + b.height);
+    if(dx || dy) nudgeBy(obj, dx, dy);
+  });
+
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
+  setStatus('Alinhamento aplicado');
+}
+
+async function syncTextStyleRender(obj) {
+  if(!obj || !(obj.type==='textbox'||obj.type==='text'||obj.type==='i-text')) return;
+  try {
+    if(document.fonts &amp;&amp; obj.fontFamily) {
+      const size = obj.fontSize || 16;
+      await document.fonts.load(`${size}px "${obj.fontFamily}"`);
+    }
+  } catch(_) {}
+  canvas.requestRenderAll();
+}
+
+function ensureGoogleFont(fontName) {
+  const font = (fontName || '').trim();
+  if(!font) return false;
+  const q = font.split(/\s+/).join('+');
+  const id = `gf-${q.toLowerCase()}`;
+  if(!document.getElementById(id)) {
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${q}:wght@300;400;500;600;700;800;900&amp;display=swap`;
+    document.head.appendChild(link);
+  }
+  return true;
+}
+
+async function loadGoogleFontForSelection() {
+  const input = $('pGoogleFont');
+  const font = (input?.value || '').trim();
+  if(!font) { setStatus('Informe o nome da fonte Google'); return; }
+  ensureGoogleFont(font);
+  const obj = activeObj();
+  if(obj &amp;&amp; (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text')) {
+    obj.set({ fontFamily: font });
+    if(UI.font) {
+      const hasOpt = [...UI.font.options].some(o =&gt; o.value === font);
+      if(!hasOpt) {
+        const opt = document.createElement('option');
+        opt.value = font; opt.textContent = font;
+        UI.font.appendChild(opt);
+      }
+      UI.font.value = font;
+    }
+    await syncTextStyleRender(obj);
+    setStatus(`Fonte carregada: ${font}`);
+    return;
+  }
+  setStatus(`Fonte carregada: ${font}. Selecione um texto para aplicar.`);
+}
+
+function distributeSelection(axis='x') {
+  const objs = selectedObjects();
+  if(objs.length &lt; 3) {
+    setStatus('Selecione 3+ elementos para distribuir');
+    return;
+  }
+
+  const sorted = objs.slice().sort((a,b) =&gt; {
+    const ba = a.getBoundingRect(true, true);
+    const bb = b.getBoundingRect(true, true);
+    return axis === 'x' ? ba.left - bb.left : ba.top - bb.top;
+  });
+
+  const centers = sorted.map(obj =&gt; {
+    const b = obj.getBoundingRect(true, true);
+    return axis === 'x' ? (b.left + b.width / 2) : (b.top + b.height / 2);
+  });
+
+  const first = centers[0];
+  const last = centers[centers.length - 1];
+  if(Math.abs(last - first) &lt; 1) return;
+  const step = (last - first) / (sorted.length - 1);
+
+  sorted.forEach((obj, i) =&gt; {
+    if(i === 0 || i === sorted.length - 1) return;
+    const b = obj.getBoundingRect(true, true);
+    const current = axis === 'x' ? (b.left + b.width / 2) : (b.top + b.height / 2);
+    const target = first + step * i;
+    const delta = target - current;
+    if(axis === 'x') nudgeBy(obj, delta, 0);
+    else nudgeBy(obj, 0, delta);
+  });
+
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
+  setStatus(axis === 'x' ? 'Distribuição horizontal aplicada' : 'Distribuição vertical aplicada');
+}
+
+function groupSelection() {
+  const active = canvas.getActiveObject();
+  if(active &amp;&amp; active.type === 'activeSelection') {
+    active.toGroup();
+    canvas.requestRenderAll();
+    refreshLayers();
+    setStatus('Grupo criado');
+    return;
+  }
+  setStatus('Selecione 2+ elementos para agrupar');
+}
+
+function ungroupSelection() {
+  const active = canvas.getActiveObject();
+  if(active &amp;&amp; active.type === 'group') {
+    active.toActiveSelection();
+    canvas.requestRenderAll();
+    refreshLayers();
+    setStatus('Grupo desfeito');
+  }
 }
 
 // ─── Properties panel ────────────────────────────────────
@@ -1582,6 +1976,7 @@ function applyProps(key) {
     if(UI.font?.value) obj.set({ fontFamily: UI.font.value });
     if(UI.fontSize?.value) obj.set({ fontSize: clamp(num(UI.fontSize.value, obj.fontSize||16), 6, 512) });
     if(key==='textColor'||key==='fill') obj.set({ fill: UI.textColor?.value || obj.fill });
+    syncTextStyleRender(obj);
   }
 
   obj.setCoords(); canvas.requestRenderAll();
@@ -1611,8 +2006,8 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 
 // ─── Layers ──────────────────────────────────────────────
 const typeIcons = {
-  textbox:'T', text:'T', 'i-text':'T',
-  rect:'▭', circle:'●', ellipse:'◉', line:'╱', image:'⬜', group:'⊞'
+  textbox:'type', text:'type', 'i-text':'type',
+  rect:'square', circle:'circle', ellipse:'circle-ellipsis', line:'slash', image:'image', group:'layers'
 };
 
 function refreshLayers() {
@@ -1629,14 +2024,15 @@ function refreshLayers() {
   }
   objs.forEach((obj, i) =&gt; {
     const isAct = obj === active;
-    const icon = typeIcons[obj.type] || '?';
+    const icon = typeIcons[obj.type] || 'square';
     const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '');
-    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;${icon}&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;`;
+    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;`;
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
     list.appendChild(div);
   });
+  if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
 }
 
 // ─── Modal ───────────────────────────────────────────────
@@ -1732,7 +2128,8 @@ canvas.on('object:moving', opt =&gt; {
 });
 
 // ─── Bind toolbar buttons ─────────────────────────────────
-$('btnAddText')?.addEventListener('click', addText);
+$('btnAddArtText')?.addEventListener('click', addArtText);
+$('btnAddTextBox')?.addEventListener('click', addTextBox);
 $('btnRect')?.addEventListener('click', addRect);
 $('btnCircle')?.addEventListener('click', addCircle);
 $('btnLine')?.addEventListener('click', addLine);
@@ -1743,11 +2140,13 @@ $('btnZoomIn')?.addEventListener('click', () =&gt; {
   const newZoom = clamp(zoom*1.15, 0.05, 10);
   canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
   zoom = newZoom; updateZoomLabel();
+  updateArtboardPlusUI();
 });
 $('btnZoomOut')?.addEventListener('click', () =&gt; {
   const newZoom = clamp(zoom/1.15, 0.05, 10);
   canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
   zoom = newZoom; updateZoomLabel();
+  updateArtboardPlusUI();
 });
 $('btnDelete')?.addEventListener('click', del);
 $('btnDuplicate')?.addEventListener('click', duplicate);
@@ -1761,18 +2160,42 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   const h = Number($('docH').value)||docH;
   setArtboardSize(w, h);
   setDeskBg($('docBg').value || deskBg);
+  setDeskTheme($('deskTheme')?.value || 'nebula');
 });
+$('btnArtboardMode')?.addEventListener('click', () =&gt; {
+  artboardMode = !artboardMode;
+  $('btnArtboardMode').classList.toggle('accent', artboardMode);
+  setStatus(artboardMode ? 'Modo pranchetas ativo: use os botões + ao redor da prancheta.' : 'Modo pranchetas desativado');
+  updateArtboardPlusUI();
+});
+$('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
+$('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
+$('btnAddArtBottom')?.addEventListener('click', () =&gt; addAdjacentArtboard('bottom'));
+$('btnAddArtLeft')?.addEventListener('click', () =&gt; addAdjacentArtboard('left'));
 $('btnCenterAll')?.addEventListener('click', () =&gt; {
   const obj = activeObj(); if(!obj||!artboard) return;
   obj.set({ left:artboard.left+docW/2-obj.getScaledWidth()/2, top:artboard.top+docH/2-obj.getScaledHeight()/2 });
   obj.setCoords(); canvas.requestRenderAll();
 });
+$('btnAlignLeft')?.addEventListener('click', () =&gt; alignSelection('left'));
+$('btnAlignCenter')?.addEventListener('click', () =&gt; alignSelection('center'));
+$('btnAlignRight')?.addEventListener('click', () =&gt; alignSelection('right'));
+$('btnAlignTop')?.addEventListener('click', () =&gt; alignSelection('top'));
+$('btnAlignBottom')?.addEventListener('click', () =&gt; alignSelection('bottom'));
+$('btnAlignMiddle')?.addEventListener('click', () =&gt; alignSelection('middle'));
+$('btnDistributeX')?.addEventListener('click', () =&gt; distributeSelection('x'));
+$('btnDistributeY')?.addEventListener('click', () =&gt; distributeSelection('y'));
+$('btnGroup')?.addEventListener('click', groupSelection);
+$('btnUngroup')?.addEventListener('click', ungroupSelection);
+$('btnLoadFont')?.addEventListener('click', loadGoogleFontForSelection);
 $('btnHelp')?.addEventListener('click', () =&gt; {
   openModal('Atalhos de teclado', `
     &lt;div class=&quot;shortcuts-grid&quot; style=&quot;gap:8px 16px&quot;&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Z&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Desfazer&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Y&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Refazer&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Ctrl+D&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Duplicar&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+G&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Agrupar seleção&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Shift+G&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Desagrupar seleção&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Del&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Apagar seleção&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Espaço&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Arrastar viewport&lt;/span&gt;
       &lt;span class=&quot;sc-key&quot;&gt;Scroll&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Zoom suave&lt;/span&gt;
@@ -1838,16 +2261,19 @@ function boot() {
   requestAnimationFrame(() =&gt; requestAnimationFrame(() =&gt; {
     resizeCanvasToViewport();
     setDeskBg(deskBg);
+    setDeskTheme('nebula');
     ensureArtboard();
     fitToArtboard();
     updateZoomLabel();
+    updateArtboardPlusUI();
 
     const ro = new ResizeObserver(() =&gt; {
       resizeCanvasToViewport();
       fitToArtboard();
+      updateArtboardPlusUI();
     });
     ro.observe(stageEl);
-    window.addEventListener('resize', () =&gt; { resizeCanvasToViewport(); fitToArtboard(); });
+    window.addEventListener('resize', () =&gt; { resizeCanvasToViewport(); fitToArtboard(); updateArtboardPlusUI(); });
     snapshot();
   }));
 }
@@ -1864,7 +2290,6 @@ boot();
   .ge-iframeWrap iframe{ flex:1; min-height:0; width:100%; border:0; display:block; }
 </style>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
