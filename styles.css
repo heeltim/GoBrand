@@ -882,7 +882,7 @@ a { color: var(--accent); text-decoration: none; }
 .layer-name{ font-weight: 700; font-size: 12px; }
 .layer-meta{ font-family: var(--mono); font-size: 11px; color: var(--ink3); }
 
-.panel-title{
+.appedit-panel-title{
   font-size: 11px;
   letter-spacing: .10em;
   text-transform: uppercase;
@@ -922,7 +922,7 @@ a { color: var(--accent); text-decoration: none; }
   box-shadow: var(--shadow-sm);
   cursor:pointer;
 }
-.badge{
+.appedit-badge{
   font-family: var(--mono);
   font-size: 11px;
   padding: 6px 10px;
