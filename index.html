@@ -44,7 +44,7 @@
           <div id="alphaKnob" class="alpha-knob"></div>
         </div>
         <div id="colorPreviewSwatch" class="color-preview-swatch">
-          <span id="colorPreviewLabel" style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.7)"></span>
+          <span id="colorPreviewLabel" style="font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;color:rgba(255,255,255,.7)"></span>
         </div>
         <div class="history-dots" id="historyDots"></div>
       </div>
@@ -667,18 +667,18 @@
 &lt;link href=&quot;https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;family=Syne:wght@400;500;600;700;800&amp;family=Outfit:wght@300;400;500;600;700;800;900&amp;family=Sora:wght@300;400;600;700;800&amp;family=DM+Sans:wght@300;400;500;600;700&amp;family=Nunito:wght@300;400;600;700;800&amp;family=Poppins:wght@300;400;600;700;800&amp;family=Montserrat:wght@300;400;600;700;800&amp;family=IBM+Plex+Sans:wght@300;400;600;700&amp;family=Raleway:wght@300;400;600;700;800&amp;family=Manrope:wght@300;400;600;700;800&amp;family=Inter:wght@300;400;600;800&amp;family=Roboto:wght@300;400;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
 &lt;style&gt;
 :root {
-  --bg:       #0a0a0c;
-  --surface:  #111116;
-  --panel:    #17171d;
+  --bg:       #0e0e11;
+  --surface:  #16161a;
+  --panel:    #1e1e24;
   --border:   rgba(255,255,255,.07);
   --border2:  rgba(255,255,255,.12);
-  --ink:      rgba(255,255,255,.92);
-  --ink2:     rgba(255,255,255,.55);
-  --ink3:     rgba(255,255,255,.28);
-  --accent:   #c8ff00;
-  --accent-d: #99c400;
-  --danger:   #ff4060;
-  --good:     #00ffaa;
+  --ink:      #f0eff4;
+  --ink2:     rgba(240,239,244,.65);
+  --ink3:     rgba(240,239,244,.32);
+  --accent:   #7f5af0;
+  --accent-d: #6848d2;
+  --danger:   #e85d5d;
+  --good:     #2cb67d;
   --mono:     'DM Mono', monospace;
   --sans:     'Syne', sans-serif;
   --r:        10px;
@@ -688,11 +688,11 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:var(--bg)}
-body{font-family:var(--sans);font-size:13px;color:var(--ink)}
+body{font-family:'Outfit', ui-sans-serif, system-ui, sans-serif;font-size:13px;color:var(--ink)}
 
 button{font-family:inherit;cursor:pointer;border:none;outline:none;user-select:none}
-input,select{font-family:var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--border2);outline:none;font-size:12px}
-input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,255,0,.12)}
+input,select{font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink);background:var(--bg);border:1px solid var(--border2);outline:none;font-size:12px}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(127,90,240,.15)}
 
 /* ─── LAYOUT ──────────────────────────────────────────── */
 .app{
@@ -722,17 +722,17 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(20
 .brand-dot{
   width:20px;height:20px;border-radius:6px;
   background:var(--accent);
-  box-shadow:0 0 12px rgba(200,255,0,.45);
+  box-shadow:0 0 12px rgba(127,90,240,.45);
   flex-shrink:0;
 }
 .brand-name{
   font-size:13px;font-weight:700;letter-spacing:.04em;
-  color:var(--ink);font-family:var(--sans);
+  color:var(--ink);font-family:'Outfit', ui-sans-serif, system-ui, sans-serif;
 }
 .topbar-status{
   flex:1;display:flex;align-items:center;justify-content:center;
   gap:6px;
-  font-family:var(--mono);font-size:11px;color:var(--ink3);
+  font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;color:var(--ink3);
   letter-spacing:.04em;
 }
 .status-dot{
@@ -740,7 +740,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(20
   background:var(--accent);
   animation:pulse 2s ease-in-out infinite;
 }
-@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(200,255,0,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(200,255,0,0)}}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(127,90,240,.35)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(127,90,240,0)}}
 .topbar-actions{
   display:flex;align-items:center;gap:6px;
   padding:0 12px;
@@ -754,20 +754,20 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(20
 .tbtn{
   height:30px;padding:0 10px;border-radius:var(--r);
   background:transparent;color:var(--ink2);
-  font-family:var(--mono);font-size:11px;font-weight:500;
+  font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;font-weight:500;
   letter-spacing:.03em;
   border:1px solid transparent;
   transition:all .12s ease;display:inline-flex;align-items:center;gap:5px;
 }
 .tbtn:hover{background:rgba(255,255,255,.06);color:var(--ink);border-color:var(--border2)}
 .tbtn.accent{
-  background:var(--accent);color:#000;font-weight:700;
+  background:var(--accent);color:#fff;font-weight:700;
   border-color:transparent;
 }
-.tbtn.accent:hover{background:#d9ff1a;box-shadow:0 0 12px rgba(200,255,0,.35)}
+.tbtn.accent:hover{background:#9370f5;box-shadow:0 0 12px rgba(127,90,240,.35)}
 .tbtn.danger{color:var(--danger)}
 .tbtn.danger:hover{background:rgba(255,64,96,.1);border-color:rgba(255,64,96,.25)}
-.tbtn.active{background:rgba(200,255,0,.1);color:var(--accent);border-color:rgba(200,255,0,.2)}
+.tbtn.active{background:rgba(127,90,240,.12);color:var(--accent);border-color:rgba(127,90,240,.26)}
 .tbtn svg{flex-shrink:0}
 
 /* ─── PANELS ──────────────────────────────────────────── */
@@ -787,7 +787,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(20
 .panel-label{
   font-size:9px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase;color:var(--ink3);
-  font-family:var(--mono);
+  font-family:'JetBrains Mono', ui-monospace, monospace;
   margin-bottom:10px;
 }
 .panel-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 12px 16px}
@@ -796,7 +796,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(20
 .panel-section{margin-bottom:16px}
 .panel-section-label{
   font-size:9px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ink3);font-family:var(--mono);
+  color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace;
   margin-bottom:8px;font-weight:600;
 }
 
@@ -806,11 +806,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(20
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:5px;padding:10px 6px;border-radius:var(--r);
   background:var(--surface);border:1px solid var(--border);
-  color:var(--ink2);font-size:10px;font-family:var(--mono);
+  color:var(--ink2);font-size:10px;font-family:'JetBrains Mono', ui-monospace, monospace;
   font-weight:500;letter-spacing:.04em;
   transition:all .12s ease;
 }
-.tool-btn:hover{background:rgba(200,255,0,.07);border-color:rgba(200,255,0,.2);color:var(--accent)}
+.tool-btn:hover{background:rgba(127,90,240,.08);border-color:rgba(127,90,240,.24);color:var(--accent)}
 .tool-btn svg{opacity:.7;transition:opacity .12s}
 .tool-btn:hover svg{opacity:1}
 
@@ -822,9 +822,9 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(20
 .field-input{
   height:32px;padding:0 9px;border-radius:8px;width:100%;
   background:var(--surface);border:1px solid var(--border2);
-  color:var(--ink);font-family:var(--mono);font-size:12px;
+  color:var(--ink);font-family:'JetBrains Mono', ui-monospace, monospace;font-size:12px;
 }
-.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,255,0,.1)}
+.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(127,90,240,.14)}
 input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 
 /* ─── SEPARATOR ───────────────────────────────────────── */
@@ -840,8 +840,8 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 }
 .layer-item:hover{background:rgba(255,255,255,.04)}
 .layer-item.active{
-  background:rgba(200,255,0,.07);
-  border-color:rgba(200,255,0,.18);
+  background:rgba(127,90,240,.1);
+  border-color:rgba(127,90,240,.26);
 }
 .layer-icon{
   width:22px;height:22px;border-radius:5px;
@@ -849,13 +849,13 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;color:var(--ink3);font-size:10px;
 }
-.layer-item.active .layer-icon{background:rgba(200,255,0,.15);color:var(--accent)}
-.layer-name{flex:1;font-size:11px;font-family:var(--mono);color:var(--ink2);
+.layer-item.active .layer-icon{background:rgba(127,90,240,.18);color:var(--accent)}
+.layer-name{flex:1;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .layer-item.active .layer-name{color:var(--ink)}
 .layer-empty{
   text-align:center;padding:24px 0;
-  font-size:11px;color:var(--ink3);font-family:var(--mono);
+  font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace;
 }
 
 /* ─── PROPS PANEL ─────────────────────────────────────── */
@@ -871,12 +871,12 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 .seg-opt{
   flex:1;height:30px;
   display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-family:var(--mono);color:var(--ink3);
+  font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);
   cursor:pointer;transition:all .1s ease;
   background:transparent;
 }
 .seg-opt:hover{color:var(--ink)}
-.seg-opt.on{background:var(--accent);color:#000;font-weight:700}
+.seg-opt.on{background:var(--accent);color:#fff;font-weight:700}
 
 /* Palette swatches */
 .swatch-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
@@ -891,8 +891,8 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 .canvas-area{
   position:relative;overflow:hidden;
   background:
-    radial-gradient(ellipse 60% 50% at 25% 20%, rgba(200,255,0,.04), transparent),
-    radial-gradient(ellipse 50% 60% at 75% 80%, rgba(0,255,170,.03), transparent),
+    radial-gradient(ellipse 60% 50% at 25% 20%, rgba(127,90,240,.12), transparent),
+    radial-gradient(ellipse 50% 60% at 75% 80%, rgba(44,182,125,.08), transparent),
     var(--bg);
 }
 /* dot grid */
@@ -922,7 +922,7 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 }
 .zbtn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
 .zbtn.label{
-  width:54px;font-family:var(--mono);font-size:11px;
+  width:54px;font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;
   cursor:default;color:var(--ink);
 }
 
@@ -935,7 +935,7 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   padding:6px 10px;z-index:10;
 }
 .hint-key{
-  font-family:var(--mono);font-size:10px;
+  font-family:'JetBrains Mono', ui-monospace, monospace;font-size:10px;
   background:rgba(255,255,255,.08);border:1px solid var(--border2);
   padding:2px 6px;border-radius:5px;color:var(--ink2);
   display:inline-flex;align-items:center;
@@ -963,12 +963,12 @@ textarea.modal-textarea{
   width:100%;min-height:200px;resize:vertical;
   background:var(--surface);border:1px solid var(--border2);
   border-radius:var(--r);padding:12px;color:var(--ink);
-  font-family:var(--mono);font-size:11px;line-height:1.6;
+  font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;line-height:1.6;
 }
 
 /* ─── SHORTCUTS POPUP ─────────────────────────────────── */
 .shortcuts-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center}
-.sc-key{font-family:var(--mono);font-size:11px;
+.sc-key{font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;
   background:rgba(255,255,255,.07);border:1px solid var(--border2);
   padding:3px 8px;border-radius:6px;color:var(--accent);white-space:nowrap;text-align:center}
 .sc-desc{font-size:11px;color:var(--ink2);font-family:var(--mono)}
@@ -1126,7 +1126,7 @@ textarea.modal-textarea{
       &lt;!-- Selection info --&gt;
       &lt;div class=&quot;panel-section&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Seleção&lt;/div&gt;
-        &lt;div id=&quot;selInfo&quot; style=&quot;font-size:11px;font-family:var(--mono);color:var(--ink3);padding:4px 0&quot;&gt;
+        &lt;div id=&quot;selInfo&quot; style=&quot;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);padding:4px 0&quot;&gt;
           Nada selecionado
         &lt;/div&gt;
       &lt;/div&gt;
@@ -1428,7 +1428,7 @@ function addCircle() {
   ensureArtboard();
   const c = new fabric.Circle({
     left: artboard.left + 420, top: artboard.top + 160,
-    radius: 80, fill:'rgba(200,255,0,.18)', stroke:'rgba(0,0,0,.1)', strokeWidth:1
+    radius: 80, fill:'rgba(127,90,240,.22)', stroke:'rgba(0,0,0,.1)', strokeWidth:1
   });
   canvas.add(c); canvas.setActiveObject(c); canvas.requestRenderAll();
 }
