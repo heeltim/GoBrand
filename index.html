@@ -7,16 +7,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- CONTEXT MENU -->
 <div id="ctxMenu" class="ctx-menu">
-  <div class="ctx-item" data-action="rename">✏️ Renomear</div>
-  <div class="ctx-item" data-action="duplicate">⧉ Duplicar</div>
+  <div class="ctx-item" data-action="rename"><i data-lucide="pencil-line"></i> Renomear</div>
+  <div class="ctx-item" data-action="duplicate"><i data-lucide="copy"></i> Duplicar</div>
   <div class="ctx-divider"></div>
-  <div class="ctx-item danger" data-action="delete">🗑 Excluir</div>
+  <div class="ctx-item danger" data-action="delete"><i data-lucide="trash-2"></i> Excluir</div>
 </div>
 
 <!-- TOAST ROOT -->
@@ -1737,8 +1738,8 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 
 // ─── Layers ──────────────────────────────────────────────
 const typeIcons = {
-  textbox:'T', text:'T', 'i-text':'T',
-  rect:'▭', circle:'●', ellipse:'◉', line:'╱', image:'⬜', group:'⊞'
+  textbox:'type', text:'type', 'i-text':'type',
+  rect:'square', circle:'circle', ellipse:'circle-ellipsis', line:'slash', image:'image', group:'layers'
 };
 
 function refreshLayers() {
@@ -1755,14 +1756,15 @@ function refreshLayers() {
   }
   objs.forEach((obj, i) =&gt; {
     const isAct = obj === active;
-    const icon = typeIcons[obj.type] || '?';
+    const icon = typeIcons[obj.type] || 'square';
     const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '');
-    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;${icon}&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;`;
+    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;`;
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
     list.appendChild(div);
   });
+  if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
 }
 
 // ─── Modal ───────────────────────────────────────────────
