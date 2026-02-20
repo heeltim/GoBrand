@@ -891,20 +891,29 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 /* ─── CANVAS AREA ─────────────────────────────────────── */
 .canvas-area{
   position:relative;overflow:hidden;
-  background:
+  background:var(--desk-bg,
     radial-gradient(ellipse 60% 50% at 25% 20%, rgba(127,90,240,.12), transparent),
     radial-gradient(ellipse 50% 60% at 75% 80%, rgba(44,182,125,.08), transparent),
-    var(--bg);
+    var(--bg)
+  );
 }
 /* dot grid */
 .canvas-area::before{
   content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-image:radial-gradient(circle, var(--desk-dot, rgba(255,255,255,.08)) 1px, transparent 1px);
   background-size:28px 28px;
   pointer-events:none;z-index:0;
 }
 #fabricCanvas{position:absolute;inset:0;z-index:1}
 #fabricCanvas canvas{display:block}
+.artboard-plus-ui{position:absolute;inset:0;pointer-events:none;z-index:6;display:none}
+.ab-plus{
+  position:absolute;width:28px;height:28px;border-radius:999px;
+  border:1px solid var(--border2);background:rgba(14,14,17,.9);color:#fff;
+  display:grid;place-items:center;font-size:18px;line-height:1;
+  box-shadow:0 8px 22px rgba(0,0,0,.35);pointer-events:auto;
+}
+.ab-plus:hover{background:var(--accent);border-color:rgba(255,255,255,.35)}
 
 /* ─── ZOOM BAR ────────────────────────────────────────── */
 .zoom-bar{
@@ -1069,6 +1078,18 @@ textarea.modal-textarea{
             &lt;input class=&quot;field-input&quot; id=&quot;docBg&quot; type=&quot;color&quot; value=&quot;#0f1626&quot;&gt;
           &lt;/div&gt;
         &lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Tema da mesa&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;deskTheme&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;nebula&quot; selected&gt;Nebula&lt;/option&gt;
+              &lt;option value=&quot;clean&quot;&gt;Clean&lt;/option&gt;
+              &lt;option value=&quot;paper&quot;&gt;Paper&lt;/option&gt;
+              &lt;option value=&quot;mint&quot;&gt;Mint&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
         &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
@@ -1140,6 +1161,12 @@ textarea.modal-textarea{
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
     &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;artboard-plus-ui&quot; id=&quot;artboardPlusUI&quot;&gt;
+      &lt;button class=&quot;ab-plus top&quot; id=&quot;btnAddArtTop&quot; title=&quot;Adicionar acima&quot;&gt;+&lt;/button&gt;
+      &lt;button class=&quot;ab-plus right&quot; id=&quot;btnAddArtRight&quot; title=&quot;Adicionar à direita&quot;&gt;+&lt;/button&gt;
+      &lt;button class=&quot;ab-plus bottom&quot; id=&quot;btnAddArtBottom&quot; title=&quot;Adicionar abaixo&quot;&gt;+&lt;/button&gt;
+      &lt;button class=&quot;ab-plus left&quot; id=&quot;btnAddArtLeft&quot; title=&quot;Adicionar à esquerda&quot;&gt;+&lt;/button&gt;
+    &lt;/div&gt;
 
     &lt;div class=&quot;zoom-bar&quot;&gt;
       &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomOut&quot;&gt;−&lt;/button&gt;
@@ -1302,9 +1329,13 @@ let deskBg = '#0f1626';
 let zoom = 1;
 let isPanning = false, isSpaceDown = false;
 let lastX = 0, lastY = 0;
+let artboardMode = false;
 
 // Artboard objects
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
+const artboards = [];
+let activeArtboardId = null;
+const ART_GAP = 120;
 const GUIDES = { bleed: 0, safe: 24 };
 
 // ─── Canvas sizing ──────────────────────────────────────
@@ -1325,57 +1356,126 @@ function resizeCanvasToViewport() {
 function setDeskBg(color) {
   deskBg = color;
   stageEl.style.setProperty('--desk-color', color);
-  // paint directly onto Fabric background
   canvas.backgroundColor = 'transparent';
 }
 
-// ─── Artboard ────────────────────────────────────────────
-function isGuide(o) { return o===artboard||o===artboardShadow||o===bleedRect||o===safeRect; }
+function setDeskTheme(theme) {
+  const map = {
+    nebula: {
+      bg: `radial-gradient(ellipse 60% 50% at 25% 20%, rgba(127,90,240,.16), transparent), radial-gradient(ellipse 50% 60% at 75% 80%, rgba(44,182,125,.10), transparent), ${deskBg}`,
+      dot: 'rgba(255,255,255,.08)'
+    },
+    clean: { bg: `${deskBg}`, dot: 'rgba(255,255,255,.06)' },
+    paper: {
+      bg: `linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), ${deskBg}`,
+      dot: 'rgba(0,0,0,.10)'
+    },
+    mint: {
+      bg: `radial-gradient(circle at 15% 15%, rgba(44,182,125,.24), transparent 35%), radial-gradient(circle at 85% 80%, rgba(127,90,240,.2), transparent 35%), ${deskBg}`,
+      dot: 'rgba(255,255,255,.07)'
+    }
+  };
+  const t = map[theme] || map.nebula;
+  stageEl.style.setProperty('--desk-bg', t.bg);
+  stageEl.style.setProperty('--desk-dot', t.dot);
+}
 
-function ensureArtboard() {
-  if (artboard) return;
-  artboardShadow = new fabric.Rect({
-    left:0, top:0, width:docW, height:docH,
+// ─── Artboard ────────────────────────────────────────────
+function isGuide(o) {
+  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+}
+
+function getActiveArtboard() {
+  return artboards.find(a =&gt; a.id === activeArtboardId) || null;
+}
+
+function syncActiveArtboardRefs() {
+  const current = getActiveArtboard();
+  if (!current) return;
+  artboard = current.board;
+  artboardShadow = current.shadow;
+  bleedRect = current.bleed;
+  safeRect = current.safe;
+  docW = current.w;
+  docH = current.h;
+  $('docW').value = docW;
+  $('docH').value = docH;
+}
+
+function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
+  const id = 'ab_' + Math.random().toString(36).slice(2, 9);
+  const shadow = new fabric.Rect({
+    left:left+8, top:top+12, width:w, height:h,
     fill:'rgba(0,0,0,.28)', rx:2, ry:2,
     selectable:false, evented:false, excludeFromExport:true,
     shadow: new fabric.Shadow({color:'rgba(0,0,0,.6)', blur:30, offsetX:0, offsetY:18})
   });
-  artboard = new fabric.Rect({
-    left:0, top:0, width:docW, height:docH,
+  const board = new fabric.Rect({
+    left, top, width:w, height:h,
     fill:'#ffffff', stroke:'rgba(0,0,0,.15)', strokeWidth:1,
     rx:2, ry:2, selectable:false, evented:false, excludeFromExport:false
   });
-  bleedRect = new fabric.Rect({
-    left:0, top:0, width:docW, height:docH,
-    fill:'transparent', stroke:'rgba(241,58,161,.5)',
-    strokeDashArray:[6,6], strokeWidth:1,
-    selectable:false, evented:false, excludeFromExport:true,
-    opacity: GUIDES.bleed &gt; 0 ? 1 : 0
+  const bleed = new fabric.Rect({
+    left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:w+2*GUIDES.bleed, height:h+2*GUIDES.bleed,
+    fill:'transparent', stroke:'rgba(241,58,161,.5)', strokeDashArray:[6,6], strokeWidth:1,
+    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed &gt; 0 ? 1 : 0
   });
-  safeRect = new fabric.Rect({
-    left:0, top:0, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe,
-    fill:'transparent', stroke:'rgba(59,109,243,.5)',
-    strokeDashArray:[6,6], strokeWidth:1,
+  const safe = new fabric.Rect({
+    left:left+GUIDES.safe, top:top+GUIDES.safe, width:w-2*GUIDES.safe, height:h-2*GUIDES.safe,
+    fill:'transparent', stroke:'rgba(59,109,243,.5)', strokeDashArray:[6,6], strokeWidth:1,
     selectable:false, evented:false, excludeFromExport:true
   });
-  canvas.add(artboardShadow, artboard, bleedRect, safeRect);
-  positionArtboard();
+  const bundle = { id, w, h, board, shadow, bleed, safe };
+  artboards.push(bundle);
+  canvas.add(shadow, board, bleed, safe);
+  activeArtboardId = id;
+  syncActiveArtboardRefs();
   orderArtboard();
+  return bundle;
+}
+
+function ensureArtboard() {
+  if (artboards.length) return;
+  createArtboard();
+  positionArtboard();
+}
+
+function addAdjacentArtboard(dir) {
+  const current = getActiveArtboard();
+  if (!current) return;
+  const left = current.board.left;
+  const top = current.board.top;
+  let nextLeft = left;
+  let nextTop = top;
+  if (dir === 'right') nextLeft = left + current.w + ART_GAP;
+  if (dir === 'left') nextLeft = left - current.w - ART_GAP;
+  if (dir === 'bottom') nextTop = top + current.h + ART_GAP;
+  if (dir === 'top') nextTop = top - current.h - ART_GAP;
+  createArtboard(nextLeft, nextTop, current.w, current.h);
+  fitToArtboard();
+  updateArtboardPlusUI();
 }
 
 function orderArtboard() {
-  [artboardShadow, artboard, bleedRect, safeRect].forEach(o =&gt; {
-    if(o) { canvas.sendToBack(o); canvas.bringToFront(o); }
+  artboards.forEach(a =&gt; {
+    [a.shadow, a.board, a.bleed, a.safe].forEach(o =&gt; {
+      if(o) { canvas.sendToBack(o); canvas.bringToFront(o); }
+    });
   });
 }
 
 function positionArtboard() {
-  if (!artboard) return;
-  artboard.set({ left:-docW/2, top:-docH/2, width:docW, height:docH });
-  artboardShadow.set({ left:artboard.left+8, top:artboard.top+12, width:docW, height:docH });
-  bleedRect.set({ left:artboard.left-GUIDES.bleed, top:artboard.top-GUIDES.bleed, width:docW+2*GUIDES.bleed, height:docH+2*GUIDES.bleed });
-  safeRect.set({ left:artboard.left+GUIDES.safe, top:artboard.top+GUIDES.safe, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe });
+  const current = getActiveArtboard();
+  if (!current) return;
+  current.board.set({ width:docW, height:docH });
+  current.shadow.set({ left:current.board.left+8, top:current.board.top+12, width:docW, height:docH });
+  current.bleed.set({ left:current.board.left-GUIDES.bleed, top:current.board.top-GUIDES.bleed, width:docW+2*GUIDES.bleed, height:docH+2*GUIDES.bleed });
+  current.safe.set({ left:current.board.left+GUIDES.safe, top:current.board.top+GUIDES.safe, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe });
+  current.w = docW;
+  current.h = docH;
+  syncActiveArtboardRefs();
   canvas.requestRenderAll();
+  updateArtboardPlusUI();
 }
 
 function fitToArtboard() {
@@ -1388,6 +1488,7 @@ function fitToArtboard() {
   canvas.setViewportTransform([newZoom, 0, 0, newZoom, cw/2 - artCx*newZoom, ch/2 - artCy*newZoom]);
   zoom = newZoom;
   updateZoomLabel();
+  updateArtboardPlusUI();
 }
 
 function setArtboardSize(w, h) {
@@ -1398,6 +1499,30 @@ function setArtboardSize(w, h) {
   if (!artboard) ensureArtboard();
   positionArtboard();
   fitToArtboard();
+}
+
+function updateArtboardPlusUI() {
+  const ui = $('artboardPlusUI');
+  if (!ui) return;
+  if (!artboardMode || !artboard) {
+    ui.style.display = 'none';
+    return;
+  }
+  const vpt = canvas.viewportTransform || [1,0,0,1,0,0];
+  const x1 = artboard.left * vpt[0] + vpt[4];
+  const y1 = artboard.top * vpt[3] + vpt[5];
+  const x2 = (artboard.left + docW) * vpt[0] + vpt[4];
+  const y2 = (artboard.top + docH) * vpt[3] + vpt[5];
+  const m = 16;
+  $('btnAddArtTop').style.left = ((x1+x2)/2 - 14) + 'px';
+  $('btnAddArtTop').style.top = (y1 - m - 14) + 'px';
+  $('btnAddArtBottom').style.left = ((x1+x2)/2 - 14) + 'px';
+  $('btnAddArtBottom').style.top = (y2 + m - 14) + 'px';
+  $('btnAddArtLeft').style.left = (x1 - m - 14) + 'px';
+  $('btnAddArtLeft').style.top = ((y1+y2)/2 - 14) + 'px';
+  $('btnAddArtRight').style.left = (x2 + m - 14) + 'px';
+  $('btnAddArtRight').style.top = ((y1+y2)/2 - 14) + 'px';
+  ui.style.display = 'block';
 }
 
 function updateZoomLabel() {
@@ -1411,6 +1536,7 @@ canvas.on('mouse:wheel', opt =&gt; {
   const newZoom = clamp(zoom * Math.pow(0.999, e.deltaY), 0.05, 10);
   canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), newZoom);
   zoom = newZoom; updateZoomLabel();
+  updateArtboardPlusUI();
 });
 
 canvas.on('mouse:down', opt =&gt; {
@@ -1430,9 +1556,20 @@ canvas.on('mouse:move', opt =&gt; {
   vpt[5] += e.clientY - lastY;
   canvas.setViewportTransform(vpt);
   lastX = e.clientX; lastY = e.clientY;
+  updateArtboardPlusUI();
 });
 
 canvas.on('mouse:up', () =&gt; { if (isPanning) { isPanning = false; canvas.setCursor('default'); } });
+canvas.on('mouse:down', opt =&gt; {
+  const target = opt.target;
+  if (!target) return;
+  const ab = artboards.find(a =&gt; a.board === target || a.shadow === target || a.bleed === target || a.safe === target);
+  if (!ab) return;
+  activeArtboardId = ab.id;
+  syncActiveArtboardRefs();
+  updateArtboardPlusUI();
+  setStatus('Prancheta ativa selecionada');
+});
 
 window.addEventListener('keydown', e =&gt; {
   if (e.code === 'Space' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; !isSpaceDown) {
@@ -1989,11 +2126,13 @@ $('btnZoomIn')?.addEventListener('click', () =&gt; {
   const newZoom = clamp(zoom*1.15, 0.05, 10);
   canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
   zoom = newZoom; updateZoomLabel();
+  updateArtboardPlusUI();
 });
 $('btnZoomOut')?.addEventListener('click', () =&gt; {
   const newZoom = clamp(zoom/1.15, 0.05, 10);
   canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
   zoom = newZoom; updateZoomLabel();
+  updateArtboardPlusUI();
 });
 $('btnDelete')?.addEventListener('click', del);
 $('btnDuplicate')?.addEventListener('click', duplicate);
@@ -2007,7 +2146,18 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   const h = Number($('docH').value)||docH;
   setArtboardSize(w, h);
   setDeskBg($('docBg').value || deskBg);
+  setDeskTheme($('deskTheme')?.value || 'nebula');
 });
+$('btnArtboardMode')?.addEventListener('click', () =&gt; {
+  artboardMode = !artboardMode;
+  $('btnArtboardMode').classList.toggle('accent', artboardMode);
+  setStatus(artboardMode ? 'Modo pranchetas ativo: use os botões + ao redor da prancheta.' : 'Modo pranchetas desativado');
+  updateArtboardPlusUI();
+});
+$('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
+$('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
+$('btnAddArtBottom')?.addEventListener('click', () =&gt; addAdjacentArtboard('bottom'));
+$('btnAddArtLeft')?.addEventListener('click', () =&gt; addAdjacentArtboard('left'));
 $('btnCenterAll')?.addEventListener('click', () =&gt; {
   const obj = activeObj(); if(!obj||!artboard) return;
   obj.set({ left:artboard.left+docW/2-obj.getScaledWidth()/2, top:artboard.top+docH/2-obj.getScaledHeight()/2 });
@@ -2097,16 +2247,19 @@ function boot() {
   requestAnimationFrame(() =&gt; requestAnimationFrame(() =&gt; {
     resizeCanvasToViewport();
     setDeskBg(deskBg);
+    setDeskTheme('nebula');
     ensureArtboard();
     fitToArtboard();
     updateZoomLabel();
+    updateArtboardPlusUI();
 
     const ro = new ResizeObserver(() =&gt; {
       resizeCanvasToViewport();
       fitToArtboard();
+      updateArtboardPlusUI();
     });
     ro.observe(stageEl);
-    window.addEventListener('resize', () =&gt; { resizeCanvasToViewport(); fitToArtboard(); });
+    window.addEventListener('resize', () =&gt; { resizeCanvasToViewport(); fitToArtboard(); updateArtboardPlusUI(); });
     snapshot();
   }));
 }
