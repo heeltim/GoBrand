@@ -549,6 +549,7 @@ function openColorModal(){
   $("mHex").value=c.hex.toUpperCase();
   $("mRgb").value=`${rgb.r}, ${rgb.g}, ${rgb.b}`;
   $("mAlpha").value=c.alpha??100;
+  if($("mAlphaRange")) $("mAlphaRange").value=c.alpha??100;
   $("mPct").value=c.pct??10;
   $("mName").value=c.name||"";
   syncPicker();
@@ -638,7 +639,12 @@ document.addEventListener("touchmove",e=>{if(!S.dragging)return;
 function handlePickerMove(id,x,y,w,h){
   if(id==="pickerCanvas"){ S.hsv.s=(x/w)*100; S.hsv.v=(1-(y/h))*100; syncPicker(); }
   else if(id==="hueStrip"){ S.hsv.h=(x/w)*360; syncPicker(); }
-  else if(id==="alphaStrip"){ $("mAlpha").value=Math.round((x/w)*100); syncPicker(); }
+  else if(id==="alphaStrip"){
+    const alpha=Math.round((x/w)*100);
+    $("mAlpha").value=alpha;
+    if($("mAlphaRange")) $("mAlphaRange").value=alpha;
+    syncPicker();
+  }
 }
 
 pickerDrag($("pickerCanvas"),(x,y,w,h)=>handlePickerMove("pickerCanvas",x,y,w,h));
@@ -654,7 +660,17 @@ $("mRgb").addEventListener("input",()=>{
   if(!m)return;
   S.hsv=rgbToHsv(+m[1],+m[2],+m[3]);syncPicker();
 });
-$("mAlpha").addEventListener("input",syncPicker);
+$("mAlpha").addEventListener("input",()=>{
+  const alpha=clamp(parseFloat($("mAlpha").value)||100,0,100);
+  $("mAlpha").value=alpha;
+  if($("mAlphaRange")) $("mAlphaRange").value=alpha;
+  syncPicker();
+});
+$("mAlphaRange")?.addEventListener("input",()=>{
+  const alpha=clamp(parseFloat($("mAlphaRange").value)||100,0,100);
+  $("mAlpha").value=alpha;
+  syncPicker();
+});
 
 $("btnCopyColor").onclick=async()=>{
   const mode=$("mCopyMode").value;
@@ -751,9 +767,40 @@ function buildFamOptions(p){
   return opts;
 }
 
+function buildBaseStyleOptions(p,currentKey){
+  return (p.typo||[])
+    .filter(x=>x.key!==currentKey)
+    .map(x=>({l:x.key,v:x.key}));
+}
+
+function applyBaseStyle(){
+  const p=P();if(!p)return;
+  const s=p.typo.find(x=>x.key===S.styleKey);if(!s)return;
+  const baseKey=$("edBaseStyle")?.value;
+  if(!baseKey||baseKey==="__none__") return;
+  const base=(p.typo||[]).find(x=>x.key===baseKey);
+  if(!base) return;
+  s.fam=base.fam;
+  s.wt=base.wt;
+  s.sz=base.sz;
+  s.lh=base.lh;
+  s.ls=base.ls;
+  s.al=base.al;
+  s.va=base.va;
+  s.up=!!base.up;
+  s.it=!!base.it;
+  openStyleEditor(p,s);
+  renderPreview();
+}
+
 function openStyleEditor(p,s){
   const editor=$("typoEditor");
   editor.classList.add("open");
+
+  // base style
+  const baseOpts=buildBaseStyleOptions(p,s.key);
+  $("edBaseStyle").innerHTML=[`<option value="__none__">Selecione…</option>`,...baseOpts.map(o=>`<option value="${esc(o.v)}">${esc(o.l)}</option>`)].join("");
+  $("edBaseStyle").value="__none__";
 
   // family
   const famOpts=buildFamOptions(p);
@@ -809,6 +856,7 @@ function saveStyle(){
 }
 
 $("chkRestrict")?.addEventListener("change",()=>{ const p=P();if(p){const s=p.typo.find(x=>x.key===S.styleKey);if(s)openStyleEditor(p,s);} });
+$("edBaseStyle")?.addEventListener("change",applyBaseStyle);
 
 /* ============================================================
    LIVE PREVIEW
