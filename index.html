@@ -1,0 +1,1870 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GOBLINS FAZ • Brand Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- CONTEXT MENU -->
+<div id="ctxMenu" class="ctx-menu">
+  <div class="ctx-item" data-action="rename">✏️ Renomear</div>
+  <div class="ctx-item" data-action="duplicate">⧉ Duplicar</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item danger" data-action="delete">🗑 Excluir</div>
+</div>
+
+<!-- TOAST ROOT -->
+<div id="toastRoot" class="toast-root"></div>
+
+<!-- COLOR MODAL -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div class="modal-head-title">Editar Cor</div>
+      <button class="btn-icon" id="btnCloseModal">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-left">
+        <div id="pickerCanvas" class="picker-canvas">
+          <div id="pickerKnob" class="picker-knob"></div>
+        </div>
+        <div id="hueStrip" class="hue-strip">
+          <div id="hueKnob" class="hue-knob"></div>
+        </div>
+        <div id="alphaStrip" class="alpha-strip">
+          <div id="alphaFill" class="alpha-strip-fill"></div>
+          <div id="alphaKnob" class="alpha-knob"></div>
+        </div>
+        <div id="colorPreviewSwatch" class="color-preview-swatch">
+          <span id="colorPreviewLabel" style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.7)"></span>
+        </div>
+        <div class="history-dots" id="historyDots"></div>
+      </div>
+      <div class="modal-right">
+        <div class="modal-field">
+          <label>HEX</label>
+          <input id="mHex" class="modal-inp" placeholder="#RRGGBB">
+        </div>
+        <div class="modal-field">
+          <label>RGB</label>
+          <input id="mRgb" class="modal-inp" placeholder="255, 0, 128">
+        </div>
+        <div class="modal-field">
+          <label>Opac.</label>
+          <input id="mAlpha" class="modal-inp" type="number" min="0" max="100">
+        </div>
+        <div class="modal-field">
+          <label>% Uso</label>
+          <input id="mPct" class="modal-inp" type="number" min="1" max="100">
+        </div>
+        <div class="modal-field">
+          <label>Nome</label>
+          <input id="mName" class="modal-inp" placeholder="Ex.: Azul Primário">
+        </div>
+        <div class="divider"></div>
+        <div class="modal-field">
+          <label>Copiar</label>
+          <select id="mCopyMode" class="modal-sel">
+            <option value="hex">HEX</option>
+            <option value="rgb">RGB</option>
+            <option value="rgba">RGBA</option>
+            <option value="hsl">HSL</option>
+            <option value="css">CSS var()</option>
+          </select>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" id="btnCopyColor">Copiar</button>
+          <button class="btn btn-danger" id="btnDeleteColor">Excluir</button>
+          <button class="btn btn-primary" id="btnApplyColor">Aplicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="dot">G</div>
+      <div class="brand">Goblins Faz</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Principal</div>
+      <div class="sidebar-item active" data-view="home" onclick="nav('home',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Projetos
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="editorNav" style="display:none;">
+      <div class="sidebar-label" id="editorNavLabel">Projeto</div>
+      <div class="sidebar-item" data-view="editor" onclick="nav('editor',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Editar
+      </div>
+      <div class="sidebar-item" data-view="board" onclick="nav('board',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="14" rx="2"/><line x1="7" y1="21" x2="17" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        Brand Board
+      </div>
+      <div class="sidebar-item" data-view="apps" onclick="nav('apps',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/>
+        </svg>
+        Aplicações
+      </div>
+<div class="sidebar-item" data-view="export" onclick="nav('export',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/><path d="M9 18H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>
+        Exportar
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="version-tag">v2.0 • Brand Studio</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-breadcrumb" id="breadcrumb">
+          <span>Projetos</span>
+        </div>
+      </div>
+      <div class="topbar-right" id="topbarRight"></div>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div id="viewHome" class="view active">
+      <div class="home-head">
+        <div>
+          <h1>Seus Projetos</h1>
+          <p>Gerencie identidades visuais das suas marcas.</p>
+        </div>
+        <button class="btn btn-primary" onclick="createProject()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo Projeto
+        </button>
+      </div>
+      <div id="projGrid" class="proj-grid"></div>
+    </div>
+
+
+    <!-- BRAND BOARD VIEW -->
+    <div id="viewBoard" class="view">
+      <div class="home-head" style="margin-bottom:18px">
+        <div>
+          <h1 id="bbTitle">Brand Board</h1>
+          <p id="bbSubtitle">Visão geral da identidade — pronto para gerar materiais.</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="nav('editor')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar Identidade
+          </button>
+          <button class="btn btn-primary" onclick="openAppConfigurator()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova Aplicação
+          </button>
+        </div>
+      </div>
+
+      <div class="editor-layout" style="grid-template-columns:340px 1fr 320px">
+        <!-- left: logos + meta quick -->
+        <div class="col-left">
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">Identidade</div>
+              <span class="badge accent" id="bbUpdated"></span>
+            </div>
+            <div class="block-body stack">
+              <div style="display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start">
+                <div>
+                  <div class="field-label" style="margin-bottom:8px">Logo</div>
+                  <div class="logo-slot" style="height:110px" id="bbLogoSlot" onclick="nav('editor')"></div>
+                </div>
+                <div class="stack" style="gap:10px">
+                  <div class="field">
+                    <label class="field-label">Nome</label>
+                    <div class="inp" style="display:flex;align-items:center;background:var(--surface2);border-color:var(--border2)"><span id="bbName"></span></div>
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Sobre</label>
+                    <div class="inp" style="min-height:72px;white-space:pre-wrap" id="bbAbout"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">Paleta</div>
+              <span style="font-size:11px;color:var(--ink3)">arraste % no editor</span>
+            </div>
+            <div class="block-body">
+              <div id="bbPaletteBig" style="border-radius:14px;overflow:hidden;border:1px solid var(--border2);height:92px;display:flex"></div>
+              <div id="bbPaletteMeta" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- mid: typography scale -->
+        <div class="col-mid">
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">Tipografia em escala real</div>
+              <span style="font-size:11px;color:var(--ink3)">Primária + Secundária</span>
+            </div>
+            <div class="block-body" id="bbTypeScale" style="display:flex;flex-direction:column;gap:14px"></div>
+          </div>
+        </div>
+
+        <!-- right: quick actions -->
+        <div class="col-preview">
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">Atalhos</div>
+            </div>
+            <div class="block-body stack">
+              <button class="btn btn-ghost" onclick="nav('apps')" style="justify-content:center">
+                Ver Aplicações Geradas
+              </button>
+              <button class="btn btn-ghost" onclick="nav('export')" style="justify-content:center">
+                Exportar Tokens
+              </button>
+              <div class="divider"></div>
+              <div style="font-size:12px;color:var(--ink2);line-height:1.6">
+                <b>Objetivo:</b> gerar arquivos (SVG agora, PDF depois) já com tamanho, sangria e elementos base da marca.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APLICAÇÕES VIEW -->
+    <div id="viewApps" class="view">
+      <div class="home-head" style="margin-bottom:18px">
+        <div>
+          <h1>Aplicações</h1>
+          <p>Arquivos gerados a partir da identidade do projeto.</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="nav('board')">Voltar ao Brand Board</button>
+          <button class="btn btn-primary" onclick="openAppConfigurator()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova Aplicação
+          </button>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-header">
+          <div class="block-title">Lista de aplicações geradas</div>
+          <span style="font-size:11px;color:var(--ink3)" id="appsCount"></span>
+        </div>
+        <div class="block-body">
+          <div id="appsList" class="export-grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDITOR VIEW -->
+    <div id="viewEditor" class="view">
+      <div class="editor-layout">
+
+        <!-- LEFT -->
+        <div class="col-left">
+
+          <!-- Meta -->
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Identidade
+              </div>
+              <span class="badge" id="edProjectId">—</span>
+            </div>
+            <div class="block-body stack">
+              <div class="field">
+                <label class="field-label">Nome do Projeto</label>
+                <input class="inp" id="inpName" placeholder="Ex.: Marca X, App Y...">
+              </div>
+              <div class="field">
+                <label class="field-label">Descrição</label>
+                <textarea class="tex inp" id="inpAbout" placeholder="Descrição curta da marca..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Logo -->
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Logo
+              </div>
+              <span style="font-size:11px;color:var(--ink3)">SVG · PNG · JPG</span>
+            </div>
+            <div class="block-body">
+              <div class="logo-grid">
+                <div class="logo-slot sq" id="slotSq" onclick="triggerLogo('sq')">
+                  <div class="upload-hint">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Quadrado
+                  </div>
+                  <div class="clear-logo" id="clearSq" onclick.stop="clearLogo('sq',event)">✕</div>
+                </div>
+                <div class="logo-slot wd" id="slotWd" onclick="triggerLogo('wd')">
+                  <div class="upload-hint">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Horizontal
+                  </div>
+                  <div class="clear-logo" id="clearWd" onclick.stop="clearLogo('wd',event)">✕</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colors -->
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                Paleta
+              </div>
+              <button class="add-color-btn" onclick="addColor()">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Adicionar
+              </button>
+            </div>
+            <div class="block-body">
+              <div id="colorBar" class="color-bar-wrap"></div>
+              <div id="colorChips" class="color-chips"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- MID -->
+        <div class="col-mid">
+
+          <!-- Fonts -->
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                Tipografia
+              </div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);cursor:pointer">
+                <input type="checkbox" id="chkRestrict" checked> Restrito
+              </label>
+            </div>
+            <div class="block-body stack">
+              <div class="row2">
+                <div class="field">
+                  <label class="field-label">Primária</label>
+                  <select class="sel" id="selPrimary"></select>
+                </div>
+                <div class="field">
+                  <label class="field-label">Secundária</label>
+                  <select class="sel" id="selSecondary"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Type styles -->
+          <div class="block">
+            <div class="block-header">
+              <div class="block-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="11" y2="18"/></svg>
+                Hierarquia de Estilos
+              </div>
+              <span class="badge accent" id="activeStyleBadge" style="display:none"></span>
+            </div>
+            <div class="block-body">
+              <div id="typoList"></div>
+              <div id="typoEditor" class="typo-editor">
+                <div class="stack" style="margin-top:0">
+                  <div class="row2">
+                    <div class="field">
+                      <label class="field-label">Família</label>
+                      <select class="sel" id="edFamily"></select>
+                    </div>
+                    <div class="field">
+                      <label class="field-label">Peso</label>
+                      <select class="sel" id="edWeight"></select>
+                    </div>
+                  </div>
+                  <div class="row3">
+                    <div class="field">
+                      <label class="field-label">Tamanho px</label>
+                      <input class="inp" id="edSize" type="number" min="8" max="160">
+                    </div>
+                    <div class="field">
+                      <label class="field-label">Line Height</label>
+                      <input class="inp" id="edLine" type="number" step="0.05" min="0.8" max="2.5">
+                    </div>
+                    <div class="field">
+                      <label class="field-label">Letter Sp.</label>
+                      <input class="inp" id="edTrack" type="number" step="0.1" min="-5" max="20">
+                    </div>
+                  </div>
+                  <div class="row2">
+                    <div class="field">
+                      <label class="field-label">Alinhamento</label>
+                      <div class="seg-group">
+                        <button class="seg-btn" id="bLeft" onclick="applyAlign('left')">≡</button>
+                        <button class="seg-btn" id="bCenter" onclick="applyAlign('center')">≣</button>
+                        <button class="seg-btn" id="bRight" onclick="applyAlign('right')">≡</button>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label class="field-label">Vertical</label>
+                      <div class="seg-group">
+                        <button class="seg-btn" id="bVTop" onclick="applyVAlign('top')">↑</button>
+                        <button class="seg-btn" id="bVMid" onclick="applyVAlign('middle')">↕</button>
+                        <button class="seg-btn" id="bVBot" onclick="applyVAlign('bottom')">↓</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="chip-row">
+                    <button class="chip-btn" id="btnUpper" onclick="toggleStyle('upper')">⇧ UPPERCASE</button>
+                    <button class="chip-btn" id="btnItalic" onclick="toggleStyle('italic')">/ Itálico</button>
+                  </div>
+                  <div style="display:flex;gap:8px;padding-top:4px">
+                    <button class="btn btn-ghost" onclick="closeStyleEditor()">Fechar</button>
+                    <button class="btn btn-primary" onclick="saveStyle()">Salvar Estilo</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- PREVIEW -->
+        <div class="col-preview">
+          <div class="block" style="position:sticky;top:76px;">
+            <div class="block-header">
+              <div class="block-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Preview ao Vivo
+              </div>
+            </div>
+            <div id="livePreview" class="preview-scroll fade-edge"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- EXPORT VIEW -->
+    <div id="viewExport" class="view">
+      <div class="home-head">
+        <div>
+          <h1>Exportar</h1>
+          <p>Tokens, CSS, JSON — pronto para o seu pipeline.</p>
+        </div>
+      </div>
+      <div id="exportGrid" class="export-grid"></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+
+<!-- APPLICATION CONFIGURATOR MODAL -->
+<div id="appBackdrop" class="modal-backdrop">
+  <div class="modal" id="appModal" style="width:min(980px,92vw)">
+    <div class="modal-head">
+      <div class="modal-head-title">Nova Aplicação</div>
+      <button class="btn-icon" onclick="closeAppConfigurator()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-grid" style="grid-template-columns:1.1fr 0.9fr">
+      <div class="modal-left">
+        <div class="field">
+          <label class="field-label">Template</label>
+          <select id="appTpl" class="select"></select>
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label class="field-label">Nome do arquivo</label>
+            <input id="appName" class="inp" placeholder="ex: Cartão de Visita — Frente"/>
+          </div>
+          <div class="field">
+            <label class="field-label">Tipo</label>
+            <select id="appType" class="select">
+              <option value="print">Impressão</option>
+              <option value="web">Web</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row-3">
+          <div class="field">
+            <label class="field-label">Largura</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="appW" class="inp" type="number" min="1" step="1"/>
+              <select id="appUnit" class="select" style="width:110px">
+                <option value="mm">mm</option>
+                <option value="px">px</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Altura</label>
+            <input id="appH" class="inp" type="number" min="1" step="1"/>
+          </div>
+          <div class="field">
+            <label class="field-label">Orientação</label>
+            <select id="appOri" class="select">
+              <option value="auto">Auto</option>
+              <option value="portrait">Retrato</option>
+              <option value="landscape">Paisagem</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row-3">
+          <div class="field">
+            <label class="field-label">Resolução (DPI)</label>
+            <select id="appDpi" class="select">
+              <option value="72">72</option>
+              <option value="150">150</option>
+              <option value="300" selected>300</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Sangria</label>
+            <select id="appBleed" class="select">
+              <option value="0">0 mm</option>
+              <option value="3" selected>3 mm</option>
+              <option value="5">5 mm</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Margem segura</label>
+            <select id="appSafe" class="select">
+              <option value="0">0 mm</option>
+              <option value="5" selected>5 mm</option>
+              <option value="8">8 mm</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="closeAppConfigurator()">Cancelar</button>
+          <button class="btn btn-primary" onclick="createApplication()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Gerar SVG
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-right">
+        <div class="preview-label" style="margin-bottom:8px">Preview (layout base)</div>
+        <div class="export-preview" style="height:420px;overflow:auto" id="appPreview"></div>
+        <div style="font-size:12px;color:var(--ink2);line-height:1.6;margin-top:10px">
+          O SVG vem com camadas (guides, logo, swatches, type) para abrir no Illustrator e montar.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input id="fileLogoSq" type="file" accept=".svg,image/*" style="display:none">
+<input id="fileLogoWd" type="file" accept=".svg,image/*" style="display:none">
+
+
+<!-- =========================================================
+     APP EDITOR (FULLSCREEN) — Embedded Advanced Editor
+========================================================= -->
+<div id="appEditBackdrop" class="appedit-backdrop" aria-hidden="true">
+  <div class="appedit-shell" role="dialog" aria-modal="true">
+    <div class="appedit-top">
+      <div class="left">
+        <button class="btn btn-ghost" onclick="closeAppEditor()" style="padding:10px 14px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          Voltar
+        </button>
+        <span id="appEditName" class="badge">Aplicação</span>
+      </div>
+      <div class="mid">
+        <span id="appEditMeta" style="font-size:12px;color:var(--ink3);font-family:var(--mono)">—</span>
+      </div>
+      <div class="right">
+        <button class="btn btn-ghost" onclick="geFit()" title="Encaixar na tela">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3H3v4M17 3h4v4M7 21H3v-4M21 17v4h-4"/></svg>
+          Encaixar
+        </button>
+        <button class="btn btn-primary" onclick="geExportPNG()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar PNG
+        </button>
+        <button class="btn btn-ghost" onclick="closeAppEditor()" style="width:38px;padding:0;justify-content:center">✕</button>
+      </div>
+    </div>
+
+    <!-- EDITOR BODY: apenas o iframe ocupa tudo -->
+    <div class="appedit-body">
+      <div class="ge-iframeWrap">
+        <iframe id="geEditorFrame" title="Goblin Editor"
+          sandbox="allow-scripts allow-same-origin allow-downloads"
+          referrerpolicy="no-referrer"
+          style="width:100%;height:100%;border:0;border-radius:18px;overflow:hidden;background:transparent"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IDs fantasmas para que o código JS não quebre ao buscar esses elementos -->
+<div style="display:none" aria-hidden="true">
+  <span id="selTag"></span><span id="selType"></span>
+  <input id="fillHex"><input id="fillColor"><input id="posX"><input id="posY">
+  <input id="sizeW"><input id="sizeH"><input id="radius"><input id="fontSize">
+  <input id="textValue"><select id="fontWeight"></select><select id="stylePick"></select>
+  <div id="paletteRow"></div><div id="layerList"></div><span id="layerCount"></span>
+  <div id="sizeTitle"></div><div id="sizeWRow"></div><div id="sizeHRow"></div>
+  <div id="radiusRow"></div><div id="textStyleRow"></div>
+  <div id="appCanvasHost"></div>
+</div>
+
+<template id="geEditorTemplate">
+&lt;!doctype html&gt;
+&lt;html lang=&quot;pt-BR&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;/&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;/&gt;
+&lt;title&gt;Studio&lt;/title&gt;
+&lt;script src=&quot;https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js&quot;&gt;&lt;/script&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;family=Syne:wght@400;500;600;700;800&amp;family=Outfit:wght@300;400;500;600;700;800;900&amp;family=Sora:wght@300;400;600;700;800&amp;family=DM+Sans:wght@300;400;500;600;700&amp;family=Nunito:wght@300;400;600;700;800&amp;family=Poppins:wght@300;400;600;700;800&amp;family=Montserrat:wght@300;400;600;700;800&amp;family=IBM+Plex+Sans:wght@300;400;600;700&amp;family=Raleway:wght@300;400;600;700;800&amp;family=Manrope:wght@300;400;600;700;800&amp;family=Inter:wght@300;400;600;800&amp;family=Roboto:wght@300;400;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+:root {
+  --bg:       #0a0a0c;
+  --surface:  #111116;
+  --panel:    #17171d;
+  --border:   rgba(255,255,255,.07);
+  --border2:  rgba(255,255,255,.12);
+  --ink:      rgba(255,255,255,.92);
+  --ink2:     rgba(255,255,255,.55);
+  --ink3:     rgba(255,255,255,.28);
+  --accent:   #c8ff00;
+  --accent-d: #99c400;
+  --danger:   #ff4060;
+  --good:     #00ffaa;
+  --mono:     'DM Mono', monospace;
+  --sans:     'Syne', sans-serif;
+  --r:        10px;
+  --r-lg:     16px;
+  --panel-w:  224px;
+  --topbar-h: 48px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:var(--sans);font-size:13px;color:var(--ink)}
+
+button{font-family:inherit;cursor:pointer;border:none;outline:none;user-select:none}
+input,select{font-family:var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--border2);outline:none;font-size:12px}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,255,0,.12)}
+
+/* ─── LAYOUT ──────────────────────────────────────────── */
+.app{
+  display:grid;
+  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-columns: var(--panel-w) 1fr var(--panel-w);
+  height:100%;
+}
+
+/* ─── TOPBAR ──────────────────────────────────────────── */
+.topbar{
+  grid-column: 1 / -1;
+  display:flex;align-items:center;gap:0;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:relative;
+  z-index:10;
+}
+.topbar-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:0 20px;
+  width:var(--panel-w);
+  border-right:1px solid var(--border);
+  height:100%;
+  flex-shrink:0;
+}
+.brand-dot{
+  width:20px;height:20px;border-radius:6px;
+  background:var(--accent);
+  box-shadow:0 0 12px rgba(200,255,0,.45);
+  flex-shrink:0;
+}
+.brand-name{
+  font-size:13px;font-weight:700;letter-spacing:.04em;
+  color:var(--ink);font-family:var(--sans);
+}
+.topbar-status{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  gap:6px;
+  font-family:var(--mono);font-size:11px;color:var(--ink3);
+  letter-spacing:.04em;
+}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(200,255,0,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(200,255,0,0)}}
+.topbar-actions{
+  display:flex;align-items:center;gap:6px;
+  padding:0 12px;
+  width:var(--panel-w);
+  border-left:1px solid var(--border);
+  height:100%;
+  flex-shrink:0;
+}
+
+/* ─── TOOLBAR BUTTONS ─────────────────────────────────── */
+.tbtn{
+  height:30px;padding:0 10px;border-radius:var(--r);
+  background:transparent;color:var(--ink2);
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.03em;
+  border:1px solid transparent;
+  transition:all .12s ease;display:inline-flex;align-items:center;gap:5px;
+}
+.tbtn:hover{background:rgba(255,255,255,.06);color:var(--ink);border-color:var(--border2)}
+.tbtn.accent{
+  background:var(--accent);color:#000;font-weight:700;
+  border-color:transparent;
+}
+.tbtn.accent:hover{background:#d9ff1a;box-shadow:0 0 12px rgba(200,255,0,.35)}
+.tbtn.danger{color:var(--danger)}
+.tbtn.danger:hover{background:rgba(255,64,96,.1);border-color:rgba(255,64,96,.25)}
+.tbtn.active{background:rgba(200,255,0,.1);color:var(--accent);border-color:rgba(200,255,0,.2)}
+.tbtn svg{flex-shrink:0}
+
+/* ─── PANELS ──────────────────────────────────────────── */
+.panel{
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+}
+.panel.right{border-right:none;border-left:1px solid var(--border)}
+.panel-head{
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.panel-label{
+  font-size:9px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);
+  font-family:var(--mono);
+  margin-bottom:10px;
+}
+.panel-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 12px 16px}
+.panel-body::-webkit-scrollbar{width:3px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.panel-section{margin-bottom:16px}
+.panel-section-label{
+  font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3);font-family:var(--mono);
+  margin-bottom:8px;font-weight:600;
+}
+
+/* ─── TOOL BUTTONS (left panel) ──────────────────────── */
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.tool-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;padding:10px 6px;border-radius:var(--r);
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--ink2);font-size:10px;font-family:var(--mono);
+  font-weight:500;letter-spacing:.04em;
+  transition:all .12s ease;
+}
+.tool-btn:hover{background:rgba(200,255,0,.07);border-color:rgba(200,255,0,.2);color:var(--accent)}
+.tool-btn svg{opacity:.7;transition:opacity .12s}
+.tool-btn:hover svg{opacity:1}
+
+/* ─── DOC INPUTS ──────────────────────────────────────── */
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.field-row.one{grid-template-columns:1fr}
+.field-item{display:flex;flex-direction:column;gap:4px}
+.field-label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-family:var(--mono)}
+.field-input{
+  height:32px;padding:0 9px;border-radius:8px;width:100%;
+  background:var(--surface);border:1px solid var(--border2);
+  color:var(--ink);font-family:var(--mono);font-size:12px;
+}
+.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,255,0,.1)}
+input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
+
+/* ─── SEPARATOR ───────────────────────────────────────── */
+.sep{height:1px;background:var(--border);margin:12px -12px}
+
+/* ─── LAYERS ──────────────────────────────────────────── */
+.layer-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 9px;border-radius:8px;
+  border:1px solid transparent;
+  cursor:pointer;transition:all .1s ease;
+  margin-bottom:3px;
+}
+.layer-item:hover{background:rgba(255,255,255,.04)}
+.layer-item.active{
+  background:rgba(200,255,0,.07);
+  border-color:rgba(200,255,0,.18);
+}
+.layer-icon{
+  width:22px;height:22px;border-radius:5px;
+  background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:var(--ink3);font-size:10px;
+}
+.layer-item.active .layer-icon{background:rgba(200,255,0,.15);color:var(--accent)}
+.layer-name{flex:1;font-size:11px;font-family:var(--mono);color:var(--ink2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-item.active .layer-name{color:var(--ink)}
+.layer-empty{
+  text-align:center;padding:24px 0;
+  font-size:11px;color:var(--ink3);font-family:var(--mono);
+}
+
+/* ─── PROPS PANEL ─────────────────────────────────────── */
+.prop-row{margin-bottom:8px}
+.prop-grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prop-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+
+/* Segmented control */
+.seg{
+  display:flex;background:var(--surface);
+  border:1px solid var(--border2);border-radius:8px;overflow:hidden;
+}
+.seg-opt{
+  flex:1;height:30px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-family:var(--mono);color:var(--ink3);
+  cursor:pointer;transition:all .1s ease;
+  background:transparent;
+}
+.seg-opt:hover{color:var(--ink)}
+.seg-opt.on{background:var(--accent);color:#000;font-weight:700}
+
+/* Palette swatches */
+.swatch-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.swatch{
+  width:22px;height:22px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.12);cursor:pointer;
+  transition:transform .1s ease,box-shadow .1s ease;
+}
+.swatch:hover{transform:scale(1.15);box-shadow:0 0 0 2px var(--accent)}
+
+/* ─── CANVAS AREA ─────────────────────────────────────── */
+.canvas-area{
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 60% 50% at 25% 20%, rgba(200,255,0,.04), transparent),
+    radial-gradient(ellipse 50% 60% at 75% 80%, rgba(0,255,170,.03), transparent),
+    var(--bg);
+}
+/* dot grid */
+.canvas-area::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size:28px 28px;
+  pointer-events:none;z-index:0;
+}
+#fabricCanvas{position:absolute;inset:0;z-index:1}
+#fabricCanvas canvas{display:block}
+
+/* ─── ZOOM BAR ────────────────────────────────────────── */
+.zoom-bar{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:2px;
+  background:rgba(10,10,12,.85);backdrop-filter:blur(12px);
+  border:1px solid var(--border2);border-radius:12px;padding:4px;
+  z-index:10;
+}
+.zbtn{
+  width:28px;height:28px;border-radius:8px;
+  background:transparent;color:var(--ink2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;
+  transition:all .1s ease;
+}
+.zbtn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+.zbtn.label{
+  width:54px;font-family:var(--mono);font-size:11px;
+  cursor:default;color:var(--ink);
+}
+
+/* ─── HINT ────────────────────────────────────────────── */
+.hint-bar{
+  position:absolute;bottom:16px;left:16px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:rgba(10,10,12,.75);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:10px;
+  padding:6px 10px;z-index:10;
+}
+.hint-key{
+  font-family:var(--mono);font-size:10px;
+  background:rgba(255,255,255,.08);border:1px solid var(--border2);
+  padding:2px 6px;border-radius:5px;color:var(--ink2);
+  display:inline-flex;align-items:center;
+}
+.hint-sep{color:var(--ink3);font-size:10px;font-family:var(--mono)}
+
+/* ─── MODAL ───────────────────────────────────────────── */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  z-index:100;align-items:center;justify-content:center;
+}
+.modal-bg.open{display:flex}
+.modal-box{
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--r-lg);padding:24px;
+  min-width:360px;max-width:520px;width:90%;
+  max-height:80vh;display:flex;flex-direction:column;
+  box-shadow:0 40px 80px rgba(0,0,0,.7);
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-title{font-size:15px;font-weight:700}
+.modal-body{flex:1;overflow:auto}
+textarea.modal-textarea{
+  width:100%;min-height:200px;resize:vertical;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:12px;color:var(--ink);
+  font-family:var(--mono);font-size:11px;line-height:1.6;
+}
+
+/* ─── SHORTCUTS POPUP ─────────────────────────────────── */
+.shortcuts-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center}
+.sc-key{font-family:var(--mono);font-size:11px;
+  background:rgba(255,255,255,.07);border:1px solid var(--border2);
+  padding:3px 8px;border-radius:6px;color:var(--accent);white-space:nowrap;text-align:center}
+.sc-desc{font-size:11px;color:var(--ink2);font-family:var(--mono)}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&quot;app&quot;&gt;
+
+  &lt;!-- ═══ TOPBAR ═════════════════════════════════════════ --&gt;
+  &lt;header class=&quot;topbar&quot;&gt;
+    &lt;div class=&quot;topbar-brand&quot;&gt;
+      &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
+      &lt;span class=&quot;brand-name&quot;&gt;STUDIO&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-status&quot;&gt;
+      &lt;div class=&quot;status-dot&quot;&gt;&lt;/div&gt;
+      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-actions&quot;&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnRedo&quot; title=&quot;Redo (Ctrl+Y)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;23 4 23 10 17 10&quot;/&gt;&lt;path d=&quot;M20.49 15a9 9 0 1 1-.49-4.5&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnDelete&quot; title=&quot;Apagar seleção (Del)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;3 6 5 6 21 6&quot;/&gt;&lt;path d=&quot;M19 6l-1 14H6L5 6&quot;/&gt;&lt;path d=&quot;M10 11v6M14 11v6&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;div style=&quot;width:1px;height:20px;background:var(--border);margin:0 4px&quot;&gt;&lt;/div&gt;
+      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4&quot;/&gt;&lt;polyline points=&quot;7 10 12 15 17 10&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;15&quot; x2=&quot;12&quot; y2=&quot;3&quot;/&gt;&lt;/svg&gt;
+        PNG
+      &lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
+  &lt;aside class=&quot;panel&quot;&gt;
+    &lt;div class=&quot;panel-body&quot;&gt;
+
+      &lt;!-- Shapes --&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Adicionar&lt;/div&gt;
+        &lt;div class=&quot;tool-grid&quot;&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddText&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;polyline points=&quot;4 7 4 4 20 4 20 7&quot;/&gt;&lt;line x1=&quot;9&quot; y1=&quot;20&quot; x2=&quot;15&quot; y2=&quot;20&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;4&quot; x2=&quot;12&quot; y2=&quot;20&quot;/&gt;&lt;/svg&gt;
+            TEXTO
+          &lt;/button&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnRect&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;3&quot;/&gt;&lt;/svg&gt;
+            RECT
+          &lt;/button&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnCircle&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;9&quot;/&gt;&lt;/svg&gt;
+            CIRC
+          &lt;/button&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnLine&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;line x1=&quot;5&quot; y1=&quot;12&quot; x2=&quot;19&quot; y2=&quot;12&quot;/&gt;&lt;/svg&gt;
+            LINHA
+          &lt;/button&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnUpload&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot;/&gt;&lt;circle cx=&quot;8.5&quot; cy=&quot;8.5&quot; r=&quot;1.5&quot;/&gt;&lt;polyline points=&quot;21 15 16 10 5 21&quot;/&gt;&lt;/svg&gt;
+            IMG
+          &lt;/button&gt;
+          &lt;button class=&quot;tool-btn&quot; id=&quot;btnHelp&quot;&gt;
+            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;9&quot;/&gt;&lt;path d=&quot;M9 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;17&quot; x2=&quot;12.01&quot; y2=&quot;17&quot;/&gt;&lt;/svg&gt;
+            TECLAS
+          &lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- Document --&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Documento&lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;W px&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;docW&quot; type=&quot;number&quot; value=&quot;1200&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;H px&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;docH&quot; type=&quot;number&quot; value=&quot;750&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Mesa&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;docBg&quot; type=&quot;color&quot; value=&quot;#0f1626&quot;&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- JSON --&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Projeto&lt;/div&gt;
+        &lt;div style=&quot;display:flex;gap:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnSaveJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Salvar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnLoadJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Carregar&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- Layers --&gt;
+      &lt;div class=&quot;panel-section&quot; style=&quot;flex:1&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
+          Camadas
+          &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;layersList&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+    &lt;/div&gt;
+
+    &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;image/*&quot; style=&quot;display:none&quot;&gt;
+  &lt;/aside&gt;
+
+  &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
+  &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
+    &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;zoom-bar&quot;&gt;
+      &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomOut&quot;&gt;−&lt;/button&gt;
+      &lt;button class=&quot;zbtn label&quot; id=&quot;btnZoomReset&quot;&gt;&lt;span id=&quot;zoomLabel&quot;&gt;100%&lt;/span&gt;&lt;/button&gt;
+      &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomIn&quot;&gt;+&lt;/button&gt;
+      &lt;div style=&quot;width:1px;height:20px;background:var(--border);margin:0 2px&quot;&gt;&lt;/div&gt;
+      &lt;button class=&quot;zbtn&quot; id=&quot;btnFit&quot; title=&quot;Encaixar&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M7 3H3v4M17 3h4v4M7 21H3v-4M21 17v4h-4&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;hint-bar&quot;&gt;
+      &lt;span class=&quot;hint-key&quot;&gt;Espaço&lt;/span&gt;&lt;span class=&quot;hint-sep&quot;&gt;pan&lt;/span&gt;
+      &lt;span class=&quot;hint-key&quot;&gt;Scroll&lt;/span&gt;&lt;span class=&quot;hint-sep&quot;&gt;zoom&lt;/span&gt;
+      &lt;span class=&quot;hint-key&quot;&gt;Del&lt;/span&gt;&lt;span class=&quot;hint-sep&quot;&gt;apagar&lt;/span&gt;
+      &lt;span class=&quot;hint-key&quot;&gt;Ctrl+Z&lt;/span&gt;&lt;span class=&quot;hint-sep&quot;&gt;undo&lt;/span&gt;
+    &lt;/div&gt;
+  &lt;/main&gt;
+
+  &lt;!-- ═══ RIGHT PANEL ════════════════════════════════════ --&gt;
+  &lt;aside class=&quot;panel right&quot;&gt;
+    &lt;div class=&quot;panel-body&quot;&gt;
+
+      &lt;!-- Selection info --&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Seleção&lt;/div&gt;
+        &lt;div id=&quot;selInfo&quot; style=&quot;font-size:11px;font-family:var(--mono);color:var(--ink3);padding:4px 0&quot;&gt;
+          Nada selecionado
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- Transform --&gt;
+      &lt;div class=&quot;panel-section&quot; id=&quot;propTransform&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Transformação&lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;X&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pX&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Y&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pY&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;W&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pW&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;1&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;H&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pH&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;1&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Rot°&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pR&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Opac&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pO&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;1&quot; step=&quot;0.01&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- Style --&gt;
+      &lt;div class=&quot;panel-section&quot; id=&quot;propStyle&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Estilo&lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Fill&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pFill&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Stroke&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStroke&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Espessura&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStrokeW&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;0&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Raio&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pRx&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;0&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;!-- Text --&gt;
+      &lt;div class=&quot;panel-section&quot; id=&quot;propText&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Texto&lt;/div&gt;
+        &lt;div class=&quot;prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Fonte&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;pFont&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;Outfit&quot;&gt;Outfit&lt;/option&gt;
+              &lt;option value=&quot;Syne&quot;&gt;Syne&lt;/option&gt;
+              &lt;option value=&quot;Sora&quot;&gt;Sora&lt;/option&gt;
+              &lt;option value=&quot;DM Sans&quot;&gt;DM Sans&lt;/option&gt;
+              &lt;option value=&quot;Nunito&quot;&gt;Nunito&lt;/option&gt;
+              &lt;option value=&quot;Poppins&quot;&gt;Poppins&lt;/option&gt;
+              &lt;option value=&quot;Montserrat&quot;&gt;Montserrat&lt;/option&gt;
+              &lt;option value=&quot;IBM Plex Sans&quot;&gt;IBM Plex Sans&lt;/option&gt;
+              &lt;option value=&quot;Raleway&quot;&gt;Raleway&lt;/option&gt;
+              &lt;option value=&quot;Manrope&quot;&gt;Manrope&lt;/option&gt;
+              &lt;option value=&quot;Inter&quot;&gt;Inter&lt;/option&gt;
+              &lt;option value=&quot;Roboto&quot;&gt;Roboto&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Tamanho&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pFontSize&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;6&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pTextColor&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-row&quot;&gt;
+          &lt;div class=&quot;field-label&quot; style=&quot;margin-bottom:6px&quot;&gt;Alinhamento&lt;/div&gt;
+          &lt;div class=&quot;seg&quot; id=&quot;alignSeg&quot;&gt;
+            &lt;button class=&quot;seg-opt on&quot; data-val=&quot;left&quot;&gt;≡&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- Brand palette (injected by postMessage) --&gt;
+      &lt;div class=&quot;sep&quot; id=&quot;paletteSep&quot; style=&quot;display:none&quot;&gt;&lt;/div&gt;
+      &lt;div class=&quot;panel-section&quot; id=&quot;paletteSection&quot; style=&quot;display:none&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Paleta da Marca&lt;/div&gt;
+        &lt;div class=&quot;swatch-grid&quot; id=&quot;brandPalette&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+    &lt;/div&gt;
+  &lt;/aside&gt;
+
+&lt;/div&gt;&lt;!-- .app --&gt;
+
+&lt;!-- ═══ MODAL ════════════════════════════════════════════ --&gt;
+&lt;div class=&quot;modal-bg&quot; id=&quot;modalBg&quot;&gt;
+  &lt;div class=&quot;modal-box&quot;&gt;
+    &lt;div class=&quot;modal-head&quot;&gt;
+      &lt;div class=&quot;modal-title&quot; id=&quot;modalTitle&quot;&gt;Modal&lt;/div&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnCloseModal&quot;&gt;✕&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;modal-body&quot; id=&quot;modalBody&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+const $ = id =&gt; document.getElementById(id);
+const clamp = (n,a,b) =&gt; Math.max(a, Math.min(b, n));
+
+// ─── Fabric canvas ───────────────────────────────────────
+const fabricHost = $('fabricCanvas');
+const canvasEl = document.createElement('canvas');
+canvasEl.id = 'c';
+fabricHost.appendChild(canvasEl);
+
+const canvas = new fabric.Canvas('c', {
+  preserveObjectStacking: true,
+  selection: true,
+  fireRightClick: true,
+  stopContextMenu: true
+});
+
+const stageEl = $('canvasStage');
+
+// Document state
+let docW = 1200, docH = 750;
+let deskBg = '#0f1626';
+let zoom = 1;
+let isPanning = false, isSpaceDown = false;
+let lastX = 0, lastY = 0;
+
+// Artboard objects
+let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
+const GUIDES = { bleed: 0, safe: 24 };
+
+// ─── Canvas sizing ──────────────────────────────────────
+function resizeCanvasToViewport() {
+  const r = stageEl.getBoundingClientRect();
+  const w = Math.floor(r.width);
+  const h = Math.floor(r.height);
+  if (w &gt; 10 &amp;&amp; h &gt; 10) {
+    fabricHost.style.width  = w + 'px';
+    fabricHost.style.height = h + 'px';
+    canvas.setWidth(w);
+    canvas.setHeight(h);
+    canvas.requestRenderAll();
+  }
+}
+
+// ─── Mesa (workspace bg) ────────────────────────────────
+function setDeskBg(color) {
+  deskBg = color;
+  stageEl.style.setProperty('--desk-color', color);
+  // paint directly onto Fabric background
+  canvas.backgroundColor = 'transparent';
+}
+
+// ─── Artboard ────────────────────────────────────────────
+function isGuide(o) { return o===artboard||o===artboardShadow||o===bleedRect||o===safeRect; }
+
+function ensureArtboard() {
+  if (artboard) return;
+  artboardShadow = new fabric.Rect({
+    left:0, top:0, width:docW, height:docH,
+    fill:'rgba(0,0,0,.28)', rx:2, ry:2,
+    selectable:false, evented:false, excludeFromExport:true,
+    shadow: new fabric.Shadow({color:'rgba(0,0,0,.6)', blur:30, offsetX:0, offsetY:18})
+  });
+  artboard = new fabric.Rect({
+    left:0, top:0, width:docW, height:docH,
+    fill:'#ffffff', stroke:'rgba(0,0,0,.15)', strokeWidth:1,
+    rx:2, ry:2, selectable:false, evented:false, excludeFromExport:false
+  });
+  bleedRect = new fabric.Rect({
+    left:0, top:0, width:docW, height:docH,
+    fill:'transparent', stroke:'rgba(241,58,161,.5)',
+    strokeDashArray:[6,6], strokeWidth:1,
+    selectable:false, evented:false, excludeFromExport:true,
+    opacity: GUIDES.bleed &gt; 0 ? 1 : 0
+  });
+  safeRect = new fabric.Rect({
+    left:0, top:0, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe,
+    fill:'transparent', stroke:'rgba(59,109,243,.5)',
+    strokeDashArray:[6,6], strokeWidth:1,
+    selectable:false, evented:false, excludeFromExport:true
+  });
+  canvas.add(artboardShadow, artboard, bleedRect, safeRect);
+  positionArtboard();
+  orderArtboard();
+}
+
+function orderArtboard() {
+  [artboardShadow, artboard, bleedRect, safeRect].forEach(o =&gt; {
+    if(o) { canvas.sendToBack(o); canvas.bringToFront(o); }
+  });
+}
+
+function positionArtboard() {
+  if (!artboard) return;
+  artboard.set({ left:-docW/2, top:-docH/2, width:docW, height:docH });
+  artboardShadow.set({ left:artboard.left+8, top:artboard.top+12, width:docW, height:docH });
+  bleedRect.set({ left:artboard.left-GUIDES.bleed, top:artboard.top-GUIDES.bleed, width:docW+2*GUIDES.bleed, height:docH+2*GUIDES.bleed });
+  safeRect.set({ left:artboard.left+GUIDES.safe, top:artboard.top+GUIDES.safe, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe });
+  canvas.requestRenderAll();
+}
+
+function fitToArtboard() {
+  if (!artboard) return;
+  const pad = 100;
+  const cw = canvas.getWidth(), ch = canvas.getHeight();
+  const newZoom = clamp(Math.min((cw-pad)/docW, (ch-pad)/docH), 0.05, 6);
+  const artCx = artboard.left + docW/2;
+  const artCy = artboard.top + docH/2;
+  canvas.setViewportTransform([newZoom, 0, 0, newZoom, cw/2 - artCx*newZoom, ch/2 - artCy*newZoom]);
+  zoom = newZoom;
+  updateZoomLabel();
+}
+
+function setArtboardSize(w, h) {
+  docW = clamp(w, 200, 5000);
+  docH = clamp(h, 200, 5000);
+  $('docW').value = docW;
+  $('docH').value = docH;
+  if (!artboard) ensureArtboard();
+  positionArtboard();
+  fitToArtboard();
+}
+
+function updateZoomLabel() {
+  const el = $('zoomLabel');
+  if (el) el.textContent = Math.round(zoom*100) + '%';
+}
+
+// ─── Pan / Zoom ──────────────────────────────────────────
+canvas.on('mouse:wheel', opt =&gt; {
+  const e = opt.e; e.preventDefault(); e.stopPropagation();
+  const newZoom = clamp(zoom * Math.pow(0.999, e.deltaY), 0.05, 10);
+  canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), newZoom);
+  zoom = newZoom; updateZoomLabel();
+});
+
+canvas.on('mouse:down', opt =&gt; {
+  const e = opt.e;
+  if (e.button === 1 || isSpaceDown) {
+    isPanning = true; canvas.setCursor('grab');
+    lastX = e.clientX; lastY = e.clientY;
+    opt.e.preventDefault();
+  }
+});
+
+canvas.on('mouse:move', opt =&gt; {
+  if (!isPanning) return;
+  const e = opt.e;
+  const vpt = canvas.viewportTransform;
+  vpt[4] += e.clientX - lastX;
+  vpt[5] += e.clientY - lastY;
+  canvas.setViewportTransform(vpt);
+  lastX = e.clientX; lastY = e.clientY;
+});
+
+canvas.on('mouse:up', () =&gt; { if (isPanning) { isPanning = false; canvas.setCursor('default'); } });
+
+window.addEventListener('keydown', e =&gt; {
+  if (e.code === 'Space' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; !isSpaceDown) {
+    isSpaceDown = true; canvas.setCursor('grab'); e.preventDefault();
+  }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
+  if ((e.key === 'Delete' || e.key === 'Backspace') &amp;&amp; !e.target.matches('input,textarea')) { del(); }
+}, {passive:false});
+
+window.addEventListener('keyup', e =&gt; {
+  if (e.code === 'Space') { isSpaceDown = false; canvas.setCursor('default'); }
+});
+
+// ─── Status text ─────────────────────────────────────────
+function setStatus(txt) {
+  const el = $('statusText'); if (el) el.textContent = txt;
+}
+
+// ─── Add objects ─────────────────────────────────────────
+function addText() {
+  ensureArtboard();
+  const t = new fabric.Textbox('Texto', {
+    left: artboard.left + 60, top: artboard.top + 60,
+    width: 360, fontFamily: 'Outfit', fontSize: 42,
+    fill: '#111', editable: true
+  });
+  canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
+  setStatus('Texto adicionado');
+}
+
+function addRect() {
+  ensureArtboard();
+  const r = new fabric.Rect({
+    left: artboard.left + 80, top: artboard.top + 140,
+    width: 260, height: 160, rx:16, ry:16,
+    fill: 'rgba(59,109,243,.15)', stroke: 'rgba(0,0,0,.1)', strokeWidth: 1
+  });
+  canvas.add(r); canvas.setActiveObject(r); canvas.requestRenderAll();
+}
+
+function addCircle() {
+  ensureArtboard();
+  const c = new fabric.Circle({
+    left: artboard.left + 420, top: artboard.top + 160,
+    radius: 80, fill:'rgba(200,255,0,.18)', stroke:'rgba(0,0,0,.1)', strokeWidth:1
+  });
+  canvas.add(c); canvas.setActiveObject(c); canvas.requestRenderAll();
+}
+
+function addLine() {
+  ensureArtboard();
+  const l = new fabric.Line([artboard.left+80, artboard.top+docH-120, artboard.left+520, artboard.top+docH-120], {
+    stroke:'rgba(0,0,0,.55)', strokeWidth:2
+  });
+  canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
+}
+
+// ─── History ─────────────────────────────────────────────
+const history = { stack:[], idx:-1, lock:false };
+function snapshot() {
+  if (history.lock) return;
+  try {
+    const json = canvas.toJSON(['excludeFromExport','dataName']);
+    history.stack = history.stack.slice(0, history.idx+1);
+    history.stack.push(json);
+    if (history.stack.length &gt; 60) history.stack.shift();
+    history.idx = history.stack.length - 1;
+  } catch(e) {}
+}
+function restore(idx) {
+  if (idx &lt; 0 || idx &gt;= history.stack.length) return;
+  history.lock = true;
+  canvas.loadFromJSON(history.stack[idx], () =&gt; {
+    canvas.requestRenderAll();
+    history.idx = idx;
+    history.lock = false;
+    refreshLayers(); refreshProps();
+  });
+}
+function undo() { if (history.idx &gt; 0) restore(history.idx-1); }
+function redo() { if (history.idx &lt; history.stack.length-1) restore(history.idx+1); }
+
+canvas.on('object:added', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
+canvas.on('object:modified', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
+canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); });
+
+// ─── Delete / Duplicate ──────────────────────────────────
+function del() {
+  const o = activeObj(); if(!o) return;
+  canvas.remove(o); canvas.discardActiveObject(); canvas.requestRenderAll();
+  refreshProps(); refreshLayers();
+}
+function duplicate() {
+  const o = activeObj(); if(!o) return;
+  o.clone(cl =&gt; {
+    cl.set({ left:(o.left||0)+18, top:(o.top||0)+18 });
+    canvas.add(cl); canvas.setActiveObject(cl);
+    canvas.requestRenderAll(); refreshProps(); refreshLayers();
+  });
+}
+
+// ─── Properties panel ────────────────────────────────────
+const UI = {
+  x:$('pX'), y:$('pY'), w:$('pW'), h:$('pH'),
+  r:$('pR'), o:$('pO'),
+  fill:$('pFill'), stroke:$('pStroke'), strokeW:$('pStrokeW'), rx:$('pRx'),
+  font:$('pFont'), fontSize:$('pFontSize'),
+  textColor:$('pTextColor'), align:null
+};
+
+function activeObj() {
+  const o = canvas.getActiveObject();
+  return (o &amp;&amp; !isGuide(o)) ? o : null;
+}
+function num(v, fb=0) { const n=Number(v); return Number.isFinite(n)?n:fb; }
+function normalizeHex(c) {
+  if(!c) return null;
+  const s = String(c).trim();
+  if(/^#[0-9a-f]{3}$/i.test(s)) return '#'+s.slice(1).split('').map(x=&gt;x+x).join('');
+  if(/^#[0-9a-f]{6}$/i.test(s)) return s;
+  return null;
+}
+
+function refreshProps() {
+  const obj = activeObj();
+  const info = $('selInfo');
+
+  // alignment seg
+  const segs = document.querySelectorAll('#alignSeg .seg-opt');
+
+  if (!obj) {
+    if (info) info.textContent = 'Nada selecionado';
+    return;
+  }
+
+  if (info) {
+    const typeNames = {textbox:'Texto',text:'Texto','i-text':'Texto',rect:'Retângulo',circle:'Círculo',ellipse:'Elipse',line:'Linha',image:'Imagem',group:'Grupo'};
+    info.textContent = typeNames[obj.type] || obj.type;
+  }
+
+  const sw = obj.getScaledWidth ? obj.getScaledWidth() : (obj.width||0);
+  const sh = obj.getScaledHeight ? obj.getScaledHeight() : (obj.height||0);
+  if(UI.x) UI.x.value = Math.round(obj.left??0);
+  if(UI.y) UI.y.value = Math.round(obj.top??0);
+  if(UI.w) UI.w.value = Math.round(sw);
+  if(UI.h) UI.h.value = Math.round(sh);
+  if(UI.r) UI.r.value = Math.round(obj.angle??0);
+  if(UI.o) UI.o.value = obj.opacity??1;
+
+  const f = (typeof obj.fill==='string') ? obj.fill : '#111111';
+  if(UI.fill) UI.fill.value = normalizeHex(f) || '#111111';
+  if(UI.textColor) UI.textColor.value = normalizeHex(f) || '#111111';
+  const s = (typeof obj.stroke==='string') ? obj.stroke : '#000000';
+  if(UI.stroke) UI.stroke.value = normalizeHex(s) || '#000000';
+  if(UI.strokeW) UI.strokeW.value = obj.strokeWidth??0;
+  if(UI.rx) UI.rx.value = Math.round(obj.rx??obj.ry??0);
+
+  if (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text') {
+    if(UI.font &amp;&amp; obj.fontFamily) UI.font.value = obj.fontFamily;
+    if(UI.fontSize) UI.fontSize.value = obj.fontSize??'';
+    const align = obj.textAlign || 'left';
+    segs.forEach(s =&gt; {
+      s.classList.toggle('on', s.dataset.val === align);
+    });
+  }
+}
+
+function applyProps(key) {
+  const obj = activeObj(); if(!obj) return;
+  obj.set({
+    left: num(UI.x?.value, obj.left||0),
+    top:  num(UI.y?.value, obj.top||0),
+    angle: num(UI.r?.value, obj.angle||0),
+    opacity: num(UI.o?.value, obj.opacity??1)
+  });
+
+  const tw = num(UI.w?.value, obj.getScaledWidth());
+  const th = num(UI.h?.value, obj.getScaledHeight());
+  if (tw&gt;1 &amp;&amp; th&gt;1) {
+    if (obj.type==='line') {
+      obj.set({ x2:(obj.x1??0)+tw, y2:(obj.y1??0)+th });
+    } else {
+      obj.set({ scaleX: tw/(obj.width||1), scaleY: th/(obj.height||1) });
+    }
+  }
+
+  if(key==='fill'||!key) obj.set({ fill: UI.fill?.value || obj.fill });
+  if(key==='stroke'||!key) obj.set({ stroke: UI.stroke?.value || obj.stroke });
+  if(key==='strokeW'||!key) obj.set({ strokeWidth: num(UI.strokeW?.value, obj.strokeWidth||0) });
+  if(UI.rx &amp;&amp; (obj.type==='rect'||obj.rx!=null)) {
+    const rv = clamp(num(UI.rx.value, obj.rx||0), 0, 2000);
+    obj.set({ rx:rv, ry:rv });
+  }
+
+  if (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text') {
+    if(UI.font?.value) obj.set({ fontFamily: UI.font.value });
+    if(UI.fontSize?.value) obj.set({ fontSize: clamp(num(UI.fontSize.value, obj.fontSize||16), 6, 512) });
+    if(key==='textColor'||key==='fill') obj.set({ fill: UI.textColor?.value || obj.fill });
+  }
+
+  obj.setCoords(); canvas.requestRenderAll();
+}
+
+function bindInput(el, k) {
+  if(!el) return;
+  el.addEventListener('input', () =&gt; applyProps(k));
+  el.addEventListener('change', () =&gt; applyProps(k));
+}
+bindInput(UI.x,'pos'); bindInput(UI.y,'pos'); bindInput(UI.w,'size'); bindInput(UI.h,'size');
+bindInput(UI.r,'rot'); bindInput(UI.o,'op');
+bindInput(UI.fill,'fill'); bindInput(UI.stroke,'stroke'); bindInput(UI.strokeW,'strokeW'); bindInput(UI.rx,'rx');
+bindInput(UI.font,'font'); bindInput(UI.fontSize,'fontSize');
+bindInput(UI.textColor,'textColor');
+
+document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
+  btn.addEventListener('click', () =&gt; {
+    document.querySelectorAll('#alignSeg .seg-opt').forEach(b =&gt; b.classList.remove('on'));
+    btn.classList.add('on');
+    const obj = activeObj();
+    if(obj) { obj.set({ textAlign: btn.dataset.val }); canvas.requestRenderAll(); }
+  });
+});
+
+['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; { refreshProps(); refreshLayers(); }));
+
+// ─── Layers ──────────────────────────────────────────────
+const typeIcons = {
+  textbox:'T', text:'T', 'i-text':'T',
+  rect:'▭', circle:'●', ellipse:'◉', line:'╱', image:'⬜', group:'⊞'
+};
+
+function refreshLayers() {
+  const list = $('layersList');
+  const cnt = $('layerCount');
+  if (!list) return;
+  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o)).slice().reverse();
+  if (cnt) cnt.textContent = objs.length;
+  const active = canvas.getActiveObject();
+  list.innerHTML = '';
+  if (!objs.length) {
+    list.innerHTML = '&lt;div class=&quot;layer-empty&quot;&gt;Sem objetos ainda&lt;/div&gt;';
+    return;
+  }
+  objs.forEach((obj, i) =&gt; {
+    const isAct = obj === active;
+    const icon = typeIcons[obj.type] || '?';
+    const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
+    const div = document.createElement('div');
+    div.className = 'layer-item' + (isAct ? ' active' : '');
+    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;${icon}&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;`;
+    div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
+    list.appendChild(div);
+  });
+}
+
+// ─── Modal ───────────────────────────────────────────────
+const modalBg = $('modalBg');
+function openModal(title, html) {
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = html;
+  modalBg.classList.add('open');
+}
+function closeModal() { modalBg.classList.remove('open'); $('modalBody').innerHTML=''; }
+$('btnCloseModal')?.addEventListener('click', closeModal);
+modalBg?.addEventListener('click', e =&gt; { if(e.target===modalBg) closeModal(); });
+
+// ─── Export PNG ──────────────────────────────────────────
+function exportPNG() {
+  if (!artboard) { setStatus('Nada para exportar'); return; }
+  const vt = canvas.viewportTransform;
+  canvas.setViewportTransform([1,0,0,1,0,0]);
+  const origZoom = zoom;
+  const al = artboard.left, at = artboard.top;
+  const dataURL = canvas.toDataURL({
+    format:'png', quality:1, multiplier:2,
+    left: al, top: at, width: docW, height: docH
+  });
+  canvas.setViewportTransform(vt);
+  zoom = origZoom;
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = 'export.png';
+  a.click();
+  setStatus('PNG exportado!');
+}
+
+// ─── JSON save / load ─────────────────────────────────────
+function saveJSON() {
+  const json = JSON.stringify(canvas.toJSON(['excludeFromExport','dataName']), null, 2);
+  openModal('Salvar JSON', `
+    &lt;textarea class=&quot;modal-textarea&quot;&gt;${json}&lt;/textarea&gt;
+    &lt;div style=&quot;display:flex;gap:8px;margin-top:12px&quot;&gt;
+      &lt;button class=&quot;tbtn accent&quot; onclick=&quot;navigator.clipboard.writeText(document.querySelector('.modal-textarea').value).then(()=&gt;{this.textContent='Copiado!';setTimeout(()=&gt;{this.textContent='Copiar'},2000)})&quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Copiar&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; onclick=&quot;closeModal()&quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Fechar&lt;/button&gt;
+    &lt;/div&gt;
+  `);
+}
+
+function loadJSON() {
+  openModal('Carregar JSON', `
+    &lt;p style=&quot;font-size:12px;color:var(--ink2);margin-bottom:10px;font-family:var(--mono)&quot;&gt;Cole o JSON abaixo:&lt;/p&gt;
+    &lt;textarea class=&quot;modal-textarea&quot; id=&quot;jsonInput&quot; placeholder='{&quot;version&quot;:&quot;5.3.0&quot;,&quot;objects&quot;:[...]}'&gt;&lt;/textarea&gt;
+    &lt;div style=&quot;display:flex;gap:8px;margin-top:12px&quot;&gt;
+      &lt;button class=&quot;tbtn accent&quot; onclick=&quot;
+        try{
+          const json=JSON.parse(document.getElementById('jsonInput').value);
+          canvas.loadFromJSON(json,()=&gt;{canvas.requestRenderAll();refreshLayers();refreshProps();setStatus('JSON carregado')});
+          closeModal();
+        }catch(e){alert('JSON inválido')}
+      &quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Carregar&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; onclick=&quot;closeModal()&quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Cancelar&lt;/button&gt;
+    &lt;/div&gt;
+  `);
+}
+
+// ─── Upload image ─────────────────────────────────────────
+$('fileInput')?.addEventListener('change', e =&gt; {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev =&gt; {
+    fabric.Image.fromURL(ev.target.result, img =&gt; {
+      ensureArtboard();
+      const maxW = Math.min(docW * 0.8, 600);
+      if (img.width &gt; maxW) img.scaleToWidth(maxW);
+      img.set({ left: artboard.left + 40, top: artboard.top + 40 });
+      canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+      setStatus('Imagem importada');
+    });
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+// ─── Constrain to artboard ───────────────────────────────
+canvas.on('object:moving', opt =&gt; {
+  const obj = opt.target;
+  if (!artboard || !obj || isGuide(obj)) return;
+  const b = obj.getBoundingRect(true, true);
+  const L = artboard.left, T = artboard.top, R = L+docW, B = T+docH;
+  let dx=0, dy=0;
+  if(b.left&lt;L) dx=L-b.left;
+  if(b.top&lt;T) dy=T-b.top;
+  if(b.left+b.width&gt;R) dx=R-(b.left+b.width);
+  if(b.top+b.height&gt;B) dy=B-(b.top+b.height);
+  if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
+});
+
+// ─── Bind toolbar buttons ─────────────────────────────────
+$('btnAddText')?.addEventListener('click', addText);
+$('btnRect')?.addEventListener('click', addRect);
+$('btnCircle')?.addEventListener('click', addCircle);
+$('btnLine')?.addEventListener('click', addLine);
+$('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnFit')?.addEventListener('click', fitToArtboard);
+$('btnZoomReset')?.addEventListener('click', fitToArtboard);
+$('btnZoomIn')?.addEventListener('click', () =&gt; {
+  const newZoom = clamp(zoom*1.15, 0.05, 10);
+  canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
+  zoom = newZoom; updateZoomLabel();
+});
+$('btnZoomOut')?.addEventListener('click', () =&gt; {
+  const newZoom = clamp(zoom/1.15, 0.05, 10);
+  canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
+  zoom = newZoom; updateZoomLabel();
+});
+$('btnDelete')?.addEventListener('click', del);
+$('btnDuplicate')?.addEventListener('click', duplicate);
+$('btnUndo')?.addEventListener('click', undo);
+$('btnRedo')?.addEventListener('click', redo);
+$('btnExportPng')?.addEventListener('click', exportPNG);
+$('btnSaveJson')?.addEventListener('click', saveJSON);
+$('btnLoadJson')?.addEventListener('click', loadJSON);
+$('btnApplyDoc')?.addEventListener('click', () =&gt; {
+  const w = Number($('docW').value)||docW;
+  const h = Number($('docH').value)||docH;
+  setArtboardSize(w, h);
+  setDeskBg($('docBg').value || deskBg);
+});
+$('btnCenterAll')?.addEventListener('click', () =&gt; {
+  const obj = activeObj(); if(!obj||!artboard) return;
+  obj.set({ left:artboard.left+docW/2-obj.getScaledWidth()/2, top:artboard.top+docH/2-obj.getScaledHeight()/2 });
+  obj.setCoords(); canvas.requestRenderAll();
+});
+$('btnHelp')?.addEventListener('click', () =&gt; {
+  openModal('Atalhos de teclado', `
+    &lt;div class=&quot;shortcuts-grid&quot; style=&quot;gap:8px 16px&quot;&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Z&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Desfazer&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Y&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Refazer&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+D&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Duplicar&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Del&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Apagar seleção&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Espaço&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Arrastar viewport&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Scroll&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Zoom suave&lt;/span&gt;
+      &lt;span class=&quot;sc-key&quot;&gt;Botão do meio&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Pan&lt;/span&gt;
+    &lt;/div&gt;
+  `);
+});
+
+// ─── postMessage (brand data from parent) ────────────────
+window.addEventListener('message', ev =&gt; {
+  const msg = ev.data || {};
+  if (msg.type === 'setDoc') {
+    setArtboardSize(Number(msg.w)||docW, Number(msg.h)||docH);
+    if (msg.fit) fitToArtboard();
+  }
+  if (msg.type === 'fit') fitToArtboard();
+  if (msg.type === 'exportPNG') exportPNG();
+  if (msg.type === 'setBrand') {
+    if (Array.isArray(msg.fonts) &amp;&amp; UI.font) {
+      const existing = new Set(Array.from(UI.font.options).map(o=&gt;o.value));
+      msg.fonts.forEach(f =&gt; {
+        const ff = String(f||'').trim();
+        if(!ff||existing.has(ff)) return;
+        const opt = document.createElement('option');
+        opt.value = ff; opt.textContent = ff;
+        UI.font.appendChild(opt); existing.add(ff);
+      });
+    }
+    if (Array.isArray(msg.colors) &amp;&amp; msg.colors.length) {
+      const sec = $('paletteSection');
+      const sep = $('paletteSep');
+      const grid = $('brandPalette');
+      if (sec) sec.style.display = '';
+      if (sep) sep.style.display = '';
+      if (grid) {
+        grid.innerHTML = '';
+        msg.colors.filter(c=&gt;c&amp;&amp;c.hex).slice(0,32).forEach(c =&gt; {
+          const b = document.createElement('button');
+          b.className = 'swatch';
+          b.style.background = c.hex;
+          b.title = (c.name||'') + ' ' + c.hex;
+          b.addEventListener('click', () =&gt; {
+            const obj = activeObj();
+            if(!obj) return;
+            if(obj.type==='textbox'||obj.type==='text'||obj.type==='i-text'){
+              obj.set({fill:c.hex});
+              if(UI.textColor) UI.textColor.value = c.hex;
+            } else {
+              obj.set({fill:c.hex});
+              if(UI.fill) UI.fill.value = c.hex;
+            }
+            canvas.requestRenderAll();
+          });
+          grid.appendChild(b);
+        });
+      }
+    }
+  }
+});
+
+// ─── Boot ────────────────────────────────────────────────
+function boot() {
+  requestAnimationFrame(() =&gt; requestAnimationFrame(() =&gt; {
+    resizeCanvasToViewport();
+    setDeskBg(deskBg);
+    ensureArtboard();
+    fitToArtboard();
+    updateZoomLabel();
+
+    const ro = new ResizeObserver(() =&gt; {
+      resizeCanvasToViewport();
+      fitToArtboard();
+    });
+    ro.observe(stageEl);
+    window.addEventListener('resize', () =&gt; { resizeCanvasToViewport(); fitToArtboard(); });
+    snapshot();
+  }));
+}
+boot();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+</template>
+
+<style>
+  .ge-onecol{ grid-template-columns: 1fr !important; }
+  .ge-iframeWrap{ min-height:0; padding:0; display:flex; flex-direction:column; overflow:hidden; }
+  .ge-iframeWrap iframe{ flex:1; min-height:0; width:100%; border:0; display:block; }
+</style>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
