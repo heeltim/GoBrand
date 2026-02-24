@@ -987,6 +987,13 @@ function renderBoard(){
   refreshIcons();
 }
 
+
+function svgToDataUri(svg=""){
+  try{
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }catch{ return ""; }
+}
+
 function renderApps(){
   const p=P(); if(!p) return;
   ensureApps(p);
@@ -1007,7 +1014,9 @@ function renderApps(){
         <div class="export-card-title">${esc(a.name||"Aplicação")}</div>
         <div class="export-card-desc">${esc(a.type==="print"?"Impressão":"Web")} • ${esc(a.w)}×${esc(a.h)} ${esc(a.unit)} • ${a.dpi}dpi • ${a.bleed||0}${a.unit==="mm"?"mm":""} sangria</div>
       </div>
-      <div class="export-preview">${esc((a.svg||"").slice(0,260))}${(a.svg||"").length>260?"…":""}</div>
+      <div class="export-preview export-preview-visual">
+        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Sem preview</div>`}
+      </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="downloadApp('${a.id}')">Baixar SVG</button>
         <button class="btn btn-ghost" style="width:42px;justify-content:center" onclick="deleteApp('${a.id}')">✕</button>
