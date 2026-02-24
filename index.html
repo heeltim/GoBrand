@@ -23,6 +23,20 @@
 <!-- TOAST ROOT -->
 <div id="toastRoot" class="toast-root"></div>
 
+<!-- BRAND STUDIO MODULE -->
+<div id="brandStudioBackdrop" class="module-backdrop">
+  <div class="module-shell">
+    <div class="module-head">
+      <div>
+        <div class="module-title">Brand Studio • Módulo Avançado</div>
+        <div class="module-sub">Composição vetorial, variações e envio em ZIP.</div>
+      </div>
+      <button class="btn btn-ghost" onclick="closeBrandStudioModule()">Fechar</button>
+    </div>
+    <iframe id="brandStudioFrame" class="module-frame" src="brand-studio-module.html" title="Brand Studio Module"></iframe>
+  </div>
+</div>
+
 <!-- COLOR MODAL -->
 <div id="modalBackdrop" class="modal-backdrop">
   <div class="modal" id="modal">
@@ -324,26 +338,18 @@
             <div class="block-header">
               <div class="block-title">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                Logo
+                Marca & Envio
               </div>
-              <span style="font-size:11px;color:var(--ink3)">SVG · PNG · JPG</span>
+              <span style="font-size:11px;color:var(--ink3)">Novo módulo</span>
             </div>
             <div class="block-body">
-              <div class="logo-grid">
-                <div class="logo-slot sq" id="slotSq" onclick="triggerLogo('sq')">
-                  <div class="upload-hint">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Quadrado
-                  </div>
-                  <div class="clear-logo" id="clearSq" onclick.stop="clearLogo('sq',event)">✕</div>
+              <div class="stack" style="gap:10px">
+                <p style="font-size:12px;color:var(--ink2)">Substituímos o upload simples por um sistema avançado de marca com impressão vetorial e organização de envio.</p>
+                <div class="row2">
+                  <button class="btn btn-primary" onclick="openBrandStudioModule('brand')">Marca</button>
+                  <button class="btn btn-ghost" onclick="openBrandStudioModule('folders')">Envio</button>
                 </div>
-                <div class="logo-slot wd" id="slotWd" onclick="triggerLogo('wd')">
-                  <div class="upload-hint">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Horizontal
-                  </div>
-                  <div class="clear-logo" id="clearWd" onclick.stop="clearLogo('wd',event)">✕</div>
-                </div>
+                <div style="font-size:11px;color:var(--ink3)">Compatível com SVG, exportação PNG/SVG e pacote ZIP.</div>
               </div>
             </div>
           </div>
