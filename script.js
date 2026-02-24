@@ -1398,31 +1398,35 @@ function ensureAppEditorReady(a,p){
   if($("appEditName")) $("appEditName").textContent = a.name || "Aplicação";
   if($("appEditMeta")) $("appEditMeta").textContent = `${a.type==="print"?"Impressão":"Web"} • ${a.w}×${a.h}${a.unit} • ${a.dpi}dpi`;
 
-  // Load iframe content (defined in post-template script)
-  if(typeof geEnsureIframeLoaded === "function") geEnsureIframeLoaded();
+  const host=$("appCanvasHost");
+  if(!host) return;
+  host.innerHTML="";
 
-  // Send document + brand data after iframe boots
-  setTimeout(()=>{
-    if(a){
-      let w=Number(a.w), h=Number(a.h);
-      if((a.unit||"px")==="mm"){ const dpi=Number(a.dpi)||72; w=(w/25.4)*dpi; h=(h/25.4)*dpi; }
-      gePost({type:"setDoc", w, h});
-    }
-    gePushBrandData(p);
-  }, 400);
+  const parsed=new DOMParser().parseFromString(a.svg||"", "image/svg+xml");
+  const svg=parsed.querySelector("svg");
+  if(!svg){
+    host.innerHTML='<div style="color:var(--ink3)">SVG inválido para edição.</div>';
+    return;
+  }
+  _appEdit.svgEl=document.importNode(svg,true);
+  _appEdit.svgEl.removeAttribute("style");
+  _appEdit.svgEl.style.maxWidth="100%";
+  _appEdit.svgEl.style.maxHeight="100%";
+  _appEdit.svgEl.style.display="block";
+  _appEdit.svgEl.style.background="#fff";
+
+  host.appendChild(_appEdit.svgEl);
+
+  _appEdit.svgEl.querySelectorAll("[data-editable='1']").forEach(wireEditableElement);
+  _appEdit.svgEl.addEventListener("click",()=>selectSvgElement(null));
+  ensureSelectionUI();
+  fillStylePicker();
+  loadAppStylePresets();
+  buildLayerList();
 }
 
 function switchToFabricEditor(){
-  // Hide SVG host, show Fabric iframe
-  const host=$("appCanvasHost");
-  const iframe=$("geEditorFrame");
-  if(host) host.style.display="none";
-  if(iframe){ iframe.style.display="block"; geEnsureIframeLoaded(); }
-
-  // Send brand data to iframe
-  const p=P();
-  if(p) gePushBrandData(p);
-  toast("Editor Avançado (Fabric.js) aberto","info");
+  toast("Editor embutido ativado (sem iframe)","info");
 }
 
 function buildBrandLibrary(p){
@@ -1464,9 +1468,22 @@ function gePushBrandData(project=P()){
 
 function switchToSvgEditor(){
   const host=$("appCanvasHost");
-  const iframe=$("geEditorFrame");
-  if(iframe) iframe.style.display="none";
   if(host) host.style.display="flex";
+}
+
+
+function loadAppStylePresets(){
+  const sel=$("appStylePreset");
+  const p=P();
+  if(!sel||!p) return;
+  const opts=(p.typo||[]).map(s=>`<option value="${esc(s.key)}">${esc(s.key)}</option>`).join("");
+  sel.innerHTML='<option value="">Selecione um estilo</option>'+opts;
+}
+
+function applyAppStylePreset(){
+  const sel=$("appStylePreset");
+  if(!sel||!sel.value) return;
+  applyStyleToSelection(sel.value);
 }
 
 function appEditEsc(e){
@@ -2201,13 +2218,9 @@ function readEditorTemplate(){
    BRAND STUDIO MODULE (EMBED)
 ============================================================ */
 function openBrandStudioModule(tab="brand"){
-  const backdrop = $("brandStudioBackdrop");
-  const frame = $("brandStudioFrame");
-  if(!backdrop || !frame) return;
-  backdrop.classList.add("open");
-  setTimeout(()=>{
-    frame.contentWindow?.postMessage({ type:"brand-module-open-tab", tab }, "*");
-  }, 120);
+  const view = tab==="folders" ? "export" : "editor";
+  nav(view);
+  toast(tab==="folders" ? "Abra os cards de exportação para montar envio" : "Abra os cards de marca dentro de Editar", "info");
 }
 function closeBrandStudioModule(){
   const backdrop = $("brandStudioBackdrop");
