@@ -641,10 +641,29 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 /* ─── LAYOUT ──────────────────────────────────────────── */
 .app{
   display:grid;
-  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-rows: 30px var(--topbar-h) 38px 1fr;
   grid-template-columns: var(--panel-w) 1fr var(--panel-w);
   height:100%;
 }
+
+.menu-bar,
+.context-strip{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 14px;
+  border-bottom:1px solid var(--border);
+}
+.menu-bar{background:#202026;font-size:12px}
+.menu-item{color:var(--ink2);padding:4px 8px;border-radius:6px}
+.menu-item:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+.menu-item.active{background:rgba(127,90,240,.18);color:#fff}
+.menu-spacer{margin-left:auto}
+
+.context-strip{background:#292931;font-size:11px;gap:8px}
+.ctx-pill{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);display:inline-flex;align-items:center;color:var(--ink2)}
+.ctx-pill strong{color:var(--ink);font-weight:600}
 
 /* ─── TOPBAR ──────────────────────────────────────────── */
 .topbar{
@@ -758,6 +777,21 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .tool-btn svg{opacity:.7;transition:opacity .12s}
 .tool-btn:hover svg{opacity:1}
 
+.tools-rail{
+  width:46px;
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  padding:10px 6px;
+  background:#191920;
+}
+.rail-btn{width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink2);display:inline-flex;align-items:center;justify-content:center}
+.rail-btn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+.rail-btn.active{background:rgba(127,90,240,.18);border-color:rgba(127,90,240,.35);color:#fff}
+.rail-sep{width:18px;height:1px;background:var(--border2);margin:2px 0}
+
 /* ─── DOC INPUTS ──────────────────────────────────────── */
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
 .field-row.one{grid-template-columns:1fr}
@@ -855,6 +889,12 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
     var(--bg)
   );
 }
+.canvas-context{
+  position:absolute;left:14px;top:12px;z-index:11;
+  display:flex;align-items:center;gap:8px;
+  padding:8px;border-radius:10px;
+  border:1px solid var(--border);background:rgba(18,18,22,.9);
+}
 /* dot grid */
 .canvas-area::before{
   content:'';position:absolute;inset:0;
@@ -940,44 +980,76 @@ textarea.modal-textarea{
   background:rgba(255,255,255,.07);border:1px solid var(--border2);
   padding:3px 8px;border-radius:6px;color:var(--accent);white-space:nowrap;text-align:center}
 .sc-desc{font-size:11px;color:var(--ink2);font-family:var(--mono)}
+.panel-tabs{display:flex;gap:4px;padding:4px;background:#19191e;border:1px solid var(--border);border-radius:10px;margin-bottom:10px}
+.panel-tab{flex:1;text-align:center;padding:6px 4px;font-size:11px;color:var(--ink2);border-radius:7px}
+.panel-tab.active{background:#2d2d35;color:var(--ink);font-weight:600}
 &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
 &lt;div class=&quot;app&quot;&gt;
 
-  &lt;!-- ═══ TOPBAR ═════════════════════════════════════════ --&gt;
+  &lt;div class=&quot;menu-bar&quot;&gt;
+    &lt;span class=&quot;menu-item active&quot;&gt;Arquivo&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Editar&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Documento&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Texto&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Vetor&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Pixel&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Camada&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Exibir&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Janela&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Ajuda&lt;/span&gt;
+    &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Exportar PNG&lt;/span&gt;
+  &lt;/div&gt;
+
   &lt;header class=&quot;topbar&quot;&gt;
     &lt;div class=&quot;topbar-brand&quot;&gt;
       &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
-      &lt;span class=&quot;brand-name&quot;&gt;STUDIO&lt;/span&gt;
+      &lt;span class=&quot;brand-name&quot;&gt;Vetor&lt;/span&gt;
     &lt;/div&gt;
     &lt;div class=&quot;topbar-status&quot;&gt;
-      &lt;div class=&quot;status-dot&quot;&gt;&lt;/div&gt;
-      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;div class=&quot;topbar-actions&quot;&gt;
+      &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
       &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
         &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
       &lt;/button&gt;
       &lt;button class=&quot;tbtn&quot; id=&quot;btnRedo&quot; title=&quot;Redo (Ctrl+Y)&quot;&gt;
         &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;23 4 23 10 17 10&quot;/&gt;&lt;path d=&quot;M20.49 15a9 9 0 1 1-.49-4.5&quot;/&gt;&lt;/svg&gt;
       &lt;/button&gt;
+      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-actions&quot;&gt;
       &lt;button class=&quot;tbtn&quot; id=&quot;btnDelete&quot; title=&quot;Apagar seleção (Del)&quot;&gt;
         &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;3 6 5 6 21 6&quot;/&gt;&lt;path d=&quot;M19 6l-1 14H6L5 6&quot;/&gt;&lt;path d=&quot;M10 11v6M14 11v6&quot;/&gt;&lt;/svg&gt;
       &lt;/button&gt;
       &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
         &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
       &lt;/button&gt;
-      &lt;div style=&quot;width:1px;height:20px;background:var(--border);margin:0 4px&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4&quot;/&gt;&lt;polyline points=&quot;7 10 12 15 17 10&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;15&quot; x2=&quot;12&quot; y2=&quot;3&quot;/&gt;&lt;/svg&gt;
-        PNG
-      &lt;/button&gt;
+      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;PNG&lt;/button&gt;
     &lt;/div&gt;
   &lt;/header&gt;
 
+  &lt;div class=&quot;context-strip&quot;&gt;
+    &lt;span class=&quot;ctx-pill&quot; id=&quot;ctxSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
+    &lt;span class=&quot;ctx-pill&quot;&gt;Seleção automática&lt;/span&gt;
+    &lt;span class=&quot;ctx-pill&quot;&gt;Configuração do documento&lt;/span&gt;
+    &lt;span class=&quot;ctx-pill&quot;&gt;Configurações do aplicativo&lt;/span&gt;
+  &lt;/div&gt;
+
   &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
   &lt;aside class=&quot;panel&quot;&gt;
+    &lt;div class=&quot;tools-rail&quot;&gt;
+      &lt;button class=&quot;rail-btn active&quot; data-tool=&quot;select&quot; title=&quot;Selecionar&quot;&gt;↖&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;node&quot; title=&quot;Nó&quot;&gt;✦&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;pen&quot; title=&quot;Caneta&quot;&gt;✎&lt;/button&gt;
+      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
+      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;text&quot; title=&quot;Texto&quot;&gt;T&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;rect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;ellipse&quot; title=&quot;Elipse&quot;&gt;◯&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;line&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
+    &lt;/div&gt;
     &lt;div class=&quot;panel-body&quot;&gt;
 
       &lt;!-- Shapes --&gt;
@@ -1132,6 +1204,11 @@ textarea.modal-textarea{
 
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
+    &lt;div class=&quot;canvas-context&quot;&gt;
+      &lt;span class=&quot;ctx-pill&quot; id=&quot;canvasSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
+      &lt;span class=&quot;ctx-pill&quot;&gt;Snap&lt;/span&gt;
+      &lt;span class=&quot;ctx-pill&quot;&gt;100%&lt;/span&gt;
+    &lt;/div&gt;
     &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
     &lt;div class=&quot;artboard-plus-ui&quot; id=&quot;artboardPlusUI&quot;&gt;
       &lt;button class=&quot;ab-plus top&quot; id=&quot;btnAddArtTop&quot; title=&quot;Adicionar acima&quot;&gt;+&lt;/button&gt;
@@ -1161,6 +1238,13 @@ textarea.modal-textarea{
   &lt;!-- ═══ RIGHT PANEL ════════════════════════════════════ --&gt;
   &lt;aside class=&quot;panel right&quot;&gt;
     &lt;div class=&quot;panel-body&quot;&gt;
+      &lt;div class=&quot;panel-tabs&quot; id=&quot;propTabs&quot;&gt;
+        &lt;button class=&quot;panel-tab active&quot; data-tab=&quot;cor&quot;&gt;Cor&lt;/button&gt;
+        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;amostras&quot;&gt;Amostras&lt;/button&gt;
+        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;tracado&quot;&gt;Traçado&lt;/button&gt;
+        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;aparencia&quot;&gt;Aparência&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div data-tab-panel=&quot;cor&quot;&gt;
 
       &lt;!-- Selection info --&gt;
       &lt;div class=&quot;panel-section&quot;&gt;
@@ -1271,6 +1355,38 @@ textarea.modal-textarea{
       &lt;div class=&quot;panel-section&quot; id=&quot;paletteSection&quot; style=&quot;display:none&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Paleta da Marca&lt;/div&gt;
         &lt;div class=&quot;swatch-grid&quot; id=&quot;brandPalette&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div data-tab-panel=&quot;amostras&quot; style=&quot;display:none&quot;&gt;
+        &lt;div class=&quot;panel-section&quot;&gt;
+          &lt;div class=&quot;panel-section-label&quot;&gt;Amostras da marca&lt;/div&gt;
+          &lt;div class=&quot;swatch-grid&quot; id=&quot;paletteRow2&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div data-tab-panel=&quot;tracado&quot; style=&quot;display:none&quot;&gt;
+        &lt;div class=&quot;panel-section&quot;&gt;
+          &lt;div class=&quot;panel-section-label&quot;&gt;Traçado&lt;/div&gt;
+          &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+            &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor de traço&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStroke2&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
+            &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Espessura&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStrokeW2&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;0&quot;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div data-tab-panel=&quot;aparencia&quot; style=&quot;display:none&quot;&gt;
+        &lt;div class=&quot;panel-section&quot;&gt;
+          &lt;div class=&quot;panel-section-label&quot;&gt;Aparência&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Modo de mesclagem&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;pBlend2&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;source-over&quot;&gt;Normal&lt;/option&gt;
+              &lt;option value=&quot;multiply&quot;&gt;Multiply&lt;/option&gt;
+              &lt;option value=&quot;screen&quot;&gt;Screen&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
       &lt;/div&gt;
 
     &lt;/div&gt;
@@ -1915,12 +2031,17 @@ function refreshProps() {
 
   if (!obj) {
     if (info) info.textContent = 'Nada selecionado';
+    const c1=$('ctxSelectionState'); if(c1) c1.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
+    const c2=$('canvasSelectionState'); if(c2) c2.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
     return;
   }
 
   if (info) {
     const typeNames = {textbox:'Texto',text:'Texto','i-text':'Texto',rect:'Retângulo',circle:'Círculo',ellipse:'Elipse',line:'Linha',image:'Imagem',group:'Grupo'};
-    info.textContent = typeNames[obj.type] || obj.type;
+    const selType = typeNames[obj.type] || obj.type;
+    info.textContent = selType;
+    const c1=$('ctxSelectionState'); if(c1) c1.innerHTML='&lt;strong&gt;'+selType+'&lt;/strong&gt;';
+    const c2=$('canvasSelectionState'); if(c2) c2.innerHTML='&lt;strong&gt;'+selType+'&lt;/strong&gt;';
   }
 
   const sw = obj.getScaledWidth ? obj.getScaledWidth() : (obj.width||0);
@@ -2352,6 +2473,26 @@ $('btnDistributeY')?.addEventListener('click', () =&gt; distributeSelection('y')
 $('btnGroup')?.addEventListener('click', groupSelection);
 $('btnUngroup')?.addEventListener('click', ungroupSelection);
 $('btnLoadFont')?.addEventListener('click', loadGoogleFontForSelection);
+
+
+// modo visual da barra lateral de ferramentas
+document.querySelectorAll('.tools-rail .rail-btn').forEach(btn =&gt; {
+  btn.addEventListener('click', () =&gt; {
+    document.querySelectorAll('.tools-rail .rail-btn').forEach(b =&gt; b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// abas do painel direito
+$('propTabs')?.addEventListener('click', e =&gt; {
+  const tab = e.target.closest('.panel-tab');
+  if(!tab) return;
+  const key = tab.dataset.tab;
+  document.querySelectorAll('.panel-tab').forEach(t =&gt; t.classList.toggle('active', t===tab));
+  document.querySelectorAll('[data-tab-panel]').forEach(p =&gt; {
+    p.style.display = p.dataset.tabPanel===key ? '' : 'none';
+  });
+});
 $('btnHelp')?.addEventListener('click', () =&gt; {
   openModal('Atalhos de teclado', `
     &lt;div class=&quot;shortcuts-grid&quot; style=&quot;gap:8px 16px&quot;&gt;
@@ -2402,6 +2543,8 @@ window.addEventListener('message', ev =&gt; {
       if (sep) sep.style.display = '';
       if (grid) {
         grid.innerHTML = '';
+        const grid2=$('paletteRow2');
+        if(grid2) grid2.innerHTML = '';
         msg.colors.filter(c=&gt;c&amp;&amp;c.hex).slice(0,32).forEach(c =&gt; {
           const b = document.createElement('button');
           b.className = 'swatch';
@@ -2420,6 +2563,12 @@ window.addEventListener('message', ev =&gt; {
             canvas.requestRenderAll();
           });
           grid.appendChild(b);
+          const grid2=$('paletteRow2');
+          if(grid2){
+            const c2=b.cloneNode(true);
+            c2.addEventListener('click',()=>b.click());
+            grid2.appendChild(c2);
+          }
         });
       }
     }
