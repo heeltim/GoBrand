@@ -17,7 +17,7 @@ const TOK_PRI = "__PRI__";
 const TOK_SEC = "__SEC__";
 
 const EDITOR_VERSION_KEY = "goblins_editor_versions";
-const EDITOR_ACTIVE_VERSION = "legacy-fabric-v1";
+const EDITOR_ACTIVE_VERSION = "disabled";
 const EDITOR_EXTENSIONS = {
   stylesheets: [],
   scripts: []
@@ -1278,6 +1278,7 @@ function getPrimaryProject(){
 }
 
 function openQuickEditorFromHome(){
+  toast("Editor rápido desativado: edição SVG removida","info");
   let p=getPrimaryProject();
   if(!p){
     p=mkProject("Projeto Rápido");
@@ -1299,8 +1300,8 @@ function openQuickEditorFromHome(){
     save(S.projects);
   }
 
-  openAppEditor(app.id);
-  toast("Editor rápido aberto","info");
+  nav("apps");
+  toast("Editor rápido redirecionou para Aplicações (editor SVG removido)","info");
 }
 
 /* ============================================================
@@ -1316,41 +1317,17 @@ function openAppEditor(appId){
   _appEdit.appId = appId;
   _appEdit.selId = null;
   nav("appEditor");
+  toast("Editor SVG removido deste projeto","info");
 }
 
 function ensureAppEditorReady(a,p){
   if($("appEditName")) $("appEditName").textContent = a.name || "Aplicação";
-  if($("appEditMeta")) $("appEditMeta").textContent = `${a.type==="print"?"Impressão":"Web"} • ${a.w}×${a.h}${a.unit} • ${a.dpi}dpi`;
-
-  const host=$("appCanvasHost");
-  if(!host) return;
-  host.innerHTML="";
-
-  const parsed=new DOMParser().parseFromString(a.svg||"", "image/svg+xml");
-  const svg=parsed.querySelector("svg");
-  if(!svg){
-    host.innerHTML='<div style="color:var(--ink3)">SVG inválido para edição.</div>';
-    return;
-  }
-  _appEdit.svgEl=document.importNode(svg,true);
-  _appEdit.svgEl.removeAttribute("style");
-  _appEdit.svgEl.style.maxWidth="100%";
-  _appEdit.svgEl.style.maxHeight="100%";
-  _appEdit.svgEl.style.display="block";
-  _appEdit.svgEl.style.background="#fff";
-
-  host.appendChild(_appEdit.svgEl);
-
-  _appEdit.svgEl.querySelectorAll("[data-editable='1']").forEach(wireEditableElement);
-  _appEdit.svgEl.addEventListener("click",()=>selectSvgElement(null));
-  ensureSelectionUI();
-  fillStylePicker();
-  loadAppStylePresets();
-  buildLayerList();
+  if($("appEditMeta")) $("appEditMeta").textContent = "Editor SVG removido";
+  _appEdit.svgEl = null;
 }
 
 function switchToFabricEditor(){
-  toast("Editor embutido ativado (sem iframe)","info");
+  toast("Editor SVG removido","info");
 }
 
 function buildBrandLibrary(p){
@@ -1391,8 +1368,7 @@ function gePushBrandData(project=P()){
 }
 
 function switchToSvgEditor(){
-  const host=$("appCanvasHost");
-  if(host) host.style.display="flex";
+  toast("Editor SVG removido","info");
 }
 
 
@@ -2135,8 +2111,8 @@ function readEditorTemplate(){
     const frame = document.getElementById('geEditorFrame');
     if(frame && frame.contentWindow) frame.contentWindow.postMessage(msg, '*');
   }
-  function geFit(){ gePost({type:'fit'}); }
-  function geExportPNG(){ gePost({type:'exportPNG'}); }
+  function geFit(){ toast("Editor SVG removido","info"); }
+  function geExportPNG(){ toast("Editor SVG removido","info"); }
 
 /* ============================================================
    BRAND STUDIO MODULE (EMBED)
