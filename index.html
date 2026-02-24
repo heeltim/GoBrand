@@ -522,6 +522,10 @@
         <span id="appEditMeta" style="font-size:12px;color:var(--ink3);font-family:var(--mono)">—</span>
       </div>
       <div class="right">
+        <button class="btn btn-primary" onclick="saveCurrentApplication()" title="Salvar aplicação nas Aplicações">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar Aplicação
+        </button>
         <button class="btn btn-ghost" onclick="geFit()" title="Encaixar na tela">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3H3v4M17 3h4v4M7 21H3v-4M21 17v4h-4"/></svg>
           Encaixar
@@ -2109,6 +2113,25 @@ function exportPNG() {
   setStatus('PNG exportado!');
 }
 
+function exportSVGToParent() {
+  if (!canvas || !artboard) {
+    window.parent.postMessage({ type: 'geExportSVG', error: 'Sem conteúdo para exportar.' }, '*');
+    return;
+  }
+  const svg = canvas.toSVG({
+    suppressPreamble: false,
+    width: docW,
+    height: docH,
+    viewBox: {
+      x: artboard.left,
+      y: artboard.top,
+      width: docW,
+      height: docH
+    }
+  });
+  window.parent.postMessage({ type: 'geExportSVG', svg }, '*');
+}
+
 // ─── JSON save / load ─────────────────────────────────────
 function saveJSON() {
   const json = JSON.stringify(canvas.toJSON(['excludeFromExport','dataName']), null, 2);
@@ -2257,6 +2280,7 @@ window.addEventListener('message', ev =&gt; {
   }
   if (msg.type === 'fit') fitToArtboard();
   if (msg.type === 'exportPNG') exportPNG();
+  if (msg.type === 'exportSVG') exportSVGToParent();
   if (msg.type === 'setBrand') {
     if (Array.isArray(msg.library)) {
       brandLibrary = msg.library.slice(0,80);
