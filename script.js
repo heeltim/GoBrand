@@ -994,9 +994,66 @@ function svgToDataUri(svg=""){
   }catch{ return ""; }
 }
 
+function extractSvgFontFamilies(svg=""){
+  const out=new Set();
+  const generic=new Set(["serif","sans-serif","monospace","cursive","fantasy","system-ui","ui-sans-serif","ui-serif","ui-monospace","emoji","math","fangsong","inherit","initial","unset"]);
+  try{
+    const doc=new DOMParser().parseFromString(String(svg||""),"image/svg+xml");
+    const root=doc.documentElement;
+    if(!root || root.nodeName.toLowerCase()==="parsererror") return [];
+    root.querySelectorAll("[font-family],[style]").forEach(el=>{
+      const fromAttr=(el.getAttribute("font-family")||"").trim();
+      const fromStyle=(el.getAttribute("style")||"").match(/font-family\s*:\s*([^;]+)/i)?.[1]||"";
+      [fromAttr,fromStyle].filter(Boolean).forEach(raw=>{
+        raw.split(",").forEach(part=>{
+          const fam=part.replace(/['"]/g,"").trim();
+          if(!fam) return;
+          if(generic.has(fam.toLowerCase())) return;
+          out.add(fam);
+        });
+      });
+    });
+  }catch{}
+  return [...out];
+}
+
+function normalizeSvgForEditor(svg=""){
+  const raw=String(svg||"").trim();
+  if(!raw) return "";
+  try{
+    const doc=new DOMParser().parseFromString(raw,"image/svg+xml");
+    const root=doc.documentElement;
+    if(!root || root.nodeName.toLowerCase()==="parsererror") return raw;
+
+    const vb=(root.getAttribute("viewBox")||"").trim().split(/\s+/).map(Number);
+    if(vb.length!==4 || vb.some(n=>Number.isNaN(n))) return raw;
+    const [x,y,w,h]=vb;
+    if(Math.abs(x)<0.001 && Math.abs(y)<0.001) return raw;
+
+    const wrap=doc.createElementNS("http://www.w3.org/2000/svg","g");
+    wrap.setAttribute("transform",`translate(${-x} ${-y})`);
+    const keepAtRoot=new Set(["defs","style","title","desc","metadata"]);
+    [...root.childNodes].forEach(node=>{
+      if(node.nodeType!==1){ return; }
+      const tag=node.nodeName.toLowerCase();
+      if(keepAtRoot.has(tag)) return;
+      wrap.appendChild(node);
+    });
+    root.appendChild(wrap);
+    root.setAttribute("viewBox",`0 0 ${w} ${h}`);
+    if(root.hasAttribute("width")) root.setAttribute("width",String(w));
+    if(root.hasAttribute("height")) root.setAttribute("height",String(h));
+    return new XMLSerializer().serializeToString(root);
+  }catch{
+    return raw;
+  }
+}
+
 function renderApps(){
   const p=P(); if(!p) return;
   ensureApps(p);
+  [p.fontPri,p.fontSec].filter(Boolean).forEach(tryLoadGoogleFont);
+  (p.applications||[]).forEach(a=>extractSvgFontFamilies(a.svg||"").forEach(tryLoadGoogleFont));
   const list=$("appsList");
   $("appsCount").textContent = p.applications.length ? `${p.applications.length} arquivo(s)` : "Nenhum arquivo ainda.";
 
@@ -1015,9 +1072,10 @@ function renderApps(){
         <div class="export-card-desc">${esc(a.type==="print"?"Impressão":"Web")} • ${esc(a.w)}×${esc(a.h)} ${esc(a.unit)} • ${a.dpi}dpi • ${a.bleed||0}${a.unit==="mm"?"mm":""} sangria</div>
       </div>
       <div class="export-preview export-preview-visual">
-        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Sem preview</div>`}
+        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Abra no editor para criar</div>`}
       </div>
       <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="openAppEditor('${a.id}')">Editar</button>
         <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="downloadApp('${a.id}')">Baixar SVG</button>
         <button class="btn btn-ghost" style="width:42px;justify-content:center" onclick="deleteApp('${a.id}')">✕</button>
       </div>
@@ -1144,8 +1202,7 @@ function createApplication(){
     name:`${p.name||"Projeto"} — Nova aplicação`
   };
 
-  const svg=generateApplicationSVG(p,cfg,{preview:false});
-  const app={ id:uid("a"), createdAt:Date.now(), svg,
+  const app={ id:uid("a"), createdAt:Date.now(), svg:"",
     name:cfg.name, type:cfg.type, unit:cfg.unit, w:cfg.w, h:cfg.h, dpi:cfg.dpi, bleed:cfg.bleed, safe:cfg.safe
   };
   p.applications.unshift(app);
@@ -1301,19 +1358,23 @@ function openAppEditor(appId){
 function ensureAppEditorReady(a,p){
   if($("appEditName")) $("appEditName").textContent = a.name || "Aplicação";
   if($("appEditMeta")) $("appEditMeta").textContent = `${a.type==="print"?"Impressão":"Web"} • ${a.w}×${a.h}${a.unit} • ${a.dpi}dpi`;
+  if($("appEditNameInput")) $("appEditNameInput").value = a.name || "Aplicação";
 
   // Load iframe content (defined in post-template script)
   if(typeof geEnsureIframeLoaded === "function") geEnsureIframeLoaded();
 
-  // Send document + brand data after iframe boots
+  // Send document + current file data after iframe boots
   setTimeout(()=>{
     if(a){
       let w=Number(a.w), h=Number(a.h);
       if((a.unit||"px")==="mm"){ const dpi=Number(a.dpi)||72; w=(w/25.4)*dpi; h=(h/25.4)*dpi; }
-      gePost({type:"setDoc", w, h});
+      gePost({type:"setDoc", w, h, fit:true});
+      const normalizedSvg=normalizeSvgForEditor(a.svg||"");
+      extractSvgFontFamilies(normalizedSvg).forEach(tryLoadGoogleFont);
+      gePost({type:"setSVG", svg:normalizedSvg});
     }
     gePushBrandData(p);
-  }, 400);
+  }, 450);
 }
 
 function switchToFabricEditor(){
@@ -2060,6 +2121,22 @@ document.addEventListener("keydown",e=>{
 fillFontSelects();
 renderHome();
 
+
+function renameCurrentApplication(){
+  const p=P(); if(!p){ toast('Abra um projeto primeiro','error'); return; }
+  const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
+  if(!a){ toast('Aplicação não encontrada','error'); return; }
+  const inp=$("appEditNameInput");
+  const nv=(inp?.value||"").trim();
+  if(!nv){ toast('Digite um nome para a aplicação','info'); return; }
+  a.name = nv;
+  p.updatedAt = Date.now();
+  save(S.projects);
+  if($("appEditName")) $("appEditName").textContent = nv;
+  renderApps();
+  toast('Nome da aplicação atualizado','success');
+}
+
 function geEnsureIframeLoaded(){
     const frame = document.getElementById('geEditorFrame');
     const tpl = document.getElementById('geEditorTemplate');
@@ -2079,3 +2156,51 @@ function geEnsureIframeLoaded(){
   }
   function geFit(){ gePost({type:'fit'}); }
   function geExportPNG(){ gePost({type:'exportPNG'}); }
+  function geExportSVG(){ gePost({type:'exportSVG'}); }
+
+  function saveCurrentApplication(){
+    const p=P(); if(!p){ toast('Abra um projeto primeiro','error'); return; }
+    const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
+    if(!a){ toast('Aplicação não encontrada','error'); return; }
+    const nv=($("appEditNameInput")?.value||"").trim();
+    if(nv) a.name = nv;
+    geExportSVG();
+  }
+
+  window.addEventListener('message',(ev)=>{
+    const msg=ev.data||{};
+    if(msg.type!=="geExportSVG") return;
+    const p=P(); if(!p) return;
+    const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
+    if(!a) return;
+
+    if(msg.error){
+      toast(msg.error,'error');
+      return;
+    }
+
+    const raw=String(msg.svg||'').trim();
+    if(!raw){
+      toast('Não foi possível salvar: SVG vazio','error');
+      return;
+    }
+
+    const xml = raw.startsWith('<?xml') ? raw : `<?xml version="1.0" encoding="UTF-8"?>
+${raw}`;
+    const nv=($("appEditNameInput")?.value||"").trim();
+    if(nv) a.name = nv;
+    a.svg = xml;
+    a.updatedAt = Date.now();
+    p.updatedAt = Date.now();
+    if($("appEditName")) $("appEditName").textContent = a.name || 'Aplicação';
+    save(S.projects);
+    renderApps();
+    toast('Aplicação salva em Aplicações','success');
+  });
+
+  $("appEditNameInput")?.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      renameCurrentApplication();
+    }
+  });
