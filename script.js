@@ -1015,9 +1015,10 @@ function renderApps(){
         <div class="export-card-desc">${esc(a.type==="print"?"Impressão":"Web")} • ${esc(a.w)}×${esc(a.h)} ${esc(a.unit)} • ${a.dpi}dpi • ${a.bleed||0}${a.unit==="mm"?"mm":""} sangria</div>
       </div>
       <div class="export-preview export-preview-visual">
-        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Sem preview</div>`}
+        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Abra no editor para criar</div>`}
       </div>
       <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="openAppEditor('${a.id}')">Editar</button>
         <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="downloadApp('${a.id}')">Baixar SVG</button>
         <button class="btn btn-ghost" style="width:42px;justify-content:center" onclick="deleteApp('${a.id}')">✕</button>
       </div>
@@ -1144,8 +1145,7 @@ function createApplication(){
     name:`${p.name||"Projeto"} — Nova aplicação`
   };
 
-  const svg=generateApplicationSVG(p,cfg,{preview:false});
-  const app={ id:uid("a"), createdAt:Date.now(), svg,
+  const app={ id:uid("a"), createdAt:Date.now(), svg:"",
     name:cfg.name, type:cfg.type, unit:cfg.unit, w:cfg.w, h:cfg.h, dpi:cfg.dpi, bleed:cfg.bleed, safe:cfg.safe
   };
   p.applications.unshift(app);
@@ -1301,19 +1301,21 @@ function openAppEditor(appId){
 function ensureAppEditorReady(a,p){
   if($("appEditName")) $("appEditName").textContent = a.name || "Aplicação";
   if($("appEditMeta")) $("appEditMeta").textContent = `${a.type==="print"?"Impressão":"Web"} • ${a.w}×${a.h}${a.unit} • ${a.dpi}dpi`;
+  if($("appEditNameInput")) $("appEditNameInput").value = a.name || "Aplicação";
 
   // Load iframe content (defined in post-template script)
   if(typeof geEnsureIframeLoaded === "function") geEnsureIframeLoaded();
 
-  // Send document + brand data after iframe boots
+  // Send document + current file data after iframe boots
   setTimeout(()=>{
     if(a){
       let w=Number(a.w), h=Number(a.h);
       if((a.unit||"px")==="mm"){ const dpi=Number(a.dpi)||72; w=(w/25.4)*dpi; h=(h/25.4)*dpi; }
-      gePost({type:"setDoc", w, h});
+      gePost({type:"setDoc", w, h, fit:true});
+      gePost({type:"setSVG", svg:a.svg||""});
     }
     gePushBrandData(p);
-  }, 400);
+  }, 450);
 }
 
 function switchToFabricEditor(){
@@ -2060,6 +2062,22 @@ document.addEventListener("keydown",e=>{
 fillFontSelects();
 renderHome();
 
+
+function renameCurrentApplication(){
+  const p=P(); if(!p){ toast('Abra um projeto primeiro','error'); return; }
+  const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
+  if(!a){ toast('Aplicação não encontrada','error'); return; }
+  const inp=$("appEditNameInput");
+  const nv=(inp?.value||"").trim();
+  if(!nv){ toast('Digite um nome para a aplicação','info'); return; }
+  a.name = nv;
+  p.updatedAt = Date.now();
+  save(S.projects);
+  if($("appEditName")) $("appEditName").textContent = nv;
+  renderApps();
+  toast('Nome da aplicação atualizado','success');
+}
+
 function geEnsureIframeLoaded(){
     const frame = document.getElementById('geEditorFrame');
     const tpl = document.getElementById('geEditorTemplate');
@@ -2085,6 +2103,8 @@ function geEnsureIframeLoaded(){
     const p=P(); if(!p){ toast('Abra um projeto primeiro','error'); return; }
     const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
     if(!a){ toast('Aplicação não encontrada','error'); return; }
+    const nv=($("appEditNameInput")?.value||"").trim();
+    if(nv) a.name = nv;
     geExportSVG();
   }
 
@@ -2108,10 +2128,20 @@ function geEnsureIframeLoaded(){
 
     const xml = raw.startsWith('<?xml') ? raw : `<?xml version="1.0" encoding="UTF-8"?>
 ${raw}`;
+    const nv=($("appEditNameInput")?.value||"").trim();
+    if(nv) a.name = nv;
     a.svg = xml;
     a.updatedAt = Date.now();
     p.updatedAt = Date.now();
+    if($("appEditName")) $("appEditName").textContent = a.name || 'Aplicação';
     save(S.projects);
     renderApps();
     toast('Aplicação salva em Aplicações','success');
+  });
+
+  $("appEditNameInput")?.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      renameCurrentApplication();
+    }
   });
