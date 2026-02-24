@@ -1237,10 +1237,8 @@ function renderApps(){
       <div class="export-preview export-preview-visual">
         ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Abra no editor para criar</div>`}
       </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="openAppEditor('${a.id}')">Editar</button>
-        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="downloadApp('${a.id}')">Baixar SVG</button>
-        <button class="btn btn-ghost" style="width:42px;justify-content:center" onclick="deleteApp('${a.id}')">✕</button>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn-icon" type="button" title="Mais opções (em breve)" aria-label="Mais opções (em breve)">${icon('ellipsis',16)}</button>
       </div>
     </div>
   `).join("");
