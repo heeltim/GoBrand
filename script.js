@@ -994,9 +994,66 @@ function svgToDataUri(svg=""){
   }catch{ return ""; }
 }
 
+function extractSvgFontFamilies(svg=""){
+  const out=new Set();
+  const generic=new Set(["serif","sans-serif","monospace","cursive","fantasy","system-ui","ui-sans-serif","ui-serif","ui-monospace","emoji","math","fangsong","inherit","initial","unset"]);
+  try{
+    const doc=new DOMParser().parseFromString(String(svg||""),"image/svg+xml");
+    const root=doc.documentElement;
+    if(!root || root.nodeName.toLowerCase()==="parsererror") return [];
+    root.querySelectorAll("[font-family],[style]").forEach(el=>{
+      const fromAttr=(el.getAttribute("font-family")||"").trim();
+      const fromStyle=(el.getAttribute("style")||"").match(/font-family\s*:\s*([^;]+)/i)?.[1]||"";
+      [fromAttr,fromStyle].filter(Boolean).forEach(raw=>{
+        raw.split(",").forEach(part=>{
+          const fam=part.replace(/['"]/g,"").trim();
+          if(!fam) return;
+          if(generic.has(fam.toLowerCase())) return;
+          out.add(fam);
+        });
+      });
+    });
+  }catch{}
+  return [...out];
+}
+
+function normalizeSvgForEditor(svg=""){
+  const raw=String(svg||"").trim();
+  if(!raw) return "";
+  try{
+    const doc=new DOMParser().parseFromString(raw,"image/svg+xml");
+    const root=doc.documentElement;
+    if(!root || root.nodeName.toLowerCase()==="parsererror") return raw;
+
+    const vb=(root.getAttribute("viewBox")||"").trim().split(/\s+/).map(Number);
+    if(vb.length!==4 || vb.some(n=>Number.isNaN(n))) return raw;
+    const [x,y,w,h]=vb;
+    if(Math.abs(x)<0.001 && Math.abs(y)<0.001) return raw;
+
+    const wrap=doc.createElementNS("http://www.w3.org/2000/svg","g");
+    wrap.setAttribute("transform",`translate(${-x} ${-y})`);
+    const keepAtRoot=new Set(["defs","style","title","desc","metadata"]);
+    [...root.childNodes].forEach(node=>{
+      if(node.nodeType!==1){ return; }
+      const tag=node.nodeName.toLowerCase();
+      if(keepAtRoot.has(tag)) return;
+      wrap.appendChild(node);
+    });
+    root.appendChild(wrap);
+    root.setAttribute("viewBox",`0 0 ${w} ${h}`);
+    if(root.hasAttribute("width")) root.setAttribute("width",String(w));
+    if(root.hasAttribute("height")) root.setAttribute("height",String(h));
+    return new XMLSerializer().serializeToString(root);
+  }catch{
+    return raw;
+  }
+}
+
 function renderApps(){
   const p=P(); if(!p) return;
   ensureApps(p);
+  [p.fontPri,p.fontSec].filter(Boolean).forEach(tryLoadGoogleFont);
+  (p.applications||[]).forEach(a=>extractSvgFontFamilies(a.svg||"").forEach(tryLoadGoogleFont));
   const list=$("appsList");
   $("appsCount").textContent = p.applications.length ? `${p.applications.length} arquivo(s)` : "Nenhum arquivo ainda.";
 
@@ -1312,7 +1369,9 @@ function ensureAppEditorReady(a,p){
       let w=Number(a.w), h=Number(a.h);
       if((a.unit||"px")==="mm"){ const dpi=Number(a.dpi)||72; w=(w/25.4)*dpi; h=(h/25.4)*dpi; }
       gePost({type:"setDoc", w, h, fit:true});
-      gePost({type:"setSVG", svg:a.svg||""});
+      const normalizedSvg=normalizeSvgForEditor(a.svg||"");
+      extractSvgFontFamilies(normalizedSvg).forEach(tryLoadGoogleFont);
+      gePost({type:"setSVG", svg:normalizedSvg});
     }
     gePushBrandData(p);
   }, 450);
