@@ -1465,7 +1465,8 @@ function renderApps(){
     return;
   }
 
-  list.innerHTML = p.applications.slice().sort((a,b)=>b.createdAt-a.createdAt).map((a,i)=>`
+  const appsSorted = p.applications.slice().sort((a,b)=>b.createdAt-a.createdAt);
+  list.innerHTML = appsSorted.map((a,i)=>`
     <div class="export-card anim-in" style="animation-delay:${i*40}ms">
       <div>
         <div class="export-card-title">${esc(a.name||"Aplicação")}</div>
@@ -1474,11 +1475,32 @@ function renderApps(){
       <div class="export-preview export-preview-visual">
         ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Abra no editor para criar</div>`}
       </div>
-      <div style="display:flex;justify-content:flex-end">
-        <button class="btn-icon" type="button" title="Mais opções (em breve)" aria-label="Mais opções (em breve)">${icon('ellipsis',16)}</button>
+      <div class="app-card-actions">
+        <details class="app-actions-menu">
+          <summary class="btn-icon" aria-label="Mais opções">${icon('ellipsis',16)}</summary>
+          <div class="app-actions-popover">
+            <button class="app-action-item" type="button" data-app-action="edit" data-app-id="${a.id}">${icon('pencil',14)}Editar</button>
+            <button class="app-action-item" type="button" data-app-action="duplicate" data-app-id="${a.id}">${icon('copy',14)}Duplicar</button>
+            <button class="app-action-item" type="button" data-app-action="download" data-app-id="${a.id}">${icon('download',14)}Baixar SVG</button>
+            <button class="app-action-item danger" type="button" data-app-action="delete" data-app-id="${a.id}">${icon('trash-2',14)}Excluir</button>
+          </div>
+        </details>
       </div>
     </div>
   `).join("");
+
+  list.querySelectorAll(".app-action-item").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      btn.closest("details")?.removeAttribute("open");
+      const id=btn.dataset.appId;
+      const action=btn.dataset.appAction;
+      if(!id||!action) return;
+      if(action==="edit") openAppEditor(id);
+      else if(action==="duplicate") duplicateApp(id);
+      else if(action==="download") downloadApp(id);
+      else if(action==="delete") deleteApp(id);
+    });
+  });
 }
 
 function generateApplicationSVG(p,cfg,{preview=false}={}){
@@ -1609,6 +1631,22 @@ function createApplication(){
 
   toast("Aplicação criada e aberta no editor","success");
   openAppEditor(app.id);
+}
+
+function duplicateApp(id){
+  const p=P(); if(!p) return;
+  const source=(p.applications||[]).find(x=>x.id===id); if(!source) return;
+  const copy={
+    ...source,
+    id:uid("a"),
+    createdAt:Date.now(),
+    name:`${source.name||"Aplicação"} (cópia)`
+  };
+  p.applications.unshift(copy);
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderApps();
+  toast("Aplicação duplicada","success");
 }
 
 function downloadApp(id){

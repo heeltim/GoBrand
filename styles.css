@@ -1102,6 +1102,42 @@ a { color: var(--accent); text-decoration: none; }
 }
 .app-svg-empty { font-size: 12px; color: var(--ink3); }
 
+.app-card-actions { display:flex; justify-content:flex-end; }
+.app-actions-menu { position: relative; }
+.app-actions-menu > summary { list-style: none; cursor: pointer; }
+.app-actions-menu > summary::-webkit-details-marker { display: none; }
+.app-actions-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 170px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  display: none;
+  z-index: 6;
+}
+.app-actions-menu[open] .app-actions-popover { display: grid; gap: 3px; }
+.app-action-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 8px 9px;
+  cursor: pointer;
+  text-align: left;
+}
+.app-action-item:hover { background: var(--surface3); color: var(--ink); }
+.app-action-item.danger { color: #ff9aa9; }
+.app-action-item.danger:hover { background: rgba(255,107,107,.12); color: #ffc6cf; }
+
 /* ============================================================
    ANIMATIONS
 ============================================================ */
