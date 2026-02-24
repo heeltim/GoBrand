@@ -211,6 +211,9 @@ function nav(view, el){
   });
   document.querySelectorAll(".sidebar-item").forEach(i=>i.classList.toggle("active",i.dataset.view===view));
 
+  const shell=document.querySelector(".shell");
+  if(shell) shell.classList.toggle("app-editor-mode", view==="appEditor");
+
   updateTopbar(view);
 
   if(view==="board") renderBoard();
@@ -230,7 +233,7 @@ function updateTopbar(view){
   const bc=$("breadcrumb");
   const right=$("topbarRight");
 
-  if(view==="home"){
+  if(view==="home" || view==="appEditor"){
     bc.innerHTML=`<span>Projetos</span>`;
     right.innerHTML="";
     $("editorNav").style.display="none";
@@ -913,15 +916,6 @@ function renderPreview(){
    BRAND BOARD + APLICAÇÕES
 ════════════════════════════════════════════ */
 
-const APP_TEMPLATES = [
-  {id:"ig-post",   name:"Post Instagram", type:"web", unit:"px", w:1080, h:1080, dpi:72,  bleed:0, safe:0},
-  {id:"ig-story",  name:"Story Instagram",type:"web", unit:"px", w:1080, h:1920, dpi:72,  bleed:0, safe:0},
-  {id:"banner-hd", name:"Banner 1920×1080",type:"web",unit:"px", w:1920, h:1080, dpi:72, bleed:0, safe:0},
-  {id:"a4",        name:"Flyer A4",        type:"print",unit:"mm", w:210, h:297, dpi:300, bleed:3, safe:5},
-  {id:"a3",        name:"Pôster A3",       type:"print",unit:"mm", w:297, h:420, dpi:300, bleed:3, safe:8},
-  {id:"bc-90x50",  name:"Cartão 90×50 mm", type:"print",unit:"mm", w:90,  h:50,  dpi:300, bleed:3, safe:5},
-  {id:"custom",    name:"Customizado…",    type:"print",unit:"mm", w:100, h:100, dpi:300, bleed:3, safe:5},
-];
 
 function fmtDate(ts){
   try{
@@ -993,6 +987,13 @@ function renderBoard(){
   refreshIcons();
 }
 
+
+function svgToDataUri(svg=""){
+  try{
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }catch{ return ""; }
+}
+
 function renderApps(){
   const p=P(); if(!p) return;
   ensureApps(p);
@@ -1002,7 +1003,7 @@ function renderApps(){
   if(!p.applications.length){
     list.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       <p>Você ainda não gerou nenhuma aplicação.</p>
-      <button class="btn btn-primary" onclick="openAppConfigurator()">Nova Aplicação</button>
+      <button class="btn btn-primary" onclick="createApplication()">Nova Aplicação Rápida</button>
     </div>`;
     return;
   }
@@ -1013,81 +1014,15 @@ function renderApps(){
         <div class="export-card-title">${esc(a.name||"Aplicação")}</div>
         <div class="export-card-desc">${esc(a.type==="print"?"Impressão":"Web")} • ${esc(a.w)}×${esc(a.h)} ${esc(a.unit)} • ${a.dpi}dpi • ${a.bleed||0}${a.unit==="mm"?"mm":""} sangria</div>
       </div>
-      <div class="export-preview">${esc((a.svg||"").slice(0,260))}${(a.svg||"").length>260?"…":""}</div>
+      <div class="export-preview export-preview-visual">
+        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Sem preview</div>`}
+      </div>
       <div style="display:flex;gap:10px">
         <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="downloadApp('${a.id}')">Baixar SVG</button>
         <button class="btn btn-ghost" style="width:42px;justify-content:center" onclick="deleteApp('${a.id}')">✕</button>
       </div>
     </div>
   `).join("");
-}
-
-function openAppConfigurator(){
-  const p=P(); if(!p){toast("Abra um projeto primeiro","error");return;}
-  ensureApps(p);
-  const b=$("appBackdrop");
-  b.classList.add("open");
-  fillTplSelect();
-
-  // default: last used or first
-  const first = APP_TEMPLATES[0];
-  setConfiguratorFromTpl(first);
-  updateAppPreview();
-  document.addEventListener("keydown", escCloseApp, {once:true});
-}
-function escCloseApp(e){ if(e.key==="Escape") closeAppConfigurator(); else document.addEventListener("keydown", escCloseApp, {once:true}); }
-
-function closeAppConfigurator(){ $("appBackdrop").classList.remove("open"); }
-
-function fillTplSelect(){
-  const sel=$("appTpl");
-  if(sel.dataset.filled==="1") return;
-  sel.innerHTML = APP_TEMPLATES.map(t=>`<option value="${t.id}">${esc(t.name)} (${t.w}×${t.h}${t.unit})</option>`).join("");
-  sel.dataset.filled="1";
-  sel.addEventListener("change", ()=>{
-    const tpl=APP_TEMPLATES.find(t=>t.id===sel.value) || APP_TEMPLATES[0];
-    setConfiguratorFromTpl(tpl);
-    updateAppPreview();
-  });
-  ["appType","appUnit","appOri","appDpi","appBleed","appSafe","appW","appH","appName"].forEach(id=>{
-    $(id).addEventListener("input", updateAppPreview);
-    $(id).addEventListener("change", updateAppPreview);
-  });
-}
-
-function setConfiguratorFromTpl(t){
-  $("appTpl").value=t.id;
-  $("appType").value=t.type;
-  $("appUnit").value=t.unit;
-  $("appW").value=t.w;
-  $("appH").value=t.h;
-  $("appDpi").value=String(t.dpi);
-  $("appBleed").value=String(t.bleed);
-  $("appSafe").value=String(t.safe);
-  $("appOri").value="auto";
-  $("appName").value = (P()?.name ? (P().name+" — ") : "") + t.name;
-}
-
-function getAppConfig(){
-  const type=$("appType").value;
-  const unit=$("appUnit").value;
-  let w=parseFloat($("appW").value||0);
-  let h=parseFloat($("appH").value||0);
-  const ori=$("appOri").value;
-  if(ori==="portrait" && w>h){ [w,h]=[h,w]; }
-  if(ori==="landscape" && h>w){ [w,h]=[h,w]; }
-  const dpi=parseInt($("appDpi").value||"300",10);
-  const bleed=parseFloat($("appBleed").value||0);
-  const safe=parseFloat($("appSafe").value||0);
-  const name=$("appName").value.trim()||"Aplicação";
-  return {type,unit,w,h,dpi,bleed,safe,name};
-}
-
-function updateAppPreview(){
-  const cfg=getAppConfig();
-  const p=P(); if(!p) return;
-  const svg=generateApplicationSVG(p,cfg,{preview:true});
-  $("appPreview").textContent = svg;
 }
 
 function generateApplicationSVG(p,cfg,{preview=false}={}){
@@ -1195,11 +1130,19 @@ function generateApplicationSVG(p,cfg,{preview=false}={}){
 }
 
 function createApplication(){
-  const p=P(); if(!p) return;
+  const p=P(); if(!p){ toast("Abra um projeto primeiro","error"); return; }
   ensureApps(p);
-  const cfg=getAppConfig();
 
-  if(!(cfg.w>0&&cfg.h>0)){ toast("Defina largura e altura","error"); return; }
+  const cfg={
+    type:"web",
+    unit:"px",
+    w:1920,
+    h:1080,
+    dpi:72,
+    bleed:0,
+    safe:0,
+    name:`${p.name||"Projeto"} — Nova aplicação`
+  };
 
   const svg=generateApplicationSVG(p,cfg,{preview:false});
   const app={ id:uid("a"), createdAt:Date.now(), svg,
@@ -1209,8 +1152,7 @@ function createApplication(){
   p.updatedAt=Date.now();
   save(S.projects);
 
-  closeAppConfigurator();
-  toast("Aplicação criada — abra e aplique estilos","success");
+  toast("Aplicação criada e aberta no editor","success");
   openAppEditor(app.id);
 }
 
