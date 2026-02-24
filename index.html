@@ -983,6 +983,13 @@ textarea.modal-textarea{
 .panel-tabs{display:flex;gap:4px;padding:4px;background:#19191e;border:1px solid var(--border);border-radius:10px;margin-bottom:10px}
 .panel-tab{flex:1;text-align:center;padding:6px 4px;font-size:11px;color:var(--ink2);border-radius:7px}
 .panel-tab.active{background:#2d2d35;color:var(--ink);font-weight:600}
+.rp-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.rp-icon-btn{height:30px;min-width:30px;padding:0 8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);font-family:var(--mono);font-size:11px;display:inline-flex;align-items:center;justify-content:center}
+.rp-icon-btn:hover{color:var(--ink);border-color:rgba(255,255,255,.24)}
+.rp-icon-btn.active{background:rgba(127,90,240,.16);border-color:rgba(127,90,240,.35);color:#fff}
+.rp-grow{flex:1}
+.rp-stroke-range{width:100%;accent-color:var(--accent)}
+.rp-chip{height:24px;padding:0 8px;border-radius:999px;border:1px solid var(--border2);display:inline-flex;align-items:center;font-size:10px;color:var(--ink2);background:rgba(255,255,255,.02)}
 &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -1368,9 +1375,32 @@ textarea.modal-textarea{
       &lt;div data-tab-panel=&quot;tracado&quot; style=&quot;display:none&quot;&gt;
         &lt;div class=&quot;panel-section&quot;&gt;
           &lt;div class=&quot;panel-section-label&quot;&gt;Traçado&lt;/div&gt;
+          &lt;div class=&quot;rp-row&quot;&gt;
+            &lt;span class=&quot;rp-chip&quot;&gt;Estilo&lt;/span&gt;
+            &lt;button class=&quot;rp-icon-btn active&quot; data-stroke-style=&quot;solid&quot;&gt;Sólido&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-style=&quot;dash&quot;&gt;Tracejado&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-style=&quot;dot&quot;&gt;Pontilhado&lt;/button&gt;
+          &lt;/div&gt;
           &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
             &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor de traço&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStroke2&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
             &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Espessura&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStrokeW2&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;0&quot;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;rp-row&quot;&gt;
+            &lt;input class=&quot;rp-stroke-range rp-grow&quot; id=&quot;pStrokeWRange2&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;120&quot; step=&quot;1&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;rp-row&quot;&gt;
+            &lt;span class=&quot;rp-chip&quot;&gt;Tampa&lt;/span&gt;
+            &lt;button class=&quot;rp-icon-btn active&quot; data-stroke-cap=&quot;butt&quot;&gt;▮&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-cap=&quot;round&quot;&gt;◖&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-cap=&quot;square&quot;&gt;▭&lt;/button&gt;
+            &lt;span class=&quot;rp-chip&quot; style=&quot;margin-left:auto&quot;&gt;Mitra&lt;/span&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;pMiter2&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;10&quot; step=&quot;0.5&quot; value=&quot;1.5&quot; style=&quot;width:64px&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;rp-row&quot;&gt;
+            &lt;span class=&quot;rp-chip&quot;&gt;Unir&lt;/span&gt;
+            &lt;button class=&quot;rp-icon-btn active&quot; data-stroke-join=&quot;miter&quot;&gt;┌&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-join=&quot;round&quot;&gt;◜&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-join=&quot;bevel&quot;&gt;⌟&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -1378,13 +1408,31 @@ textarea.modal-textarea{
       &lt;div data-tab-panel=&quot;aparencia&quot; style=&quot;display:none&quot;&gt;
         &lt;div class=&quot;panel-section&quot;&gt;
           &lt;div class=&quot;panel-section-label&quot;&gt;Aparência&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Modo de mesclagem&lt;/div&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;pBlend2&quot; style=&quot;height:32px&quot;&gt;
-              &lt;option value=&quot;source-over&quot;&gt;Normal&lt;/option&gt;
-              &lt;option value=&quot;multiply&quot;&gt;Multiply&lt;/option&gt;
-              &lt;option value=&quot;screen&quot;&gt;Screen&lt;/option&gt;
-            &lt;/select&gt;
+          &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+            &lt;div class=&quot;field-item&quot;&gt;
+              &lt;div class=&quot;field-label&quot;&gt;Modo de mesclagem&lt;/div&gt;
+              &lt;select class=&quot;field-input&quot; id=&quot;pBlend2&quot; style=&quot;height:32px&quot;&gt;
+                &lt;option value=&quot;source-over&quot;&gt;Normal&lt;/option&gt;
+                &lt;option value=&quot;multiply&quot;&gt;Multiply&lt;/option&gt;
+                &lt;option value=&quot;screen&quot;&gt;Screen&lt;/option&gt;
+                &lt;option value=&quot;overlay&quot;&gt;Overlay&lt;/option&gt;
+                &lt;option value=&quot;darken&quot;&gt;Darken&lt;/option&gt;
+                &lt;option value=&quot;lighten&quot;&gt;Lighten&lt;/option&gt;
+              &lt;/select&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;field-item&quot;&gt;
+              &lt;div class=&quot;field-label&quot;&gt;Opacidade&lt;/div&gt;
+              &lt;input class=&quot;field-input&quot; id=&quot;pOpacity2&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;100&quot; step=&quot;1&quot; value=&quot;100&quot;&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;rp-row&quot;&gt;
+            &lt;input class=&quot;rp-stroke-range rp-grow&quot; id=&quot;pOpacityRange2&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;100&quot; step=&quot;1&quot; value=&quot;100&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;rp-row&quot;&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Iniciar&quot;&gt;Início&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Fim&quot;&gt;Fim&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Inverter&quot;&gt;↕&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Limpar estilo&quot;&gt;🗑&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -2493,6 +2541,65 @@ $('propTabs')?.addEventListener('click', e =&gt; {
     p.style.display = p.dataset.tabPanel===key ? '' : 'none';
   });
 });
+
+function bindMirror(a,b,transformA=(v=&gt;v),transformB=(v=&gt;v)){
+  const A=$(a), B=$(b);
+  if(!A||!B) return;
+  let lock=false;
+  const sync = (from,to,fn) =&gt; {
+    from.addEventListener('input',()=&gt;{
+      if(lock) return;
+      lock=true; to.value = fn(from.value); to.dispatchEvent(new Event('input',{bubbles:true})); lock=false;
+    });
+  };
+  sync(A,B,transformA); sync(B,A,transformB);
+}
+bindMirror('pStroke','pStroke2');
+bindMirror('pStrokeW','pStrokeW2',v=&gt;v,v=&gt;v);
+bindMirror('pStrokeW2','pStrokeWRange2',v=&gt;v,v=&gt;v);
+bindMirror('pBlend','pBlend2');
+
+(function bindOpacityMirror(){
+  const src=$('pO'), num=$('pOpacity2'), range=$('pOpacityRange2');
+  if(!src||!num||!range) return;
+  let lock=false;
+  src.addEventListener('input',()=&gt;{
+    if(lock) return; lock=true;
+    const pct=Math.round((Number(src.value)||0)*100);
+    num.value=String(pct); range.value=String(pct);
+    lock=false;
+  });
+  const push=()=&gt;{
+    if(lock) return; lock=true;
+    const pct=Math.max(0,Math.min(100,Number(num.value||range.value)||0));
+    num.value=String(Math.round(pct)); range.value=String(Math.round(pct));
+    src.value=String((pct/100).toFixed(2));
+    src.dispatchEvent(new Event('input',{bubbles:true}));
+    lock=false;
+  };
+  num.addEventListener('input',push);
+  range.addEventListener('input',()=&gt;{num.value=range.value;push();});
+})();
+
+function bindStrokeOptionGroup(selector, cb){
+  document.querySelectorAll(selector).forEach(btn =&gt; {
+    btn.addEventListener('click',()=&gt;{
+      const group=btn.parentElement?.querySelectorAll(selector) || [];
+      group.forEach(x=&gt;x.classList.remove('active'));
+      btn.classList.add('active');
+      cb?.(btn.dataset);
+    });
+  });
+}
+bindStrokeOptionGroup('[data-stroke-cap]', data =&gt; {
+  const obj=activeObj(); if(!obj) return;
+  obj.set({strokeLineCap:data.strokeCap}); canvas.requestRenderAll();
+});
+bindStrokeOptionGroup('[data-stroke-join]', data =&gt; {
+  const obj=activeObj(); if(!obj) return;
+  obj.set({strokeLineJoin:data.strokeJoin}); canvas.requestRenderAll();
+});
+
 $('btnHelp')?.addEventListener('click', () =&gt; {
   openModal('Atalhos de teclado', `
     &lt;div class=&quot;shortcuts-grid&quot; style=&quot;gap:8px 16px&quot;&gt;
