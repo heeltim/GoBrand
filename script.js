@@ -116,7 +116,7 @@ function mkProject(name=""){
     about:"", fontPri:"Outfit", fontSec:"Sora",
     typo:DEFAULT_TYPO(), colors:DEFAULT_COLORS(),
     logoSq:null, logoWd:null,
-    brandImport:{xHeight:52,safeMargin:12,enabled:false,lastStats:null},
+    brandImport:{xHeight:52,safeMargin:12,enabled:false,lastStats:null,place:{sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}}},
     exportLibrary:null,
     applications:[],
     createdAt:Date.now(), updatedAt:Date.now()
@@ -139,7 +139,10 @@ const P = () => S.projects.find(p=>p.id===S.pid)||null;
 const $ = id => document.getElementById(id);
 
 function ensureBrandImportState(p){
-  if(!p.brandImport) p.brandImport={xHeight:52,safeMargin:12,enabled:false,lastStats:null};
+  if(!p.brandImport) p.brandImport={xHeight:52,safeMargin:12,enabled:false,lastStats:null,place:{sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}}};
+  if(!p.brandImport.place) p.brandImport.place={sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}};
+  if(!p.brandImport.place.sq) p.brandImport.place.sq={x:8,y:10,scale:100};
+  if(!p.brandImport.place.wd) p.brandImport.place.wd={x:52,y:52,scale:100};
   p.brandImport.xHeight=clamp(+p.brandImport.xHeight||52,20,90);
   p.brandImport.safeMargin=clamp(+p.brandImport.safeMargin||12,0,40);
 }
@@ -225,7 +228,7 @@ ctx.querySelectorAll(".ctx-item").forEach(item=>{
    NAVIGATION
 ============================================================ */
 function nav(view, el){
-  ["home","board","apps","editor","export","appEditor"].forEach(v=>{
+  ["home","board","apps","editor","brandImport","export","appEditor"].forEach(v=>{
     $("view"+cap(v)).classList.toggle("active",v===view);
   });
   document.querySelectorAll(".sidebar-item").forEach(i=>i.classList.toggle("active",i.dataset.view===view));
@@ -238,6 +241,7 @@ function nav(view, el){
   if(view==="board") renderBoard();
   if(view==="apps") renderApps();
   if(view==="editor"){ loadEditor(); renderPreview(); }
+  if(view==="brandImport") renderBrandImportWorkspace();
   if(view==="appEditor" && _appEdit.appId){
     const p=P();
     const a=(p?.applications||[]).find(x=>x.id===_appEdit.appId);
@@ -273,6 +277,7 @@ function updateTopbar(view){
   if(view==="board") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Brand Board</span>`;
   else if(view==="apps") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Aplicações</span>`;
   else if(view==="editor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editar</span>`;
+  else if(view==="brandImport") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Importação avançada</span>`;
   else if(view==="appEditor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editor da Aplicação</span>`;
   else if(view==="export") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Exportar</span>`;
   else bc.innerHTML=crumbBase;
@@ -283,6 +288,8 @@ function updateTopbar(view){
       ${icon("save",12)}
       Salvar
     </button>`;
+  } else if(view==="brandImport") {
+    right.innerHTML=`<button class="btn btn-primary" onclick="applyBrandImportToSlots()">${icon("check",12)}Aplicar</button>`;
   } else {
     right.innerHTML="";
   }
@@ -410,9 +417,7 @@ function loadEditor(){
 
   ensureBrandImportState(p);
   ensureExportLibrary(p);
-  renderLogoSlot("sq",p.logoSq);
-  renderLogoSlot("wd",p.logoWd);
-  renderBrandImportPanel(p);
+  renderBrandQuickCard(p);
 
   normalizePercents(p);
   renderColors();
@@ -466,6 +471,10 @@ function fillFontSelects(){
 function triggerLogo(slot){
   $("fileLogo"+cap(slot)).click();
 }
+function openBrandImport(){
+  const p=P(); if(!p){ toast("Abra um projeto primeiro","info"); return; }
+  nav("brandImport");
+}
 function clearLogo(slot,e){
   if(e){e.preventDefault();e.stopPropagation();}
   const p=P();if(!p)return;
@@ -475,17 +484,19 @@ function clearLogo(slot,e){
   p.updatedAt=Date.now();
   save(S.projects);
   gePushBrandData(p);
-  renderLogoSlot(slot,null);
-  renderBrandImportPanel(p);
+  renderBrandQuickCard(p);
+  renderBrandImportWorkspace();
 }
 
-function renderLogoSlot(slot,asset){
-  const el=$("slot"+cap(slot));
-  el.querySelectorAll("img,.logo-preview-inner").forEach(n=>n.remove());
+function renderAssetInto(el,asset){
+  if(!el) return;
+  el.innerHTML="";
   if(!asset) return;
   if(asset.type==="svg"){
     const w=document.createElement("div");
     w.className="logo-preview-inner";
+    w.style.width="100%";
+    w.style.height="100%";
     w.innerHTML=asset.data;
     w.querySelectorAll("svg").forEach(s=>{s.style.width="100%";s.style.height="100%";});
     el.appendChild(w);
@@ -495,36 +506,85 @@ function renderLogoSlot(slot,asset){
 }
 
 function collectBrandImportStats(p){
-  const stats={logos:0,formats:[],vectors:0,bitmaps:0};
-  [p.logoSq,p.logoWd].forEach(a=>{
-    if(!a) return;
-    stats.logos++;
-    if(a.type==='svg') stats.vectors++; else stats.bitmaps++;
-    stats.formats.push(a.type==='svg'?'SVG':'Bitmap');
-  });
+  const stats={logos:0,vectors:0,bitmaps:0};
+  [p.logoSq,p.logoWd].forEach(a=>{ if(!a) return; stats.logos++; a.type==='svg'?stats.vectors++:stats.bitmaps++; });
   return stats;
 }
 
-function renderBrandImportPanel(p){
-  ensureBrandImportState(p);
-  const panel=$("brandImportPanel");
-  if(!panel) return;
-  panel.style.display = p.brandImport.enabled ? "block" : "none";
-  if($("inpXHeight")) $("inpXHeight").value=p.brandImport.xHeight;
-  if($("inpSafeMargin")) $("inpSafeMargin").value=p.brandImport.safeMargin;
-  const st=p.brandImport.lastStats||collectBrandImportStats(p);
-  if($("brandImportStats")){
-    if(!st.logos) $("brandImportStats").textContent='Sem ativos importados.';
-    else $("brandImportStats").textContent=`${st.logos} ativo(s) • vetorial: ${st.vectors} • bitmap: ${st.bitmaps} • Altura X ${p.brandImport.xHeight}% • Respiro ${p.brandImport.safeMargin}%`;
+function renderBrandQuickCard(p){
+  const slot=$("slotBrandEntry");
+  if(!slot) return;
+  const hint=$("brandQuickHint");
+  const status=$("brandQuickStatus");
+  const st=collectBrandImportStats(p);
+  if(status){
+    status.textContent = st.logos ? `${st.logos} ativo(s) • vetorial ${st.vectors} • bitmap ${st.bitmaps}` : "Sem ativos importados.";
   }
+  if(!p.logoSq && !p.logoWd){
+    if(hint) hint.style.display="flex";
+    slot.querySelectorAll("img,.logo-preview-inner").forEach(n=>n.remove());
+    return;
+  }
+  if(hint) hint.style.display="none";
+  renderAssetInto(slot,p.logoWd||p.logoSq);
 }
 
-function toggleBrandImportPanel(){
-  const p=P();if(!p)return;
+function syncBrandImportInputs(p){
+  if($("inpXHeight")) $("inpXHeight").value = p.brandImport.xHeight;
+  if($("inpSafeMargin")) $("inpSafeMargin").value = p.brandImport.safeMargin;
+  const sq=p.brandImport.place?.sq||{x:8,y:10,scale:100};
+  const wd=p.brandImport.place?.wd||{x:52,y:52,scale:100};
+  if($("advSqX")) $("advSqX").value = sq.x;
+  if($("advSqY")) $("advSqY").value = sq.y;
+  if($("advSqScale")) $("advSqScale").value = sq.scale;
+  if($("advWdX")) $("advWdX").value = wd.x;
+  if($("advWdY")) $("advWdY").value = wd.y;
+  if($("advWdScale")) $("advWdScale").value = wd.scale;
+}
+
+function renderBrandImportWorkspace(){
+  const p=P(); if(!p) return;
   ensureBrandImportState(p);
-  p.brandImport.enabled=!p.brandImport.enabled;
+  p.brandImport.lastStats=collectBrandImportStats(p);
+  syncBrandImportInputs(p);
+  renderAssetInto($("advSlotSq"), p.logoSq);
+  renderAssetInto($("advSlotWd"), p.logoWd);
+  const st=p.brandImport.lastStats;
+  if($("brandImportStats")){
+    $("brandImportStats").textContent = st.logos ? `${st.logos} ativo(s) • vetorial: ${st.vectors} • bitmap: ${st.bitmaps} • Altura X ${p.brandImport.xHeight}% • Respiro ${p.brandImport.safeMargin}%` : "Sem ativos importados.";
+  }
+  renderCompositePreview(p);
+}
+
+function updateBrandPlacement(slot,key,val){
+  const p=P(); if(!p) return;
+  ensureBrandImportState(p);
+  const place=p.brandImport.place[slot];
+  place[key]=Number(val)||0;
+  p.updatedAt=Date.now();
   save(S.projects);
-  renderBrandImportPanel(p);
+  renderCompositePreview(p);
+}
+
+function renderCompositePreview(p){
+  const host=$("brandCompositePreview");
+  if(!host) return;
+  host.innerHTML="";
+  const add=(asset,slot)=>{
+    if(!asset) return;
+    const place=p.brandImport.place[slot]||{x:0,y:0,scale:100};
+    const layer=document.createElement('div');
+    layer.className='asset-layer';
+    layer.style.left=clamp(place.x,0,90)+'%';
+    layer.style.top=clamp(place.y,0,90)+'%';
+    layer.style.width=(slot==='sq'?26:40)+'%';
+    layer.style.height='40%';
+    layer.style.transform=`translate(-50%, -50%) scale(${clamp((place.scale||100)/100,0.2,2.2)})`;
+    renderAssetInto(layer,asset);
+    host.appendChild(layer);
+  };
+  add(p.logoSq,'sq');
+  add(p.logoWd,'wd');
 }
 
 function updateBrandImportSetting(key,val){
@@ -536,7 +596,7 @@ function updateBrandImportSetting(key,val){
   p.brandImport.lastStats=collectBrandImportStats(p);
   p.updatedAt=Date.now();
   save(S.projects);
-  renderBrandImportPanel(p);
+  renderBrandImportWorkspace();
 }
 
 function normalizeImportedLogo(asset,p){
@@ -550,11 +610,7 @@ function normalizeImportedLogo(asset,p){
     const vb=(svg.getAttribute("viewBox")||"0 0 1000 1000").trim().split(/\s+/).map(Number);
     if(vb.length===4 && vb.every(Number.isFinite)){
       const [x,y,w,h]=vb;
-      const nx=x-(w*marginPct);
-      const ny=y-(h*marginPct);
-      const nw=w*(1+marginPct*2);
-      const nh=h*(1+marginPct*2);
-      svg.setAttribute("viewBox",`${nx} ${ny} ${nw} ${nh}`);
+      svg.setAttribute("viewBox",`${x-(w*marginPct)} ${y-(h*marginPct)} ${w*(1+marginPct*2)} ${h*(1+marginPct*2)}`);
     }
     svg.setAttribute("data-x-height",String(p.brandImport.xHeight||52));
     return {type:'svg',data:svg.outerHTML};
@@ -566,14 +622,14 @@ function applyBrandImportToSlots(){
   ["Sq","Wd"].forEach(s=>{
     const key="logo"+s;
     if(p[key]) p[key]=normalizeImportedLogo(p[key],p);
-    renderLogoSlot(s.toLowerCase(),p[key]);
   });
   p.brandImport.lastStats=collectBrandImportStats(p);
   p.updatedAt=Date.now();
   save(S.projects);
   gePushBrandData(p);
-  renderBrandImportPanel(p);
-  toast("Ajustes da importação aplicados","success");
+  renderBrandQuickCard(p);
+  renderBrandImportWorkspace();
+  toast("Ajustes da marca aplicados","success");
 }
 
 ["Sq","Wd"].forEach(s=>{
@@ -589,27 +645,16 @@ function applyBrandImportToSlots(){
     p.updatedAt=Date.now();
     save(S.projects);
     gePushBrandData(p);
-    renderLogoSlot(s.toLowerCase(),p[key]);
-    renderBrandImportPanel(p);
+    renderBrandQuickCard(p);
+    renderBrandImportWorkspace();
     fileInput.value="";
     toast("Logo carregado!","success");
   });
 });
 
-// Wire clear buttons
-["clearSq","clearWd"].forEach(id=>{
-  $(id)?.addEventListener("click",e=>{
-    e.preventDefault();e.stopPropagation();
-    clearLogo(id.replace("clear","").toLowerCase());
-  });
-});
-
 async function readAsset(file){
-  if(file.name.toLowerCase().endsWith(".svg")||file.type==="image/svg+xml")
-    return {type:"svg",data:await file.text()};
-  return new Promise((res,rej)=>{
-    const r=new FileReader();r.onload=()=>res({type:"img",data:r.result});r.onerror=rej;r.readAsDataURL(file);
-  });
+  if(file.name.toLowerCase().endsWith(".svg")||file.type==="image/svg+xml") return {type:"svg",data:await file.text()};
+  return new Promise((res,rej)=>{ const r=new FileReader();r.onload=()=>res({type:"img",data:r.result});r.onerror=rej;r.readAsDataURL(file); });
 }
 
 /* ============================================================
