@@ -151,6 +151,12 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 /* ---- MAIN CONTENT ---- */
+
+.shell.app-editor-mode { grid-template-columns: 1fr; }
+.shell.app-editor-mode .sidebar { display: none; }
+.shell.app-editor-mode .topbar { display: none; }
+.shell.app-editor-mode .main { min-height: 100vh; }
+.shell.app-editor-mode #viewAppEditor { padding: 0; height: 100vh; }
 .main {
   display: flex; flex-direction: column;
   min-height: 100vh; overflow: hidden;
@@ -797,7 +803,7 @@ a { color: var(--accent); text-decoration: none; }
 /* ============================================================
    APP EDITOR (PAGE VIEW)
 ============================================================ */
-#viewAppEditor{ padding: 14px; height: 100%; }
+#viewAppEditor{ padding: 0; height: 100%; }
 .appedit-shell{
   height: 100%;
   background: var(--bg);
