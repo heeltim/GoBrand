@@ -641,13 +641,12 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 /* ─── LAYOUT ──────────────────────────────────────────── */
 .app{
   display:grid;
-  grid-template-rows: 30px var(--topbar-h) 38px 1fr;
+  grid-template-rows: 30px var(--topbar-h) 1fr;
   grid-template-columns: var(--panel-w) 1fr var(--panel-w);
   height:100%;
 }
 
-.menu-bar,
-.context-strip{
+.menu-bar{
   grid-column:1 / -1;
   display:flex;
   align-items:center;
@@ -661,7 +660,6 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .menu-item.active{background:rgba(127,90,240,.18);color:#fff}
 .menu-spacer{margin-left:auto}
 
-.context-strip{background:#292931;font-size:11px;gap:8px}
 .ctx-pill{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);display:inline-flex;align-items:center;color:var(--ink2)}
 .ctx-pill strong{color:var(--ink);font-weight:600}
 
@@ -1019,6 +1017,13 @@ textarea.modal-textarea{
       &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
       &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
       &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
+      &lt;div style=&quot;width:1px;height:18px;background:var(--border);margin:0 2px&quot;&gt;&lt;/div&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟸&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; title=&quot;Centralizar horizontal&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↔&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; title=&quot;Alinhar à direita&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟹&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; title=&quot;Alinhar no topo&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟰&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; title=&quot;Centralizar vertical&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↕&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; title=&quot;Alinhar na base&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟱&lt;/button&gt;
       &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
         &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
       &lt;/button&gt;
@@ -1038,12 +1043,6 @@ textarea.modal-textarea{
     &lt;/div&gt;
   &lt;/header&gt;
 
-  &lt;div class=&quot;context-strip&quot;&gt;
-    &lt;span class=&quot;ctx-pill&quot; id=&quot;ctxSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Seleção automática&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configuração do documento&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configurações do aplicativo&lt;/span&gt;
-  &lt;/div&gt;
 
   &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
   &lt;aside class=&quot;panel&quot;&gt;
@@ -1090,69 +1089,20 @@ textarea.modal-textarea{
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
-        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Layout rápido&lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot;&gt;
+        &lt;div class=&quot;field-row one&quot; style=&quot;margin-top:6px&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Referência&lt;/div&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Referência de alinhamento&lt;/div&gt;
             &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
               &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
               &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟸&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Centro ↔&lt;/button&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
+        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟹&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Base ⟱&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Topo ⟰&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Meio ↕&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeX&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir X&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeY&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir Y&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Agrupar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Desagrupar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;!-- JSON --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Projeto&lt;/div&gt;
-        &lt;div style=&quot;display:flex;gap:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnSaveJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Salvar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnLoadJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Carregar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;!-- Layers --&gt;
-      &lt;div class=&quot;panel-section&quot; style=&quot;flex:1&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
-          Camadas
-          &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
-        &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;width:100%;justify-content:center;height:32px;margin:0 0 8px 0&quot;&gt;+ Nova layer&lt;/button&gt;
-        &lt;div id=&quot;layersList&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
@@ -1259,6 +1209,17 @@ textarea.modal-textarea{
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;panel-section&quot; style=&quot;max-height:220px;display:flex;flex-direction:column&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
+          Camadas
+          &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;width:100%;justify-content:center;height:32px;margin:0 0 8px 0&quot;&gt;+ Nova layer&lt;/button&gt;
+        &lt;div id=&quot;layersList&quot; style=&quot;flex:1;overflow:auto&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
