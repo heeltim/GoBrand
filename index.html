@@ -329,21 +329,18 @@
               <span style="font-size:11px;color:var(--ink3)">SVG · PNG · JPG</span>
             </div>
             <div class="block-body">
-              <div class="logo-grid">
-                <div class="logo-slot sq" id="slotSq" onclick="triggerLogo('sq')">
-                  <div class="upload-hint">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Quadrado
-                  </div>
-                  <div class="clear-logo" id="clearSq" onclick.stop="clearLogo('sq',event)">✕</div>
+              <div id="slotBrandEntry" class="logo-slot" style="height:130px" onclick="openBrandImport()">
+                <div class="upload-hint" id="brandQuickHint">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Abrir modo avançado da marca
                 </div>
-                <div class="logo-slot wd" id="slotWd" onclick="triggerLogo('wd')">
-                  <div class="upload-hint">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Horizontal
-                  </div>
-                  <div class="clear-logo" id="clearWd" onclick.stop="clearLogo('wd',event)">✕</div>
-                </div>
+              </div>
+              <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+                <div id="brandQuickStatus" class="import-stats" style="flex:1;min-width:220px">Sem ativos importados.</div>
+                <button class="btn btn-ghost" type="button" onclick="openBrandImport()">
+                  <i data-lucide="wand-sparkles" data-size="12"></i>
+                  Importação avançada
+                </button>
               </div>
             </div>
           </div>
@@ -486,14 +483,74 @@
       </div>
     </div>
 
+    <!-- BRAND IMPORT VIEW -->
+    <div id="viewBrandImport" class="view">
+      <div class="home-head" style="margin-bottom:14px">
+        <div>
+          <h1>Importação avançada da marca</h1>
+          <p>Faça upload, ajuste posicionamento e visualize versões da marca sem sair do estilo da página.</p>
+        </div>
+        <button class="btn btn-ghost" onclick="nav('editor')">Voltar</button>
+      </div>
+      <div class="brand-import-layout">
+        <div class="brand-import-controls block">
+          <div class="block-header"><div class="block-title">Configurações</div></div>
+          <div class="block-body stack">
+            <div class="field"><label class="field-label">Altura X (%)</label><input id="inpXHeight" class="inp" type="range" min="20" max="90" step="1" oninput="updateBrandImportSetting('xHeight',this.value)"></div>
+            <div class="field"><label class="field-label">Área de respiro (%)</label><input id="inpSafeMargin" class="inp" type="range" min="0" max="40" step="1" oninput="updateBrandImportSetting('safeMargin',this.value)"></div>
+            <div class="row2">
+              <button class="btn btn-ghost" onclick="triggerLogo('sq')" style="justify-content:center">Upload Quadrado</button>
+              <button class="btn btn-ghost" onclick="triggerLogo('wd')" style="justify-content:center">Upload Horizontal</button>
+            </div>
+            <div class="row2">
+              <button class="btn btn-ghost" onclick="clearLogo('sq')" style="justify-content:center">Limpar Quadrado</button>
+              <button class="btn btn-ghost" onclick="clearLogo('wd')" style="justify-content:center">Limpar Horizontal</button>
+            </div>
+            <button class="btn btn-primary" onclick="applyBrandImportToSlots()" style="justify-content:center">Aplicar ajustes da marca</button>
+            <div id="brandImportStats" class="import-stats">Sem ativos importados.</div>
+          </div>
+        </div>
+        <div class="brand-import-preview block">
+          <div class="block-header"><div class="block-title">Visualização e posicionamento</div></div>
+          <div class="block-body stack">
+            <div class="brand-preview-grid">
+              <div class="brand-preview-panel">
+                <div class="field-label" style="margin-bottom:6px">Logo quadrado</div>
+                <div class="brand-preview-slot" id="advSlotSq"></div>
+                <div class="row2" style="margin-top:8px">
+                  <input class="inp" id="advSqX" type="number" placeholder="X" oninput="updateBrandPlacement('sq','x',this.value)">
+                  <input class="inp" id="advSqY" type="number" placeholder="Y" oninput="updateBrandPlacement('sq','y',this.value)">
+                </div>
+                <input class="inp" id="advSqScale" type="range" min="20" max="220" value="100" oninput="updateBrandPlacement('sq','scale',this.value)">
+              </div>
+              <div class="brand-preview-panel">
+                <div class="field-label" style="margin-bottom:6px">Logo horizontal</div>
+                <div class="brand-preview-slot" id="advSlotWd"></div>
+                <div class="row2" style="margin-top:8px">
+                  <input class="inp" id="advWdX" type="number" placeholder="X" oninput="updateBrandPlacement('wd','x',this.value)">
+                  <input class="inp" id="advWdY" type="number" placeholder="Y" oninput="updateBrandPlacement('wd','y',this.value)">
+                </div>
+                <input class="inp" id="advWdScale" type="range" min="20" max="220" value="100" oninput="updateBrandPlacement('wd','scale',this.value)">
+              </div>
+            </div>
+            <div>
+              <div class="field-label" style="margin-bottom:6px">Painel combinado</div>
+              <div class="brand-composite" id="brandCompositePreview"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- EXPORT VIEW -->
     <div id="viewExport" class="view">
       <div class="home-head">
         <div>
           <h1>Exportar</h1>
-          <p>Tokens, CSS, JSON — pronto para o seu pipeline.</p>
+          <p>Gerencie pastas, subpastas e arquivos gerados da marca e das aplicações.</p>
         </div>
       </div>
+      <div id="exportManager"></div>
       <div id="exportGrid" class="export-grid"></div>
     </div>
 
@@ -2147,17 +2204,48 @@ function loadSVGFromParent(svgText) {
     return;
   }
 
+  // Detecta dimensões do SVG salvo para evitar abrir em uma prancheta padrão incorreta
+  try {
+    const doc = new DOMParser().parseFromString(raw, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+    if (svg) {
+      let w = Number((svg.getAttribute('width')||'').replace(/[^\d.]/g,''));
+      let h = Number((svg.getAttribute('height')||'').replace(/[^\d.]/g,''));
+      const vb = (svg.getAttribute('viewBox')||'').trim().split(/\s+/).map(Number);
+      if ((!w || !h) && vb.length===4 && vb.every(Number.isFinite)) {
+        w = vb[2]; h = vb[3];
+      }
+      if (w>0 && h>0) setArtboardSize(w, h);
+    }
+  } catch(_err) {}
+
   fabric.loadSVGFromString(raw, (objects) => {
     if (!objects || !objects.length) {
       canvas.requestRenderAll();
       setStatus('Não foi possível carregar SVG anterior');
       return;
     }
+
+    // Reposiciona o conteúdo para a prancheta ativa
+    const sel = new fabric.ActiveSelection(objects, { canvas });
+    const box = sel.getBoundingRect(true, true);
+    const dx = (artboard?.left||0) - box.left;
+    const dy = (artboard?.top||0) - box.top;
+
     objects.forEach(o => {
-      o.set({ selectable:true, evented:true, excludeFromExport:false });
+      o.set({
+        left: (o.left||0) + dx,
+        top: (o.top||0) + dy,
+        selectable:true,
+        evented:true,
+        excludeFromExport:false
+      });
+      o.setCoords();
       canvas.add(o);
     });
+
     canvas.requestRenderAll();
+    fitToArtboard();
     refreshLayers();
     refreshProps();
     setStatus('Aplicação carregada para edição');
