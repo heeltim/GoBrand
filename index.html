@@ -28,12 +28,14 @@
   <div class="module-shell">
     <div class="module-head">
       <div>
-        <div class="module-title">Brand Studio • Módulo Avançado</div>
-        <div class="module-sub">Composição vetorial, variações e envio em ZIP.</div>
+        <div class="module-title">Brand Studio integrado</div>
+        <div class="module-sub">As funções foram incorporadas ao fluxo interno do projeto.</div>
       </div>
       <button class="btn btn-ghost" onclick="closeBrandStudioModule()">Fechar</button>
     </div>
-    <iframe id="brandStudioFrame" class="module-frame" src="brand-studio-module.html" title="Brand Studio Module"></iframe>
+    <div style="padding:16px;color:var(--ink2)">
+      Use a seção <b>Editar</b> para importar e configurar a marca, e a seção <b>Exportar</b> para gerar os pacotes.
+    </div>
   </div>
 </div>
 
@@ -651,13 +653,20 @@
       </div>
     </div>
 
-    <!-- EDITOR BODY: apenas o iframe ocupa tudo -->
+    <!-- EDITOR BODY: editor SVG interno -->
     <div class="appedit-body">
-      <div class="ge-iframeWrap">
-        <iframe id="geEditorFrame" title="Goblin Editor"
-          sandbox="allow-scripts allow-same-origin allow-downloads"
-          referrerpolicy="no-referrer"
-          style="width:100%;height:100%;border:0;border-radius:18px;overflow:hidden;background:transparent"></iframe>
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:12px;height:100%">
+        <div id="appCanvasHost" style="background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:16px;overflow:auto;padding:18px;display:flex;align-items:center;justify-content:center"></div>
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px">
+          <div class="block-title">Estilo rápido</div>
+          <select id="appStylePreset" class="inp"></select>
+          <button class="btn btn-ghost" onclick="applyAppStylePreset()">Aplicar estilo no item selecionado</button>
+          <button class="btn btn-ghost" onclick="addTextInApp()">Adicionar texto</button>
+          <button class="btn btn-ghost" onclick="addShapeInApp()">Adicionar forma</button>
+          <button class="btn btn-ghost" onclick="replaceLogoInApp()">Aplicar logo da marca</button>
+          <button class="btn btn-ghost" onclick="toggleGuides()">Mostrar/ocultar guides</button>
+          <button class="btn btn-primary" onclick="exportCurrentSVG()">Exportar SVG</button>
+        </div>
       </div>
     </div>
   </div>
@@ -672,7 +681,7 @@
   <div id="paletteRow"></div><div id="layerList"></div><span id="layerCount"></span>
   <div id="sizeTitle"></div><div id="sizeWRow"></div><div id="sizeHRow"></div>
   <div id="radiusRow"></div><div id="textStyleRow"></div>
-  <div id="appCanvasHost"></div>
+  <iframe id="geEditorFrame"></iframe>
 </div>
 
 <template id="geEditorTemplate">
