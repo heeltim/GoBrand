@@ -2079,3 +2079,39 @@ function geEnsureIframeLoaded(){
   }
   function geFit(){ gePost({type:'fit'}); }
   function geExportPNG(){ gePost({type:'exportPNG'}); }
+  function geExportSVG(){ gePost({type:'exportSVG'}); }
+
+  function saveCurrentApplication(){
+    const p=P(); if(!p){ toast('Abra um projeto primeiro','error'); return; }
+    const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
+    if(!a){ toast('Aplicação não encontrada','error'); return; }
+    geExportSVG();
+  }
+
+  window.addEventListener('message',(ev)=>{
+    const msg=ev.data||{};
+    if(msg.type!=="geExportSVG") return;
+    const p=P(); if(!p) return;
+    const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
+    if(!a) return;
+
+    if(msg.error){
+      toast(msg.error,'error');
+      return;
+    }
+
+    const raw=String(msg.svg||'').trim();
+    if(!raw){
+      toast('Não foi possível salvar: SVG vazio','error');
+      return;
+    }
+
+    const xml = raw.startsWith('<?xml') ? raw : `<?xml version="1.0" encoding="UTF-8"?>
+${raw}`;
+    a.svg = xml;
+    a.updatedAt = Date.now();
+    p.updatedAt = Date.now();
+    save(S.projects);
+    renderApps();
+    toast('Aplicação salva em Aplicações','success');
+  });
