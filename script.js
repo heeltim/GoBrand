@@ -277,7 +277,7 @@ function updateTopbar(view){
   if(view==="board") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Brand Board</span>`;
   else if(view==="apps") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Aplicações</span>`;
   else if(view==="editor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editar</span>`;
-  else if(view==="brandImport") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Importação avançada</span>`;
+  else if(view==="brandImport") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Carregar sua marca</span>`;
   else if(view==="appEditor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editor da Aplicação</span>`;
   else if(view==="export") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Exportar</span>`;
   else bc.innerHTML=crumbBase;
@@ -512,21 +512,33 @@ function collectBrandImportStats(p){
 }
 
 function renderBrandQuickCard(p){
-  const slot=$("slotBrandEntry");
-  if(!slot) return;
-  const hint=$("brandQuickHint");
+  const thumb=$("brandQuickThumb");
   const status=$("brandQuickStatus");
+  if(!status && !thumb) return;
   const st=collectBrandImportStats(p);
   if(status){
     status.textContent = st.logos ? `${st.logos} ativo(s) • vetorial ${st.vectors} • bitmap ${st.bitmaps}` : "Sem ativos importados.";
   }
-  if(!p.logoSq && !p.logoWd){
-    if(hint) hint.style.display="flex";
-    slot.querySelectorAll("img,.logo-preview-inner").forEach(n=>n.remove());
-    return;
+  if(thumb){
+    thumb.innerHTML="";
+    if(!p.logoSq && !p.logoWd){
+      thumb.innerHTML=`<div class="upload-hint" style="height:96px">${icon("image-plus",16)}<span>Nenhum arquivo carregado</span></div>`;
+    } else {
+      renderAssetInto(thumb,p.logoWd||p.logoSq);
+    }
   }
-  if(hint) hint.style.display="none";
-  renderAssetInto(slot,p.logoWd||p.logoSq);
+}
+
+function renderBrandImportPalette(p){
+  const root=$("brandImportPalette");
+  if(!root || !p) return;
+  root.innerHTML=(p.colors||[]).slice(0,4).map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border2);border-radius:10px;padding:8px 10px;background:var(--surface2)">
+      <span style="width:16px;height:16px;border-radius:6px;background:${rgba(c.hex,c.alpha)};display:inline-block"></span>
+      <span style="font-size:12px;color:var(--ink);font-weight:600">${esc(c.name||c.hex)}</span>
+      <span style="font-size:11px;color:var(--ink3);margin-left:auto">${esc(c.hex)}</span>
+    </div>
+  `).join("") || `<div class="import-stats">Sem cores definidas ainda.</div>`;
 }
 
 function syncBrandImportInputs(p){
@@ -545,8 +557,11 @@ function syncBrandImportInputs(p){
 function renderBrandImportWorkspace(){
   const p=P(); if(!p) return;
   ensureBrandImportState(p);
+  if($("inpBrandBaseName")) $("inpBrandBaseName").value=(p.name||"minha-marca").toLowerCase().replace(/\s+/g,'-');
   p.brandImport.lastStats=collectBrandImportStats(p);
   syncBrandImportInputs(p);
+  renderBrandQuickCard(p);
+  renderBrandImportPalette(p);
   renderAssetInto($("advSlotSq"), p.logoSq);
   renderAssetInto($("advSlotWd"), p.logoWd);
   const st=p.brandImport.lastStats;
@@ -1379,10 +1394,8 @@ function renderApps(){
       <div class="export-preview export-preview-visual">
         ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Abra no editor para criar</div>`}
       </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="openAppEditor('${a.id}')">Editar</button>
-        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="downloadApp('${a.id}')">Baixar SVG</button>
-        <button class="btn btn-ghost" style="width:42px;justify-content:center" onclick="deleteApp('${a.id}')">✕</button>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn-icon" type="button" title="Mais opções (em breve)" aria-label="Mais opções (em breve)">${icon('ellipsis',16)}</button>
       </div>
     </div>
   `).join("");
