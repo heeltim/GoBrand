@@ -641,13 +641,12 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 /* ─── LAYOUT ──────────────────────────────────────────── */
 .app{
   display:grid;
-  grid-template-rows: 30px var(--topbar-h) 38px 1fr;
+  grid-template-rows: 30px var(--topbar-h) 1fr;
   grid-template-columns: var(--panel-w) 1fr var(--panel-w);
   height:100%;
 }
 
-.menu-bar,
-.context-strip{
+.menu-bar{
   grid-column:1 / -1;
   display:flex;
   align-items:center;
@@ -661,7 +660,6 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .menu-item.active{background:rgba(127,90,240,.18);color:#fff}
 .menu-spacer{margin-left:auto}
 
-.context-strip{background:#292931;font-size:11px;gap:8px}
 .ctx-pill{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);display:inline-flex;align-items:center;color:var(--ink2)}
 .ctx-pill strong{color:var(--ink);font-weight:600}
 
@@ -1045,12 +1043,6 @@ textarea.modal-textarea{
     &lt;/div&gt;
   &lt;/header&gt;
 
-  &lt;div class=&quot;context-strip&quot;&gt;
-    &lt;span class=&quot;ctx-pill&quot; id=&quot;ctxSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Seleção automática&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configuração do documento&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configurações do aplicativo&lt;/span&gt;
-  &lt;/div&gt;
 
   &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
   &lt;aside class=&quot;panel&quot;&gt;
