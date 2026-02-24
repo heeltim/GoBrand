@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -28,12 +29,14 @@
   <div class="module-shell">
     <div class="module-head">
       <div>
-        <div class="module-title">Brand Studio • Módulo Avançado</div>
-        <div class="module-sub">Composição vetorial, variações e envio em ZIP.</div>
+        <div class="module-title">Brand Studio integrado</div>
+        <div class="module-sub">As funções foram incorporadas ao fluxo interno do projeto.</div>
       </div>
       <button class="btn btn-ghost" onclick="closeBrandStudioModule()">Fechar</button>
     </div>
-    <iframe id="brandStudioFrame" class="module-frame" src="brand-studio-module.html" title="Brand Studio Module"></iframe>
+    <div style="padding:16px;color:var(--ink2)">
+      Use a seção <b>Editar</b> para importar e configurar a marca, e a seção <b>Exportar</b> para gerar os pacotes.
+    </div>
   </div>
 </div>
 
@@ -339,24 +342,25 @@
             </div>
           </div>
 
-          <!-- Logo -->
+          <!-- Marca (integrado no editor) -->
           <div class="block">
             <div class="block-header">
               <div class="block-title">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                Marca & Envio
+                Marca (Brand Studio)
               </div>
-              <span style="font-size:11px;color:var(--ink3)">Novo módulo</span>
             </div>
-            <div class="block-body">
-              <div class="stack" style="gap:10px">
-                <p style="font-size:12px;color:var(--ink2)">Substituímos o upload simples por um sistema avançado de marca com impressão vetorial e organização de envio.</p>
-                <div class="row2">
-                  <button class="btn btn-primary" onclick="openBrandStudioModule('brand')">Marca</button>
-                  <button class="btn btn-ghost" onclick="openBrandStudioModule('folders')">Envio</button>
-                </div>
-                <div style="font-size:11px;color:var(--ink3)">Compatível com SVG, exportação PNG/SVG e pacote ZIP.</div>
+            <div class="block-body stack" style="gap:10px">
+              <div class="field"><label class="field-label">Símbolo (SVG)</label><input id="bsSymbolFile" type="file" class="inp" accept=".svg,image/svg+xml"/></div>
+              <div class="field"><label class="field-label">Logo 1 (SVG)</label><input id="bsLogo1File" type="file" class="inp" accept=".svg,image/svg+xml"/></div>
+              <div class="field"><label class="field-label">Logo 2 opcional (SVG)</label><input id="bsLogo2File" type="file" class="inp" accept=".svg,image/svg+xml"/></div>
+              <div class="row2">
+                <div class="field"><label class="field-label">Layout marca</label><select id="bsMarkLayout" class="sel"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></div>
+                <div class="field"><label class="field-label">Layout tipografia</label><select id="bsTypeLayout" class="sel"><option value="stack">Empilhado</option><option value="inline">Inline</option></select></div>
               </div>
+              <div class="field"><label class="field-label">Cor da variação</label><select id="bsColorVariant" class="sel"></select></div>
+              <button class="btn btn-primary" onclick="bsComposeAndPreview()">Atualizar composição da marca</button>
+              <div id="bsPreview" class="export-preview" style="min-height:120px"></div>
             </div>
           </div>
 
@@ -503,120 +507,19 @@
       <div class="home-head">
         <div>
           <h1>Exportar</h1>
-          <p>Tokens, CSS, JSON — pronto para o seu pipeline.</p>
+          <p>Pacotes de marca + tokens do projeto.</p>
         </div>
       </div>
-      <div id="exportGrid" class="export-grid"></div>
+      <div class="editor-layout" style="grid-template-columns:1fr 1fr;gap:16px">
+        <div class="block"><div class="block-header"><div class="block-title">Arquivos da marca gerados</div></div><div class="block-body stack"><button class="btn btn-primary" onclick="bsGenerateAssets()">Gerar arquivos (SVG/PNG)</button><div id="bsAssetsList" class="color-chips"></div></div></div>
+        <div class="block"><div class="block-header"><div class="block-title">Pastas e ZIP</div></div><div class="block-body stack"><div class="row2"><input id="bsRootFolder" class="inp" value="BrandPackage"/><button class="btn btn-ghost" onclick="bsPresetFolders()">Preset</button></div><div id="bsFoldersList" class="color-chips"></div><div class="row2"><button class="btn btn-ghost" onclick="bsAddFolder()">+ Pasta</button><button class="btn btn-primary" onclick="bsExportZip()">Exportar ZIP</button></div></div></div>
+      </div>
+      <div id="exportGrid" class="export-grid" style="margin-top:16px"></div>
     </div>
 
   </div><!-- /main -->
 </div><!-- /shell -->
 
-
-<!-- APPLICATION CONFIGURATOR MODAL -->
-<div id="appBackdrop" class="modal-backdrop">
-  <div class="modal" id="appModal" style="width:min(980px,92vw)">
-    <div class="modal-head">
-      <div class="modal-head-title">Nova Aplicação</div>
-      <button class="btn-icon" onclick="closeAppConfigurator()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-
-    <div class="modal-grid" style="grid-template-columns:1.1fr 0.9fr">
-      <div class="modal-left">
-        <div class="field">
-          <label class="field-label">Template</label>
-          <select id="appTpl" class="select"></select>
-        </div>
-
-        <div class="row-2">
-          <div class="field">
-            <label class="field-label">Nome do arquivo</label>
-            <input id="appName" class="inp" placeholder="ex: Cartão de Visita — Frente"/>
-          </div>
-          <div class="field">
-            <label class="field-label">Tipo</label>
-            <select id="appType" class="select">
-              <option value="print">Impressão</option>
-              <option value="web">Web</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row-3">
-          <div class="field">
-            <label class="field-label">Largura</label>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input id="appW" class="inp" type="number" min="1" step="1"/>
-              <select id="appUnit" class="select" style="width:110px">
-                <option value="mm">mm</option>
-                <option value="px">px</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label class="field-label">Altura</label>
-            <input id="appH" class="inp" type="number" min="1" step="1"/>
-          </div>
-          <div class="field">
-            <label class="field-label">Orientação</label>
-            <select id="appOri" class="select">
-              <option value="auto">Auto</option>
-              <option value="portrait">Retrato</option>
-              <option value="landscape">Paisagem</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row-3">
-          <div class="field">
-            <label class="field-label">Resolução (DPI)</label>
-            <select id="appDpi" class="select">
-              <option value="72">72</option>
-              <option value="150">150</option>
-              <option value="300" selected>300</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="field-label">Sangria</label>
-            <select id="appBleed" class="select">
-              <option value="0">0 mm</option>
-              <option value="3" selected>3 mm</option>
-              <option value="5">5 mm</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="field-label">Margem segura</label>
-            <select id="appSafe" class="select">
-              <option value="0">0 mm</option>
-              <option value="5" selected>5 mm</option>
-              <option value="8">8 mm</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end">
-          <button class="btn btn-ghost" onclick="closeAppConfigurator()">Cancelar</button>
-          <button class="btn btn-primary" onclick="createApplication()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-            Gerar SVG
-          </button>
-        </div>
-      </div>
-
-      <div class="modal-right">
-        <div class="preview-label" style="margin-bottom:8px">Preview (layout base)</div>
-        <div class="export-preview" style="height:420px;overflow:auto" id="appPreview"></div>
-        <div style="font-size:12px;color:var(--ink2);line-height:1.6;margin-top:10px">
-          O SVG vem com camadas (guides, logo, swatches, type) para abrir no Illustrator e montar.
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <input id="fileLogoSq" type="file" accept=".svg,image/*" style="display:none">
 <input id="fileLogoWd" type="file" accept=".svg,image/*" style="display:none">
@@ -651,13 +554,20 @@
       </div>
     </div>
 
-    <!-- EDITOR BODY: apenas o iframe ocupa tudo -->
+    <!-- EDITOR BODY: editor SVG interno -->
     <div class="appedit-body">
-      <div class="ge-iframeWrap">
-        <iframe id="geEditorFrame" title="Goblin Editor"
-          sandbox="allow-scripts allow-same-origin allow-downloads"
-          referrerpolicy="no-referrer"
-          style="width:100%;height:100%;border:0;border-radius:18px;overflow:hidden;background:transparent"></iframe>
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:12px;height:100%">
+        <div id="appCanvasHost" style="background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:16px;overflow:auto;padding:18px;display:flex;align-items:center;justify-content:center"></div>
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px">
+          <div class="block-title">Estilo rápido</div>
+          <select id="appStylePreset" class="inp"></select>
+          <button class="btn btn-ghost" onclick="applyAppStylePreset()">Aplicar estilo no item selecionado</button>
+          <button class="btn btn-ghost" onclick="addTextInApp()">Adicionar texto</button>
+          <button class="btn btn-ghost" onclick="addShapeInApp()">Adicionar forma</button>
+          <button class="btn btn-ghost" onclick="replaceLogoInApp()">Aplicar logo da marca</button>
+          <button class="btn btn-ghost" onclick="toggleGuides()">Mostrar/ocultar guides</button>
+          <button class="btn btn-primary" onclick="exportCurrentSVG()">Exportar SVG</button>
+        </div>
       </div>
     </div>
   </div>
@@ -672,7 +582,7 @@
   <div id="paletteRow"></div><div id="layerList"></div><span id="layerCount"></span>
   <div id="sizeTitle"></div><div id="sizeWRow"></div><div id="sizeHRow"></div>
   <div id="radiusRow"></div><div id="textStyleRow"></div>
-  <div id="appCanvasHost"></div>
+  <iframe id="geEditorFrame"></iframe>
 </div>
 
 <template id="geEditorTemplate">
