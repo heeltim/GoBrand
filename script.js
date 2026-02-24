@@ -116,7 +116,7 @@ function mkProject(name=""){
     about:"", fontPri:"Outfit", fontSec:"Sora",
     typo:DEFAULT_TYPO(), colors:DEFAULT_COLORS(),
     logoSq:null, logoWd:null,
-    brandImport:{xHeight:52,safeMargin:12,enabled:false,lastStats:null,place:{sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}}},
+    brandImport:{xHeight:52,safeMargin:12,enabled:false,lastStats:null,place:{sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}},extras:[]},
     exportLibrary:null,
     applications:[],
     createdAt:Date.now(), updatedAt:Date.now()
@@ -139,10 +139,11 @@ const P = () => S.projects.find(p=>p.id===S.pid)||null;
 const $ = id => document.getElementById(id);
 
 function ensureBrandImportState(p){
-  if(!p.brandImport) p.brandImport={xHeight:52,safeMargin:12,enabled:false,lastStats:null,place:{sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}}};
+  if(!p.brandImport) p.brandImport={xHeight:52,safeMargin:12,enabled:false,lastStats:null,place:{sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}},extras:[]};
   if(!p.brandImport.place) p.brandImport.place={sq:{x:8,y:10,scale:100},wd:{x:52,y:52,scale:100}};
   if(!p.brandImport.place.sq) p.brandImport.place.sq={x:8,y:10,scale:100};
   if(!p.brandImport.place.wd) p.brandImport.place.wd={x:52,y:52,scale:100};
+  if(!Array.isArray(p.brandImport.extras)) p.brandImport.extras=[];
   p.brandImport.xHeight=clamp(+p.brandImport.xHeight||52,20,90);
   p.brandImport.safeMargin=clamp(+p.brandImport.safeMargin||12,0,40);
 }
@@ -277,7 +278,7 @@ function updateTopbar(view){
   if(view==="board") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Brand Board</span>`;
   else if(view==="apps") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Aplicações</span>`;
   else if(view==="editor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editar</span>`;
-  else if(view==="brandImport") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Importação avançada</span>`;
+  else if(view==="brandImport") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Carregar sua marca</span>`;
   else if(view==="appEditor") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Editor da Aplicação</span>`;
   else if(view==="export") bc.innerHTML=crumbBase+`<span style="color:var(--ink3)">›</span><span>Exportar</span>`;
   else bc.innerHTML=crumbBase;
@@ -488,6 +489,32 @@ function clearLogo(slot,e){
   renderBrandImportWorkspace();
 }
 
+function addExtraLogoSlot(){
+  const p=P();if(!p)return;
+  ensureBrandImportState(p);
+  const id=uid('lx');
+  p.brandImport.extras.push({id,name:`Logo ${p.brandImport.extras.length+2}`,asset:null,place:{x:50,y:50,scale:100}});
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderBrandImportWorkspace();
+}
+
+function removeExtraLogoSlot(id){
+  const p=P();if(!p)return;
+  ensureBrandImportState(p);
+  p.brandImport.extras=p.brandImport.extras.filter(x=>x.id!==id);
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderBrandImportWorkspace();
+}
+
+function triggerExtraLogo(id){
+  const inp=$("fileLogoExtra");
+  if(!inp) return;
+  inp.dataset.target=id;
+  inp.click();
+}
+
 function renderAssetInto(el,asset){
   if(!el) return;
   el.innerHTML="";
@@ -508,25 +535,38 @@ function renderAssetInto(el,asset){
 function collectBrandImportStats(p){
   const stats={logos:0,vectors:0,bitmaps:0};
   [p.logoSq,p.logoWd].forEach(a=>{ if(!a) return; stats.logos++; a.type==='svg'?stats.vectors++:stats.bitmaps++; });
+  (p.brandImport?.extras||[]).forEach(e=>{ if(!e?.asset) return; stats.logos++; e.asset.type==='svg'?stats.vectors++:stats.bitmaps++; });
   return stats;
 }
 
 function renderBrandQuickCard(p){
-  const slot=$("slotBrandEntry");
-  if(!slot) return;
-  const hint=$("brandQuickHint");
+  const thumb=$("brandQuickThumb");
   const status=$("brandQuickStatus");
+  if(!status && !thumb) return;
   const st=collectBrandImportStats(p);
   if(status){
     status.textContent = st.logos ? `${st.logos} ativo(s) • vetorial ${st.vectors} • bitmap ${st.bitmaps}` : "Sem ativos importados.";
   }
-  if(!p.logoSq && !p.logoWd){
-    if(hint) hint.style.display="flex";
-    slot.querySelectorAll("img,.logo-preview-inner").forEach(n=>n.remove());
-    return;
+  if(thumb){
+    thumb.innerHTML="";
+    if(!p.logoSq && !p.logoWd){
+      thumb.innerHTML=`<div class="upload-hint" style="height:96px">${icon("image-plus",16)}<span>Nenhum arquivo carregado</span></div>`;
+    } else {
+      renderAssetInto(thumb,p.logoWd||p.logoSq);
+    }
   }
-  if(hint) hint.style.display="none";
-  renderAssetInto(slot,p.logoWd||p.logoSq);
+}
+
+function renderBrandImportPalette(p){
+  const root=$("brandImportPalette");
+  if(!root || !p) return;
+  root.innerHTML=(p.colors||[]).slice(0,4).map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border2);border-radius:10px;padding:8px 10px;background:var(--surface2)">
+      <span style="width:16px;height:16px;border-radius:6px;background:${rgba(c.hex,c.alpha)};display:inline-block"></span>
+      <span style="font-size:12px;color:var(--ink);font-weight:600">${esc(c.name||c.hex)}</span>
+      <span style="font-size:11px;color:var(--ink3);margin-left:auto">${esc(c.hex)}</span>
+    </div>
+  `).join("") || `<div class="import-stats">Sem cores definidas ainda.</div>`;
 }
 
 function syncBrandImportInputs(p){
@@ -545,10 +585,32 @@ function syncBrandImportInputs(p){
 function renderBrandImportWorkspace(){
   const p=P(); if(!p) return;
   ensureBrandImportState(p);
+  if($("inpBrandBaseName")) $("inpBrandBaseName").value=(p.name||"minha-marca").toLowerCase().replace(/\s+/g,'-');
   p.brandImport.lastStats=collectBrandImportStats(p);
   syncBrandImportInputs(p);
+  renderBrandQuickCard(p);
+  renderBrandImportPalette(p);
   renderAssetInto($("advSlotSq"), p.logoSq);
   renderAssetInto($("advSlotWd"), p.logoWd);
+  const extraList=$("extraUploadList");
+  if(extraList){
+    extraList.innerHTML=(p.brandImport.extras||[]).map((item,idx)=>`
+      <div class="upload-row">
+        <button class="btn btn-ghost" onclick="triggerExtraLogo('${item.id}')" style="justify-content:center">${esc(item.name||`Logo ${idx+2}`)}</button>
+        <button class="btn btn-ghost mini" onclick="removeExtraLogoSlot('${item.id}')" style="justify-content:center">Limpar</button>
+      </div>
+    `).join("");
+  }
+  const extraPreview=$("advExtraPreview");
+  if(extraPreview){
+    extraPreview.innerHTML=(p.brandImport.extras||[]).map((item,idx)=>`
+      <div class="brand-preview-panel">
+        <div class="field-label" style="margin-bottom:6px">${esc(item.name||`Logo ${idx+2}`)}</div>
+        <div class="brand-preview-slot" id="advExtraSlot-${item.id}"></div>
+      </div>
+    `).join("") || `<div class="import-stats">Adicione mais elementos da marca no botão +.</div>`;
+    (p.brandImport.extras||[]).forEach(item=>renderAssetInto($("advExtraSlot-"+item.id),item.asset));
+  }
   const st=p.brandImport.lastStats;
   if($("brandImportStats")){
     $("brandImportStats").textContent = st.logos ? `${st.logos} ativo(s) • vetorial: ${st.vectors} • bitmap: ${st.bitmaps} • Altura X ${p.brandImport.xHeight}% • Respiro ${p.brandImport.safeMargin}%` : "Sem ativos importados.";
@@ -585,6 +647,20 @@ function renderCompositePreview(p){
   };
   add(p.logoSq,'sq');
   add(p.logoWd,'wd');
+  (p.brandImport?.extras||[]).forEach((item,idx)=>{
+    if(!item?.asset) return;
+    const layer=document.createElement('div');
+    layer.className='asset-layer';
+    const px=48 + ((idx%3)-1)*16;
+    const py=72 + Math.floor(idx/3)*12;
+    layer.style.left=clamp(px,8,92)+'%';
+    layer.style.top=clamp(py,8,92)+'%';
+    layer.style.width='26%';
+    layer.style.height='28%';
+    layer.style.transform='translate(-50%, -50%) scale(1)';
+    renderAssetInto(layer,item.asset);
+    host.appendChild(layer);
+  });
 }
 
 function updateBrandImportSetting(key,val){
@@ -650,6 +726,25 @@ function applyBrandImportToSlots(){
     fileInput.value="";
     toast("Logo carregado!","success");
   });
+});
+
+$("fileLogoExtra")?.addEventListener("change",async ()=>{
+  const p=P();if(!p)return;
+  ensureBrandImportState(p);
+  const inp=$("fileLogoExtra");
+  const id=inp?.dataset?.target;
+  const f=inp?.files?.[0];if(!f||!id) return;
+  const slot=p.brandImport.extras.find(x=>x.id===id);
+  if(!slot) return;
+  const raw=await readAsset(f);
+  slot.asset=normalizeImportedLogo(raw,p);
+  p.brandImport.lastStats=collectBrandImportStats(p);
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderBrandImportWorkspace();
+  inp.value="";
+  delete inp.dataset.target;
+  toast("Elemento adicional carregado!","success");
 });
 
 async function readAsset(file){
