@@ -328,7 +328,7 @@
               </div>
               <span style="font-size:11px;color:var(--ink3)">SVG · PNG · JPG</span>
             </div>
-            <div class="block-body">
+          <div class="block-body">
               <div class="logo-grid">
                 <div class="logo-slot sq" id="slotSq" onclick="triggerLogo('sq')">
                   <div class="upload-hint">
@@ -343,6 +343,34 @@
                     Horizontal
                   </div>
                   <div class="clear-logo" id="clearWd" onclick.stop="clearLogo('wd',event)">✕</div>
+                </div>
+              </div>
+              <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-ghost" type="button" onclick="toggleBrandImportPanel()">
+                  <i data-lucide="wand-sparkles" data-size="12"></i>
+                  Importação avançada
+                </button>
+              </div>
+              <div id="brandImportPanel" class="brand-import-panel" style="display:none">
+                <div class="row2">
+                  <div class="field">
+                    <label class="field-label">Altura X (%)</label>
+                    <input id="inpXHeight" class="inp" type="range" min="20" max="90" step="1" value="52" oninput="updateBrandImportSetting('xHeight',this.value)">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Área de respiro (%)</label>
+                    <input id="inpSafeMargin" class="inp" type="range" min="0" max="40" step="1" value="12" oninput="updateBrandImportSetting('safeMargin',this.value)">
+                  </div>
+                </div>
+                <div class="row2" style="margin-top:8px">
+                  <div class="field">
+                    <label class="field-label">Resumo</label>
+                    <div id="brandImportStats" class="import-stats">Sem ativos importados.</div>
+                  </div>
+                  <div class="field" style="justify-content:flex-end">
+                    <label class="field-label">Ações</label>
+                    <button class="btn btn-ghost" type="button" onclick="applyBrandImportToSlots()" style="justify-content:center">Aplicar ajustes</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -491,9 +519,10 @@
       <div class="home-head">
         <div>
           <h1>Exportar</h1>
-          <p>Tokens, CSS, JSON — pronto para o seu pipeline.</p>
+          <p>Gerencie pastas, subpastas e arquivos gerados da marca e das aplicações.</p>
         </div>
       </div>
+      <div id="exportManager"></div>
       <div id="exportGrid" class="export-grid"></div>
     </div>
 
