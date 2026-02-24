@@ -1048,53 +1048,17 @@ textarea.modal-textarea{
   &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
   &lt;aside class=&quot;panel&quot;&gt;
     &lt;div class=&quot;tools-rail&quot;&gt;
-      &lt;button class=&quot;rail-btn active&quot; data-tool=&quot;select&quot; title=&quot;Selecionar&quot;&gt;↖&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;node&quot; title=&quot;Nó&quot;&gt;✦&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;pen&quot; title=&quot;Caneta&quot;&gt;✎&lt;/button&gt;
+      &lt;button class=&quot;rail-btn active&quot; id=&quot;btnAddArtText&quot; title=&quot;Texto artístico&quot;&gt;T&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; id=&quot;btnAddTextBox&quot; title=&quot;Caixa de texto&quot;&gt;T▭&lt;/button&gt;
       &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;text&quot; title=&quot;Texto&quot;&gt;T&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;rect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;ellipse&quot; title=&quot;Elipse&quot;&gt;◯&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; data-tool=&quot;line&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
+      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
+      &lt;button class=&quot;rail-btn&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
+      &lt;button class=&quot;rail-btn&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
     &lt;/div&gt;
     &lt;div class=&quot;panel-body&quot;&gt;
-
-      &lt;!-- Shapes --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Adicionar&lt;/div&gt;
-        &lt;div class=&quot;tool-grid&quot;&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddArtText&quot;&gt;
-            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;polyline points=&quot;4 7 4 4 20 4 20 7&quot;/&gt;&lt;line x1=&quot;9&quot; y1=&quot;20&quot; x2=&quot;15&quot; y2=&quot;20&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;4&quot; x2=&quot;12&quot; y2=&quot;20&quot;/&gt;&lt;/svg&gt;
-            T. ART
-          &lt;/button&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnAddTextBox&quot;&gt;
-            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;5&quot; width=&quot;18&quot; height=&quot;14&quot; rx=&quot;2&quot;/&gt;&lt;line x1=&quot;7&quot; y1=&quot;10&quot; x2=&quot;17&quot; y2=&quot;10&quot;/&gt;&lt;line x1=&quot;7&quot; y1=&quot;14&quot; x2=&quot;14&quot; y2=&quot;14&quot;/&gt;&lt;/svg&gt;
-            CAIXA T
-          &lt;/button&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnRect&quot;&gt;
-            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;3&quot;/&gt;&lt;/svg&gt;
-            RECT
-          &lt;/button&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnCircle&quot;&gt;
-            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;9&quot;/&gt;&lt;/svg&gt;
-            CIRC
-          &lt;/button&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnLine&quot;&gt;
-            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;line x1=&quot;5&quot; y1=&quot;12&quot; x2=&quot;19&quot; y2=&quot;12&quot;/&gt;&lt;/svg&gt;
-            LINHA
-          &lt;/button&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnUpload&quot;&gt;
-            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot;/&gt;&lt;circle cx=&quot;8.5&quot; cy=&quot;8.5&quot; r=&quot;1.5&quot;/&gt;&lt;polyline points=&quot;21 15 16 10 5 21&quot;/&gt;&lt;/svg&gt;
-            IMG
-          &lt;/button&gt;
-          &lt;button class=&quot;tool-btn&quot; id=&quot;btnHelp&quot;&gt;
-            &lt;svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;&gt;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;9&quot;/&gt;&lt;path d=&quot;M9 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3&quot;/&gt;&lt;line x1=&quot;12&quot; y1=&quot;17&quot; x2=&quot;12.01&quot; y2=&quot;17&quot;/&gt;&lt;/svg&gt;
-            TECLAS
-          &lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
       &lt;!-- Document --&gt;
       &lt;div class=&quot;panel-section&quot;&gt;
