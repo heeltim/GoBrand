@@ -203,6 +203,16 @@
           <div id="bbShowcase" class="bb-showcase"></div>
         </div>
       </div>
+
+      <div class="block bb-showcase-wrap">
+        <div class="block-header">
+          <div class="block-title">Visual Guide do Projeto</div>
+          <span style="font-size:11px;color:var(--ink3)">Visão macro para apresentação e handoff</span>
+        </div>
+        <div class="block-body">
+          <div id="bbShowcase" class="bb-showcase"></div>
+        </div>
+      </div>
     </div>
 
     <!-- APLICAÇÕES VIEW -->
@@ -267,21 +277,21 @@
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 Logo
               </div>
-              <span style="font-size:11px;color:var(--ink3)">SVG · PNG · JPG</span>
+              <span style="font-size:11px;color:var(--ink3)">Fluxo centralizado</span>
             </div>
-            <div class="block-body">
-              <div id="slotBrandEntry" class="logo-slot" style="height:130px" onclick="openBrandImport()">
-                <div class="upload-hint" id="brandQuickHint">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  Abrir modo avançado da marca
-                </div>
-              </div>
-              <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-                <div id="brandQuickStatus" class="import-stats" style="flex:1;min-width:220px">Sem ativos importados.</div>
-                <button class="btn btn-ghost" type="button" onclick="openBrandImport()">
+            <div class="block-body stack">
+              <div class="brand-entry-card">
+                <div class="field-label" style="margin-bottom:8px">Carregamento de logo e composição</div>
+                <p class="brand-entry-copy">Toda importação de imagem da marca agora fica em um único fluxo para evitar retrabalho durante a edição da identidade.</p>
+                <div class="brand-entry-inline" id="brandQuickStatus">Sem ativos importados.</div>
+                <button class="btn btn-primary" type="button" onclick="openBrandImport()" style="margin-top:6px">
                   <i data-lucide="wand-sparkles" data-size="12"></i>
-                  Importação avançada
+                  Carregar sua marca
                 </button>
+                <div class="brand-entry-thumb" id="brandQuickThumb"></div>
+              </div>
+              <div class="import-stats" style="font-size:11px;line-height:1.45">
+                Dica: envie os arquivos no fluxo avançado para ajustar posicionamento, respiro e versões antes de voltar para edição.
               </div>
             </div>
           </div>
@@ -428,31 +438,37 @@
     <div id="viewBrandImport" class="view">
       <div class="home-head" style="margin-bottom:14px">
         <div>
-          <h1>Importação avançada da marca</h1>
-          <p>Faça upload, ajuste posicionamento e visualize versões da marca sem sair do estilo da página.</p>
+          <h1>Carregar sua marca</h1>
+          <p>Faça upload dos elementos da identidade, ajuste composição e finalize antes de voltar para a edição.</p>
         </div>
         <button class="btn btn-ghost" onclick="nav('editor')">Voltar</button>
       </div>
-      <div class="brand-import-layout">
-        <div class="brand-import-controls block">
-          <div class="block-header"><div class="block-title">Configurações</div></div>
+      <div class="brand-import-shell">
+        <div class="brand-import-main">
+          <div class="brand-import-controls block">
+          <div class="block-header"><div class="block-title">Identidade da Marca</div></div>
           <div class="block-body stack">
+            <div class="field">
+              <label class="field-label">Nome base (para arquivos)</label>
+              <input class="inp" id="inpBrandBaseName" placeholder="minha-marca" disabled>
+            </div>
+            <div class="field-label">Uploads da marca</div>
+            <div class="row2">
+              <button class="btn btn-ghost" onclick="triggerLogo('sq')" style="justify-content:center">Símbolo / Ícone</button>
+              <button class="btn btn-ghost" onclick="clearLogo('sq')" style="justify-content:center">Limpar símbolo</button>
+            </div>
+            <div class="row2">
+              <button class="btn btn-ghost" onclick="triggerLogo('wd')" style="justify-content:center">Logotipo principal</button>
+              <button class="btn btn-ghost" onclick="clearLogo('wd')" style="justify-content:center">Limpar logotipo</button>
+            </div>
             <div class="field"><label class="field-label">Altura X (%)</label><input id="inpXHeight" class="inp" type="range" min="20" max="90" step="1" oninput="updateBrandImportSetting('xHeight',this.value)"></div>
             <div class="field"><label class="field-label">Área de respiro (%)</label><input id="inpSafeMargin" class="inp" type="range" min="0" max="40" step="1" oninput="updateBrandImportSetting('safeMargin',this.value)"></div>
-            <div class="row2">
-              <button class="btn btn-ghost" onclick="triggerLogo('sq')" style="justify-content:center">Upload Quadrado</button>
-              <button class="btn btn-ghost" onclick="triggerLogo('wd')" style="justify-content:center">Upload Horizontal</button>
-            </div>
-            <div class="row2">
-              <button class="btn btn-ghost" onclick="clearLogo('sq')" style="justify-content:center">Limpar Quadrado</button>
-              <button class="btn btn-ghost" onclick="clearLogo('wd')" style="justify-content:center">Limpar Horizontal</button>
-            </div>
             <button class="btn btn-primary" onclick="applyBrandImportToSlots()" style="justify-content:center">Aplicar ajustes da marca</button>
             <div id="brandImportStats" class="import-stats">Sem ativos importados.</div>
           </div>
         </div>
         <div class="brand-import-preview block">
-          <div class="block-header"><div class="block-title">Visualização e posicionamento</div></div>
+          <div class="block-header"><div class="block-title">Composição Final</div></div>
           <div class="block-body stack">
             <div class="brand-preview-grid">
               <div class="brand-preview-panel">
@@ -477,6 +493,29 @@
             <div>
               <div class="field-label" style="margin-bottom:6px">Painel combinado</div>
               <div class="brand-composite" id="brandCompositePreview"></div>
+            </div>
+          </div>
+        </div>
+        </div>
+        <div class="brand-import-side">
+          <div class="block">
+            <div class="block-header"><div class="block-title">Layout & Composição</div></div>
+            <div class="block-body stack">
+              <div class="field"><label class="field-label">Estrutura da marca</label><select class="sel" disabled><option>Horizontal (símbolo + logotipo)</option></select></div>
+              <div class="field"><label class="field-label">Layout do logotipo</label><select class="sel" disabled><option>Stack (1 sobre 2)</option></select></div>
+              <div class="field"><label class="field-label">Grid de construção</label><select class="sel" disabled><option>Oculto</option></select></div>
+              <div class="field"><label class="field-label">Área de proteção</label><select class="sel" disabled><option>Visível</option></select></div>
+              <div class="import-stats">Os ajustes finos de layout podem ser ligados nas próximas versões. Por enquanto, use altura X, respiro e posição manual.</div>
+            </div>
+          </div>
+          <div class="block">
+            <div class="block-header"><div class="block-title">Paleta & Exportar</div></div>
+            <div class="block-body stack">
+              <div id="brandImportPalette" class="stack" style="gap:8px"></div>
+              <div class="row2">
+                <button class="btn btn-ghost" onclick="nav('editor')" style="justify-content:center">Editar cores</button>
+                <button class="btn btn-primary" onclick="nav('export')" style="justify-content:center">Ir para exportar</button>
+              </div>
             </div>
           </div>
         </div>
