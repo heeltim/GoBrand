@@ -116,6 +116,8 @@ function mkProject(name=""){
     about:"", fontPri:"Outfit", fontSec:"Sora",
     typo:DEFAULT_TYPO(), colors:DEFAULT_COLORS(),
     logoSq:null, logoWd:null,
+    brandImport:{xHeight:52,safeMargin:12,enabled:false,lastStats:null},
+    exportLibrary:null,
     applications:[],
     createdAt:Date.now(), updatedAt:Date.now()
   };
@@ -135,6 +137,23 @@ const S = {
 
 const P = () => S.projects.find(p=>p.id===S.pid)||null;
 const $ = id => document.getElementById(id);
+
+function ensureBrandImportState(p){
+  if(!p.brandImport) p.brandImport={xHeight:52,safeMargin:12,enabled:false,lastStats:null};
+  p.brandImport.xHeight=clamp(+p.brandImport.xHeight||52,20,90);
+  p.brandImport.safeMargin=clamp(+p.brandImport.safeMargin||12,0,40);
+}
+function ensureExportLibrary(p){
+  if(p.exportLibrary) return;
+  p.exportLibrary={
+    folders:[
+      {id:'root-brand',name:'Marca',parent:null},
+      {id:'root-apps',name:'Aplicações',parent:null},
+    ],
+    files:[],
+    activeFolderId:'root-brand'
+  };
+}
 
 function icon(name, size=16, cls=""){
   const klass = cls ? ` class="${cls}"` : "";
@@ -389,8 +408,11 @@ function loadEditor(){
   $("selPrimary").value=p.fontPri||"Outfit";
   $("selSecondary").value=p.fontSec||"Sora";
 
+  ensureBrandImportState(p);
+  ensureExportLibrary(p);
   renderLogoSlot("sq",p.logoSq);
   renderLogoSlot("wd",p.logoWd);
+  renderBrandImportPanel(p);
 
   normalizePercents(p);
   renderColors();
@@ -441,11 +463,20 @@ function fillFontSelects(){
 /* ============================================================
    LOGO
 ============================================================ */
-function triggerLogo(slot){ $("fileLogo"+cap(slot)).click(); }
+function triggerLogo(slot){
+  $("fileLogo"+cap(slot)).click();
+}
 function clearLogo(slot,e){
   if(e){e.preventDefault();e.stopPropagation();}
   const p=P();if(!p)return;
-  p["logo"+cap(slot)]=null;save(S.projects);gePushBrandData(p);renderLogoSlot(slot,null);
+  ensureBrandImportState(p);
+  p["logo"+cap(slot)]=null;
+  p.brandImport.lastStats=collectBrandImportStats(p);
+  p.updatedAt=Date.now();
+  save(S.projects);
+  gePushBrandData(p);
+  renderLogoSlot(slot,null);
+  renderBrandImportPanel(p);
 }
 
 function renderLogoSlot(slot,asset){
@@ -463,22 +494,109 @@ function renderLogoSlot(slot,asset){
   }
 }
 
+function collectBrandImportStats(p){
+  const stats={logos:0,formats:[],vectors:0,bitmaps:0};
+  [p.logoSq,p.logoWd].forEach(a=>{
+    if(!a) return;
+    stats.logos++;
+    if(a.type==='svg') stats.vectors++; else stats.bitmaps++;
+    stats.formats.push(a.type==='svg'?'SVG':'Bitmap');
+  });
+  return stats;
+}
+
+function renderBrandImportPanel(p){
+  ensureBrandImportState(p);
+  const panel=$("brandImportPanel");
+  if(!panel) return;
+  panel.style.display = p.brandImport.enabled ? "block" : "none";
+  if($("inpXHeight")) $("inpXHeight").value=p.brandImport.xHeight;
+  if($("inpSafeMargin")) $("inpSafeMargin").value=p.brandImport.safeMargin;
+  const st=p.brandImport.lastStats||collectBrandImportStats(p);
+  if($("brandImportStats")){
+    if(!st.logos) $("brandImportStats").textContent='Sem ativos importados.';
+    else $("brandImportStats").textContent=`${st.logos} ativo(s) • vetorial: ${st.vectors} • bitmap: ${st.bitmaps} • Altura X ${p.brandImport.xHeight}% • Respiro ${p.brandImport.safeMargin}%`;
+  }
+}
+
+function toggleBrandImportPanel(){
+  const p=P();if(!p)return;
+  ensureBrandImportState(p);
+  p.brandImport.enabled=!p.brandImport.enabled;
+  save(S.projects);
+  renderBrandImportPanel(p);
+}
+
+function updateBrandImportSetting(key,val){
+  const p=P();if(!p)return;
+  ensureBrandImportState(p);
+  const num=+val;
+  if(key==='xHeight') p.brandImport.xHeight=clamp(num,20,90);
+  if(key==='safeMargin') p.brandImport.safeMargin=clamp(num,0,40);
+  p.brandImport.lastStats=collectBrandImportStats(p);
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderBrandImportPanel(p);
+}
+
+function normalizeImportedLogo(asset,p){
+  ensureBrandImportState(p);
+  const marginPct=(p.brandImport.safeMargin||0)/100;
+  if(asset?.type!=="svg") return asset;
+  try{
+    const doc=new DOMParser().parseFromString(String(asset.data||""),"image/svg+xml");
+    const svg=doc.querySelector("svg");
+    if(!svg) return asset;
+    const vb=(svg.getAttribute("viewBox")||"0 0 1000 1000").trim().split(/\s+/).map(Number);
+    if(vb.length===4 && vb.every(Number.isFinite)){
+      const [x,y,w,h]=vb;
+      const nx=x-(w*marginPct);
+      const ny=y-(h*marginPct);
+      const nw=w*(1+marginPct*2);
+      const nh=h*(1+marginPct*2);
+      svg.setAttribute("viewBox",`${nx} ${ny} ${nw} ${nh}`);
+    }
+    svg.setAttribute("data-x-height",String(p.brandImport.xHeight||52));
+    return {type:'svg',data:svg.outerHTML};
+  }catch{return asset;}
+}
+
+function applyBrandImportToSlots(){
+  const p=P();if(!p)return;
+  ["Sq","Wd"].forEach(s=>{
+    const key="logo"+s;
+    if(p[key]) p[key]=normalizeImportedLogo(p[key],p);
+    renderLogoSlot(s.toLowerCase(),p[key]);
+  });
+  p.brandImport.lastStats=collectBrandImportStats(p);
+  p.updatedAt=Date.now();
+  save(S.projects);
+  gePushBrandData(p);
+  renderBrandImportPanel(p);
+  toast("Ajustes da importação aplicados","success");
+}
+
 ["Sq","Wd"].forEach(s=>{
   const fileInput=$("fileLogo"+s);
   fileInput.addEventListener("change",async ()=>{
     const p=P();if(!p)return;
+    ensureBrandImportState(p);
     const f=fileInput.files?.[0];if(!f)return;
     const key="logo"+s;
-    p[key]=await readAsset(f);
-    p.updatedAt=Date.now();save(S.projects);
+    const raw=await readAsset(f);
+    p[key]=normalizeImportedLogo(raw,p);
+    p.brandImport.lastStats=collectBrandImportStats(p);
+    p.updatedAt=Date.now();
+    save(S.projects);
     gePushBrandData(p);
     renderLogoSlot(s.toLowerCase(),p[key]);
+    renderBrandImportPanel(p);
     fileInput.value="";
     toast("Logo carregado!","success");
   });
 });
 
-// Wire clear buttons (handle stop propagation via HTML onclick.stop → override here)
+// Wire clear buttons
 ["clearSq","clearWd"].forEach(id=>{
   $(id)?.addEventListener("click",e=>{
     e.preventDefault();e.stopPropagation();
@@ -1236,8 +1354,136 @@ function deleteApp(id){
   toast("Aplicação removida","info");
 }
 
+function buildGeneratedFiles(p){
+  const out=[];
+  if(p.logoSq) out.push({id:'brand-logo-sq',name:`logo-quadrado.${p.logoSq.type==='svg'?'svg':'png'}`,source:'brand',kind:'logo',folderId:'root-brand'});
+  if(p.logoWd) out.push({id:'brand-logo-wd',name:`logo-horizontal.${p.logoWd.type==='svg'?'svg':'png'}`,source:'brand',kind:'logo',folderId:'root-brand'});
+  (p.applications||[]).forEach(a=>{
+    if(a.svg) out.push({id:`app-${a.id}`,name:`${(a.name||'aplicacao').replace(/[^\w-]+/g,'_')}.svg`,source:'application',kind:'application',folderId:'root-apps',appId:a.id});
+  });
+  return out;
+}
+function syncExportLibraryFiles(p){
+  ensureExportLibrary(p);
+  const generated=buildGeneratedFiles(p);
+  const manual=(p.exportLibrary.files||[]).filter(f=>!f.generated);
+  const gen=generated.map(g=>{
+    const prev=(p.exportLibrary.files||[]).find(f=>f.id===g.id);
+    return {...g, generated:true, folderId:prev?.folderId||g.folderId};
+  });
+  p.exportLibrary.files=[...manual,...gen];
+}
+function createExportFolder(parentId=null){
+  const p=P();if(!p)return;
+  ensureExportLibrary(p);
+  const name=prompt('Nome da pasta:','Nova pasta');
+  if(!name||!name.trim()) return;
+  p.exportLibrary.folders.push({id:uid('fld'),name:name.trim(),parent:parentId});
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderExport();
+}
+function renameExportFolder(folderId){
+  const p=P();if(!p)return;
+  ensureExportLibrary(p);
+  const fld=p.exportLibrary.folders.find(f=>f.id===folderId);if(!fld)return;
+  const name=prompt('Renomear pasta:',fld.name);
+  if(!name||!name.trim()) return;
+  fld.name=name.trim();
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderExport();
+}
+function setActiveExportFolder(folderId){
+  const p=P();if(!p)return;
+  ensureExportLibrary(p);
+  p.exportLibrary.activeFolderId=folderId;
+  save(S.projects);
+  renderExport();
+}
+function onExportFileDragStart(ev,fileId){
+  ev.dataTransfer.setData('text/plain',fileId);
+}
+function onExportFolderDrop(ev,folderId){
+  ev.preventDefault();
+  const id=ev.dataTransfer.getData('text/plain');
+  const p=P();if(!p||!id)return;
+  const file=(p.exportLibrary?.files||[]).find(f=>f.id===id); if(!file)return;
+  file.folderId=folderId;
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderExport();
+}
+function onExportFolderDragOver(ev){ ev.preventDefault(); }
+function renameExportFile(fileId){
+  const p=P();if(!p)return;
+  const file=(p.exportLibrary?.files||[]).find(f=>f.id===fileId); if(!file)return;
+  const name=prompt('Renomear arquivo:',file.name);
+  if(!name||!name.trim()) return;
+  file.name=name.trim();
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderExport();
+}
+function addManualExportFile(){
+  const p=P();if(!p)return;
+  ensureExportLibrary(p);
+  const name=prompt('Nome do arquivo manual:','novo-arquivo.txt');
+  if(!name||!name.trim()) return;
+  p.exportLibrary.files.push({id:uid('file'),name:name.trim(),source:'manual',kind:'manual',folderId:p.exportLibrary.activeFolderId||'root-brand',generated:false});
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderExport();
+}
+
 function renderExport(){
-  const p=P();if(!p){$("exportGrid").innerHTML=`<div class="empty-state"><p>Nenhum projeto aberto.</p></div>`;return;}
+  const p=P();if(!p){$("exportGrid").innerHTML=`<div class="empty-state"><p>Nenhum projeto aberto.</p></div>`; const em=$("exportManager"); if(em) em.innerHTML=''; return;}
+  ensureExportLibrary(p);
+  syncExportLibraryFiles(p);
+
+  const activeFolderId=p.exportLibrary.activeFolderId||'root-brand';
+  const folders=p.exportLibrary.folders||[];
+  const files=(p.exportLibrary.files||[]).filter(f=>(f.folderId||'root-brand')===activeFolderId);
+  const manager=$("exportManager");
+  if(manager){
+    manager.innerHTML=`
+      <div class="export-manager anim-in">
+        <div class="export-manager-head">
+          <div>
+            <div class="export-manager-title">Pastas e arquivos exportados</div>
+            <div class="export-manager-sub">Arraste os arquivos para uma pasta, crie subpastas e renomeie itens.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="createExportFolder(null)">${icon('folder-plus',12)} Nova pasta</button>
+            <button class="btn btn-ghost" onclick="createExportFolder('${activeFolderId}')">${icon('folder-tree',12)} Nova subpasta</button>
+            <button class="btn btn-ghost" onclick="addManualExportFile()">${icon('file-plus-2',12)} Novo arquivo</button>
+          </div>
+        </div>
+        <div class="export-manager-body">
+          <div class="folder-tree">
+            ${folders.map(f=>{
+              const count=(p.exportLibrary.files||[]).filter(x=>(x.folderId||'root-brand')===f.id).length;
+              return `<div class="tree-item ${f.id===activeFolderId?'active':''}" onclick="setActiveExportFolder('${f.id}')" ondrop="onExportFolderDrop(event,'${f.id}')" ondragover="onExportFolderDragOver(event)">
+                ${icon('folder',12)}
+                <span class="name">${esc(f.name)}</span>
+                <span class="count">${count}</span>
+                <button class="btn-icon" style="width:24px;height:24px" onclick="event.stopPropagation();renameExportFolder('${f.id}')">${icon('pencil',11)}</button>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="file-pane">
+            ${files.length?files.map(file=>`<div class="file-item" draggable="true" ondragstart="onExportFileDragStart(event,'${file.id}')">
+              ${icon(file.source==='application'?'file-code-2':(file.source==='brand'?'image':'file'),13)}
+              <div style="flex:1">
+                <div>${esc(file.name)}</div>
+                <div class="file-meta">${file.source==='brand'?'Gerado da marca':file.source==='application'?'Gerado da aplicação':'Manual'}</div>
+              </div>
+              <button class="btn-icon" onclick="renameExportFile('${file.id}')">${icon('pencil',11)}</button>
+            </div>`).join(''):`<div class="empty-state" style="padding:18px 8px"><p>Sem arquivos nesta pasta.</p></div>`}
+          </div>
+        </div>
+      </div>`;
+  }
 
   // CSS Variables
   const cssVars=[
@@ -1252,70 +1498,39 @@ function renderExport(){
     "/* === TIPOGRAFIA === */",
     `--font-primary: "${p.fontPri}";`,
     `--font-secondary: "${p.fontSec}";`,
-    ...(p.typo||[]).map(s=>{
-      const real=resolveFont(p,s.fam);
-      const key=s.key.toLowerCase();
-      return `--type-${key}-size: ${s.sz}px;\n--type-${key}-weight: ${s.wt};\n--type-${key}-line: ${s.lh};\n--type-${key}-spacing: ${s.ls}px;`;
+    ...(p.typo||[]).map(st=>{
+      const key=st.key.toLowerCase();
+      return `--type-${key}-size: ${st.sz}px;\n--type-${key}-weight: ${st.wt};\n--type-${key}-line: ${st.lh};\n--type-${key}-spacing: ${st.ls}px;`;
     }),
   ].join("\n");
 
-  // JSON Tokens
   const tokens=JSON.stringify({
     color:Object.fromEntries(p.colors.map((c,i)=>{
       const name=(c.name||`color${i+1}`).toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
       return [name,{value:c.hex,alpha:c.alpha,usage:`${c.pct}%`}];
     })),
-    typography:{
-      fontPrimary:p.fontPri, fontSecondary:p.fontSec,
-      styles:Object.fromEntries((p.typo||[]).map(s=>[s.key,{
-        fontFamily:famLabel(s.fam),size:s.sz,weight:s.wt,
-        lineHeight:s.lh,letterSpacing:s.ls,uppercase:s.up,italic:s.it,
-      }])),
-    }
+    typography:{fontPrimary:p.fontPri,fontSecondary:p.fontSec}
   },null,2);
 
-  // Tailwind config
   const tailwind=`// tailwind.config.js
 module.exports = {
   theme: {
     extend: {
       colors: {
-${p.colors.map((c,i)=>{
-  const name=(c.name||`color${i+1}`).toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
-  return `        "${name}": "${c.hex}",`;
-}).join("\n")}
-      },
-      fontFamily: {
-        primary: ["${p.fontPri}", "sans-serif"],
-        secondary: ["${p.fontSec}", "sans-serif"],
-      },
+${p.colors.map((c,i)=>{const name=(c.name||`color${i+1}`).toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");return `        "${name}": "${c.hex}",`;}).join("\n")}
+      }
     }
   }
 }`;
 
   const cards=[
-    {
-      title:"CSS Custom Properties",
-      desc:"Cole no seu :root {} para usar em qualquer projeto web.",
-      preview:":root {\n"+cssVars+"\n}",
-      copy:":root {\n"+cssVars+"\n}",
-    },
-    {
-      title:"Design Tokens (JSON)",
-      desc:"Compatível com Style Dictionary, Theo, Token Transformer e outros pipelines.",
-      preview:tokens.slice(0,300)+(tokens.length>300?"…":""),
-      copy:tokens,
-    },
-    {
-      title:"Tailwind Config",
-      desc:"Exporte direto para o seu tailwind.config.js.",
-      preview:tailwind.slice(0,280)+"…",
-      copy:tailwind,
-    },
+    {title:"CSS Custom Properties",desc:"Cole no seu :root {} para usar em qualquer projeto web.",preview:":root {\n"+cssVars+"\n}",copy:":root {\n"+cssVars+"\n}"},
+    {title:"Design Tokens (JSON)",desc:"Seção secundária: mantenha para pipeline quando necessário.",preview:tokens.slice(0,300)+(tokens.length>300?"…":""),copy:tokens},
+    {title:"Tailwind Config",desc:"Seção secundária: exporte para seu tailwind.config.js.",preview:tailwind.slice(0,280)+"…",copy:tailwind},
   ];
 
   $("exportGrid").innerHTML=cards.map((card,i)=>`
-    <div class="export-card anim-in" style="animation-delay:${i*60}ms">
+    <div class="export-card anim-in tokens-muted" style="animation-delay:${i*60}ms">
       <div>
         <div class="export-card-title">${esc(card.title)}</div>
         <div class="export-card-desc">${esc(card.desc)}</div>
@@ -1329,6 +1544,7 @@ ${p.colors.map((c,i)=>{
   `).join("");
 
   window._exportData=cards;
+  save(S.projects);
   refreshIcons();
 }
 
