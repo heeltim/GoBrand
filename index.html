@@ -194,76 +194,13 @@
         </div>
       </div>
 
-      <div class="editor-layout" style="grid-template-columns:340px 1fr 320px">
-        <!-- left: logos + meta quick -->
-        <div class="col-left">
-          <div class="block">
-            <div class="block-header">
-              <div class="block-title">Identidade</div>
-              <span class="badge accent" id="bbUpdated"></span>
-            </div>
-            <div class="block-body stack">
-              <div style="display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start">
-                <div>
-                  <div class="field-label" style="margin-bottom:8px">Logo</div>
-                  <div class="logo-slot" style="height:110px" id="bbLogoSlot" onclick="nav('editor')"></div>
-                </div>
-                <div class="stack" style="gap:10px">
-                  <div class="field">
-                    <label class="field-label">Nome</label>
-                    <div class="inp" style="display:flex;align-items:center;background:var(--surface2);border-color:var(--border2)"><span id="bbName"></span></div>
-                  </div>
-                  <div class="field">
-                    <label class="field-label">Sobre</label>
-                    <div class="inp" style="min-height:72px;white-space:pre-wrap" id="bbAbout"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="block">
-            <div class="block-header">
-              <div class="block-title">Paleta</div>
-              <span style="font-size:11px;color:var(--ink3)">arraste % no editor</span>
-            </div>
-            <div class="block-body">
-              <div id="bbPaletteBig" style="border-radius:14px;overflow:hidden;border:1px solid var(--border2);height:92px;display:flex"></div>
-              <div id="bbPaletteMeta" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px"></div>
-            </div>
-          </div>
+      <div class="block bb-showcase-wrap">
+        <div class="block-header">
+          <div class="block-title">Visual Guide do Projeto</div>
+          <span class="badge accent" id="bbUpdated">Atualizado —</span>
         </div>
-
-        <!-- mid: typography scale -->
-        <div class="col-mid">
-          <div class="block">
-            <div class="block-header">
-              <div class="block-title">Tipografia em escala real</div>
-              <span style="font-size:11px;color:var(--ink3)">Primária + Secundária</span>
-            </div>
-            <div class="block-body" id="bbTypeScale" style="display:flex;flex-direction:column;gap:14px"></div>
-          </div>
-        </div>
-
-        <!-- right: quick actions -->
-        <div class="col-preview">
-          <div class="block">
-            <div class="block-header">
-              <div class="block-title">Atalhos</div>
-            </div>
-            <div class="block-body stack">
-              <button class="btn btn-ghost" onclick="nav('apps')" style="justify-content:center">
-                Ver Aplicações Geradas
-              </button>
-              <button class="btn btn-ghost" onclick="nav('export')" style="justify-content:center">
-                Exportar Tokens
-              </button>
-              <div class="divider"></div>
-              <div style="font-size:12px;color:var(--ink2);line-height:1.6">
-                <b>Objetivo:</b> gerar arquivos (SVG agora, PDF depois) já com tamanho, sangria e elementos base da marca.
-              </div>
-            </div>
-          </div>
+        <div class="block-body">
+          <div id="bbShowcase" class="bb-showcase"></div>
         </div>
       </div>
 
