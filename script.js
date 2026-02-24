@@ -1136,7 +1136,8 @@ function renderBoard(){
   // type scale
   const scale=$("bbTypeScale");
   const samples={Display:"Display",H1:"Título Principal",H2:"Subtítulo",H3:"Cabeçalho",Body:"Corpo do texto",Small:"Texto pequeno",Caption:"LEGENDA",Button:"Ação"};
-  scale.innerHTML=(p.typo||[]).filter(s=>["Display","H1","H2","H3","Body","Small","Caption","Button"].includes(s.key))
+  const boardType=(p.typo||[]).filter(s=>["Display","H1","H2","H3","Body","Small","Caption","Button"].includes(s.key));
+  scale.innerHTML=boardType
     .map(s=>{
       const real=resolveFont(p,s.fam).replace(/"/g,"");
       const txt=samples[s.key]||s.key;
@@ -1147,9 +1148,171 @@ function renderBoard(){
         </div>
       </div>`;
     }).join("");
+
+  renderBoardShowcase(p, colors, boardType);
   refreshIcons();
 }
 
+
+
+function renderBoardShowcase(p, colors, boardType){
+  const showcase=$("bbShowcase");
+  if(!showcase) return;
+
+  const palette=(colors||[]).filter(c=>c?.hex);
+  const heroLogo=p.logoWd||p.logoSq;
+  const topColors=palette.slice(0,8);
+  const allType=(p.typo||[]);
+  const styleOrder=["Display","H1","H2","H3","Body","Small","Caption","Button"];
+  const sortedType=allType.slice().sort((a,b)=>{
+    const ai=styleOrder.indexOf(a.key); const bi=styleOrder.indexOf(b.key);
+    return (ai<0?99:ai)-(bi<0?99:bi);
+  });
+
+  const accent=palette[0]?.hex||"#7f5af0";
+  const accentAlt=palette[1]?.hex||"#2cb67d";
+  const soft=rgba(accent,12);
+  const softAlt=rgba(accentAlt,12);
+
+  let logoHtml=`<div class="upload-hint">${icon("image",16)}<span>Sem logo</span></div>`;
+  if(heroLogo){
+    if(heroLogo.type==="svg") logoHtml=heroLogo.data;
+    else logoHtml=`<img src="${esc(heroLogo.data)}" alt="Logo da marca">`;
+  }
+
+  const colorHtml=topColors.length?topColors.map(c=>`
+    <div class="bb-chip">
+      <div class="bb-chip-swatch" style="background:${c.hex}"></div>
+      <b>${esc(c.name||"Cor")}</b>
+      <span>${esc(c.hex)} · ${esc(String(c.pct||0))}%</span>
+    </div>
+  `).join(""):`<span class="badge">Adicione cores no editor</span>`;
+
+  const typoHtml=sortedType.length?sortedType.map(s=>{
+    const fam=resolveFont(p,s.fam).replace(/"/g,"");
+    const preview=s.key==="Button"?"Ação principal":(s.key==="Caption"?"legenda / apoio":"A estética da marca em uso");
+    return `<div class="bb-typo-item">
+      <div class="preview-label" style="margin-bottom:6px">${esc(s.key)} · ${esc(fam)} · ${s.sz}px/${s.wt}</div>
+      <div style="font-family:'${fam}',ui-sans-serif;font-size:${Math.max(11,Math.min(34,s.sz))}px;font-weight:${s.wt};line-height:${s.lh};letter-spacing:${s.ls}px;text-transform:${s.up?"uppercase":"none"};font-style:${s.it?"italic":"normal"};text-align:${s.al};">
+        ${esc(preview)}
+      </div>
+    </div>`;
+  }).join(""):`<span class="badge">Defina estilos tipográficos no editor</span>`;
+
+  showcase.style.setProperty('--bb-accent', accent);
+  showcase.style.setProperty('--bb-accent-soft', soft);
+  showcase.style.setProperty('--bb-accent-alt', accentAlt);
+  showcase.style.setProperty('--bb-accent-alt-soft', softAlt);
+
+  showcase.innerHTML=`
+    <section class="bb-card bb-card-hero">
+      <h4>Identidade visual</h4>
+      <div class="bb-logo-stage">${logoHtml}</div>
+      <div class="bb-usage" style="margin-top:10px">
+        <div class="bb-usage-row"><span>Projeto</span><b>${esc(p.name||"Projeto")}</b></div>
+        <div class="bb-usage-row"><span>Aplicações</span><span class="bb-pill">${(p.applications||[]).length} arquivos</span></div>
+      </div>
+    </section>
+
+    <section class="bb-card">
+      <h4>Cores principais</h4>
+      <div class="bb-chip-grid">${colorHtml}</div>
+      <div class="bb-color-band">
+        ${topColors.map(c=>`<div style="flex:${Math.max(8,c.pct||10)};background:${c.hex}"></div>`).join("") || `<div style="flex:1;background:${accent}"></div>`}
+      </div>
+    </section>
+
+    <section class="bb-card bb-card-wide">
+      <h4>Sistema tipográfico (todos os estilos)</h4>
+      <div class="bb-typo-list">${typoHtml}</div>
+    </section>
+
+    <section class="bb-card">
+      <h4>Elementos visuais</h4>
+      <div class="bb-ui-kit">
+        <button class="bb-btn bb-btn-primary">Primário</button>
+        <button class="bb-btn bb-btn-secondary">Secundário</button>
+        <span class="bb-tag">Tag / destaque</span>
+      </div>
+      <div class="bb-mini-card">
+        <div class="bb-mini-dot"></div>
+        <div>
+          <b>Card de aplicação</b>
+          <p>Prévia visual alinhada com identidade da marca.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-card">
+      <h4>Campos de texto (futuros inputs)</h4>
+      <div class="bb-form-preview">
+        <label>Nome</label>
+        <div class="bb-input">Digite o nome da peça...</div>
+        <label>Mensagem</label>
+        <div class="bb-input bb-input-area">Texto de apoio para aplicação futura</div>
+        <div class="bb-input bb-input-focus">Campo em foco</div>
+      </div>
+    </section>
+  `;
+}
+
+function buildBrandBoardExportCSS(){
+  return `
+  :root{--ink:#14161f;--ink2:#505a70;--line:#dbe1ea;--surface:#fff;--surface2:#f7f9fd}
+  body{font-family:Inter,Arial,sans-serif;background:#f2f5fb;color:var(--ink);margin:0;padding:24px}
+  .sheet{max-width:1240px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px}
+  h1{margin:0 0 8px;font-size:30px} p{margin:0 0 18px;color:var(--ink2)}
+  .bb-showcase{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:14px}
+  .bb-card{background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .bb-card-wide{grid-column:span 2}
+  .bb-card h4{margin:0 0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6f7891}
+  .bb-logo-stage{min-height:140px;border-radius:12px;border:1px dashed var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;padding:10px}
+  .bb-logo-stage img,.bb-logo-stage svg{max-width:100%;max-height:128px;object-fit:contain}
+  .bb-chip-grid{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px}
+  .bb-chip{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;font-size:11px;display:flex;flex-direction:column;gap:4px}
+  .bb-chip-swatch{height:28px;border-radius:8px;border:1px solid rgba(0,0,0,.12)}
+  .bb-color-band{margin-top:10px;height:16px;border-radius:999px;overflow:hidden;display:flex;border:1px solid var(--line)}
+  .bb-typo-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto}
+  .bb-typo-item{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+  .preview-label{font-size:10px;color:#6f7891;font-family:ui-monospace, SFMono-Regular, Menlo, monospace}
+  .bb-usage{display:flex;flex-direction:column;gap:10px}.bb-usage-row{display:flex;justify-content:space-between;font-size:12px;color:#49536a}
+  .bb-pill{border:1px solid var(--line);border-radius:999px;padding:5px 10px;background:#fff;font-size:11px;font-weight:700}
+  .bb-ui-kit{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .bb-btn{border:1px solid transparent;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700}
+  .bb-btn-primary{background:var(--bb-accent,#7f5af0);color:#fff}
+  .bb-btn-secondary{border-color:var(--bb-accent,#7f5af0);color:var(--bb-accent,#7f5af0);background:#fff}
+  .bb-tag{font-size:11px;padding:6px 10px;border-radius:999px;background:var(--bb-accent-soft,rgba(127,90,240,.14));color:var(--bb-accent,#7f5af0)}
+  .bb-mini-card{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+  .bb-mini-dot{width:12px;height:12px;border-radius:999px;background:var(--bb-accent-alt,#2cb67d);margin-top:3px}.bb-mini-card p{margin:2px 0 0;font-size:12px;color:#6a7388}
+  .bb-form-preview{display:flex;flex-direction:column;gap:6px}.bb-form-preview label{font-size:11px;color:#5e6780}
+  .bb-input{border:1px solid var(--line);background:#fff;border-radius:10px;min-height:34px;padding:8px 10px;font-size:12px;color:#3d4456;display:flex;align-items:center}
+  .bb-input-area{min-height:58px;align-items:flex-start}.bb-input-focus{border-color:var(--bb-accent,#7f5af0);box-shadow:0 0 0 2px var(--bb-accent-soft,rgba(127,90,240,.14))}
+  @media (max-width:980px){.bb-showcase{grid-template-columns:1fr}.bb-card-wide{grid-column:auto;}}
+  `;
+}
+
+function downloadBrandBoard(){
+  const board=$("viewBoard");
+  const p=P();
+  if(!board || !p) return;
+  const showcase=$("bbShowcase");
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Brand Board - ${esc(p.name||"Projeto")}</title>
+    <style>${buildBrandBoardExportCSS()}</style></head><body>
+      <div class="sheet">
+        <h1>${esc(p.name||"Projeto")}</h1>
+        <p>Exportado do painel de projeto em ${new Date().toLocaleString("pt-BR")}.</p>
+        <div class="bb-showcase" style="--bb-accent:${showcase?.style.getPropertyValue('--bb-accent')||'#7f5af0'};--bb-accent-soft:${showcase?.style.getPropertyValue('--bb-accent-soft')||'rgba(127,90,240,.14)'};--bb-accent-alt:${showcase?.style.getPropertyValue('--bb-accent-alt')||'#2cb67d'};--bb-accent-alt-soft:${showcase?.style.getPropertyValue('--bb-accent-alt-soft')||'rgba(44,182,125,.14)'};">${showcase?.innerHTML||""}</div>
+      </div>
+    </body></html>`;
+  const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const an=document.createElement("a");
+  an.href=url;
+  an.download=(p.name||"brand-board").replace(/[^\w\-]+/g,"_").slice(0,80)+"-board.html";
+  document.body.appendChild(an); an.click(); an.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),800);
+  toast("Painel exportado em HTML","success");
+}
 
 function svgToDataUri(svg=""){
   try{
