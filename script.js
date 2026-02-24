@@ -16,6 +16,14 @@ const WEIGHTS = [
 const TOK_PRI = "__PRI__";
 const TOK_SEC = "__SEC__";
 
+const EDITOR_VERSION_KEY = "goblins_editor_versions";
+const EDITOR_ACTIVE_VERSION = "legacy-fabric-v1";
+const EDITOR_EXTENSIONS = {
+  stylesheets: [],
+  scripts: []
+};
+
+
 const DEFAULT_TYPO = () => [
   {key:"Display",  fam:TOK_PRI, wt:300, sz:56, lh:1.10, ls:-1.0, al:"left", va:"top",    up:false, it:false},
   {key:"H1",       fam:TOK_PRI, wt:700, sz:40, lh:1.15, ls:-0.5, al:"left", va:"top",    up:false, it:false},
@@ -1341,6 +1349,36 @@ async function copyExport(i){
 }
 
 
+function getPrimaryProject(){
+  return S.projects[0] || null;
+}
+
+function openQuickEditorFromHome(){
+  let p=getPrimaryProject();
+  if(!p){
+    p=mkProject("Projeto Rápido");
+    S.projects.unshift(p);
+    save(S.projects);
+    renderHome();
+  }
+
+  S.pid=p.id;
+  ensureApps(p);
+
+  let app=(p.applications||[])[0];
+  if(!app){
+    const cfg={type:"web",unit:"px",w:1200,h:675,dpi:72,bleed:0,safe:24,name:(p.name?`${p.name} — `:"")+"Canvas Rápido"};
+    const svg=generateApplicationSVG(p,cfg,{preview:false});
+    app={ id:uid("a"), createdAt:Date.now(), svg, ...cfg };
+    p.applications.unshift(app);
+    p.updatedAt=Date.now();
+    save(S.projects);
+  }
+
+  openAppEditor(app.id);
+  toast("Editor rápido aberto","info");
+}
+
 /* ============================================================
    APP EDITOR — EDIT BEFORE EXPORT
 ============================================================ */
@@ -2118,18 +2156,39 @@ document.addEventListener("keydown",e=>{
 fillFontSelects();
 renderHome();
 
-function geEnsureIframeLoaded(){
-    const frame = document.getElementById('geEditorFrame');
+function readEditorTemplate(){
     const tpl = document.getElementById('geEditorTemplate');
-    if(!frame || !tpl) return;
-    if(!frame.dataset.loaded){
-      // template content is HTML-escaped to avoid parsing; decode before using
-      const txt = tpl.innerHTML;
-      const ta = document.createElement('textarea');
-      ta.innerHTML = txt;
-      frame.srcdoc = ta.value;
-      frame.dataset.loaded = "1";
-    }
+    if(!tpl) return "";
+    const ta = document.createElement('textarea');
+    ta.innerHTML = tpl.innerHTML;
+    return ta.value;
+  }
+  function saveEditorVersionSnapshot(version, html){
+    if(!version || !html) return;
+    try{
+      const snapshots = JSON.parse(localStorage.getItem(EDITOR_VERSION_KEY) || '{}');
+      if(!snapshots[version]){
+        snapshots[version] = { html, savedAt: Date.now() };
+        localStorage.setItem(EDITOR_VERSION_KEY, JSON.stringify(snapshots));
+      }
+    }catch(e){}
+  }
+  function applyEditorExtensions(html){
+    if(!html) return html;
+    const css=(EDITOR_EXTENSIONS.stylesheets||[]).filter(Boolean).map(h=>`<link rel="stylesheet" href="${h}">`).join('');
+    const js=(EDITOR_EXTENSIONS.scripts||[]).filter(Boolean).map(src=>`<script src="${src}"><\/script>`).join('');
+    return html.replace('</head>', `${css}</head>`).replace('</body>', `${js}</body>`);
+  }
+  function geEnsureIframeLoaded(force=false){
+    const frame = document.getElementById('geEditorFrame');
+    if(!frame) return;
+    if(frame.dataset.loaded && !force) return;
+
+    const rawHtml = readEditorTemplate();
+    saveEditorVersionSnapshot(EDITOR_ACTIVE_VERSION, rawHtml);
+    frame.srcdoc = applyEditorExtensions(rawHtml);
+    frame.dataset.loaded = "1";
+    frame.dataset.editorVersion = EDITOR_ACTIVE_VERSION;
   }
   function gePost(msg){
     const frame = document.getElementById('geEditorFrame');
