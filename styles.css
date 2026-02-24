@@ -894,7 +894,12 @@ a { color: var(--accent); text-decoration: none; }
   background:linear-gradient(140deg, rgba(255,255,255,.03), rgba(127,90,240,.05));
   padding:20px;
   display:grid;
-  grid-template-columns:repeat(3,minmax(220px,1fr));
+  grid-template-columns:minmax(280px,1fr) minmax(320px,1fr);
+  grid-template-areas:
+    "logo info"
+    "typo typo"
+    "visual visual"
+    "apps apps";
   gap:16px;
 }
 .bb-card{
@@ -903,7 +908,12 @@ a { color: var(--accent); text-decoration: none; }
   border-radius:14px;
   padding:14px;
 }
-.bb-card-wide{ grid-column:span 2; }
+.bb-card-wide{ grid-column:1 / -1; }
+.bb-sec-logo{ grid-area:logo; }
+.bb-sec-info{ grid-area:info; }
+.bb-sec-typo{ grid-area:typo; }
+.bb-sec-visual{ grid-area:visual; }
+.bb-sec-apps{ grid-area:apps; }
 .bb-card-hero{ box-shadow: inset 0 0 0 1px var(--bb-accent-soft); }
 .bb-card h4{
   margin:0 0 10px;
@@ -912,6 +922,7 @@ a { color: var(--accent); text-decoration: none; }
   letter-spacing:.08em;
   color:var(--ink3);
 }
+.bb-desc{ margin:0 0 10px; font-size:12px; color:var(--ink2); line-height:1.5; }
 .bb-logo-stage{
   min-height:150px;
   border-radius:12px;
@@ -940,24 +951,16 @@ a { color: var(--accent); text-decoration: none; }
 .bb-typo-item{ border:1px solid var(--border2); border-radius:10px; padding:10px; background:var(--surface); }
 .bb-usage{ display:flex; flex-direction:column; gap:10px; }
 .bb-usage-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; color:var(--ink2); }
-.bb-pill{
-  border:1px solid var(--border2);
-  border-radius:999px;
-  padding:5px 10px;
-  font-size:11px;
-  font-weight:700;
-  background:var(--surface);
-}
-
+.bb-pill{ border:1px solid var(--border2); border-radius:999px; padding:5px 10px; font-size:11px; font-weight:700; background:var(--surface); }
 .bb-link{ border:0; background:none; color:var(--bb-accent); font-size:12px; font-weight:700; cursor:pointer; padding:0; }
 .bb-link:hover{ text-decoration:underline; }
-.bb-app-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+.bb-app-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
 .bb-app-card{ border:1px solid var(--border2); border-radius:12px; padding:10px; background:var(--surface); display:flex; flex-direction:column; gap:8px; }
 .bb-app-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11px; color:var(--ink3); }
 .bb-app-head b{ color:var(--ink); font-size:12px; }
-.bb-app-thumb{ border:1px dashed var(--border2); border-radius:10px; min-height:110px; background:var(--surface2); display:flex; align-items:center; justify-content:center; overflow:hidden; }
-.bb-app-thumb img{ width:100%; height:110px; object-fit:contain; display:block; }
-.bb-app-empty{ font-size:12px; color:var(--ink3); }
+.bb-app-thumb{ border:1px dashed var(--border2); border-radius:10px; min-height:130px; background:var(--surface2); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.bb-app-thumb img{ width:100%; height:130px; object-fit:contain; display:block; }
+.bb-app-empty{ font-size:12px; color:var(--ink3); text-align:center; padding:0 12px; }
 .bb-ui-kit{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
 .bb-btn{ border-radius:999px; padding:7px 12px; font-size:12px; font-weight:700; border:1px solid transparent; }
 .bb-btn-primary{ background:var(--bb-accent); color:#fff; }
@@ -971,13 +974,16 @@ a { color: var(--accent); text-decoration: none; }
 .bb-input{ border:1px solid var(--border2); background:var(--surface); border-radius:10px; min-height:34px; padding:8px 10px; font-size:12px; color:var(--ink2); display:flex; align-items:center; }
 .bb-input-area{ min-height:58px; align-items:flex-start; }
 .bb-input-focus{ border-color:var(--bb-accent); box-shadow:0 0 0 2px var(--bb-accent-soft); }
-@media (max-width: 1180px){
-  .bb-showcase{ grid-template-columns:1fr 1fr; }
-  .bb-card-wide{ grid-column:span 2; }
-}
 @media (max-width: 900px){
-  .bb-showcase{ grid-template-columns:1fr; }
-  .bb-card-wide{ grid-column:auto; }
+  .bb-showcase{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "logo"
+      "info"
+      "typo"
+      "visual"
+      "apps";
+  }
 }
 
 /* ============================================================
