@@ -443,14 +443,16 @@
               <input class="inp" id="inpBrandBaseName" placeholder="minha-marca" disabled>
             </div>
             <div class="field-label">Uploads da marca</div>
-            <div class="row2">
+            <div class="upload-row">
               <button class="btn btn-ghost" onclick="triggerLogo('sq')" style="justify-content:center">Símbolo / Ícone</button>
-              <button class="btn btn-ghost" onclick="clearLogo('sq')" style="justify-content:center">Limpar símbolo</button>
+              <button class="btn btn-ghost mini" onclick="clearLogo('sq')" style="justify-content:center">Limpar</button>
             </div>
-            <div class="row2">
-              <button class="btn btn-ghost" onclick="triggerLogo('wd')" style="justify-content:center">Logotipo principal</button>
-              <button class="btn btn-ghost" onclick="clearLogo('wd')" style="justify-content:center">Limpar logotipo</button>
+            <div class="upload-row">
+              <button class="btn btn-ghost" onclick="triggerLogo('wd')" style="justify-content:center">Logotipo - Parte 1</button>
+              <button class="btn btn-ghost mini" onclick="clearLogo('wd')" style="justify-content:center">Limpar</button>
             </div>
+            <div id="extraUploadList" class="stack" style="gap:8px"></div>
+            <button class="btn btn-ghost" onclick="addExtraLogoSlot()" style="justify-content:center">+ Adicionar logo / texto</button>
             <div class="field"><label class="field-label">Altura X (%)</label><input id="inpXHeight" class="inp" type="range" min="20" max="90" step="1" oninput="updateBrandImportSetting('xHeight',this.value)"></div>
             <div class="field"><label class="field-label">Área de respiro (%)</label><input id="inpSafeMargin" class="inp" type="range" min="0" max="40" step="1" oninput="updateBrandImportSetting('safeMargin',this.value)"></div>
             <button class="btn btn-primary" onclick="applyBrandImportToSlots()" style="justify-content:center">Aplicar ajustes da marca</button>
@@ -479,6 +481,10 @@
                 </div>
                 <input class="inp" id="advWdScale" type="range" min="20" max="220" value="100" oninput="updateBrandPlacement('wd','scale',this.value)">
               </div>
+            </div>
+            <div>
+              <div class="field-label" style="margin-bottom:6px">Elementos adicionais da marca</div>
+              <div id="advExtraPreview" class="brand-extra-grid"></div>
             </div>
             <div>
               <div class="field-label" style="margin-bottom:6px">Painel combinado</div>
@@ -530,6 +536,7 @@
 
 <input id="fileLogoSq" type="file" accept=".svg,image/*" style="display:none">
 <input id="fileLogoWd" type="file" accept=".svg,image/*" style="display:none">
+<input id="fileLogoExtra" type="file" accept=".svg,image/*" style="display:none">
 
 
 <!-- =========================================================
