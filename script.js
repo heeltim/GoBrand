@@ -47,6 +47,8 @@ const DEFAULT_COLORS = () => [
 function uid(p){ return p+"_"+Math.random().toString(36).slice(2)+Date.now().toString(36); }
 function clamp(n,a,b){ return Math.max(a,Math.min(b,n)); }
 function esc(s){ return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function sanitizeName(s){ return String(s||"arquivo").trim().toLowerCase().replace(/[^a-z0-9-_]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"")||"arquivo"; }
+function downloadBlob(blob,filename){ const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500); }
 
 function hexToRgb(h){
   h=(h||"").replace("#","").trim();
@@ -401,11 +403,98 @@ function loadEditor(){
   renderColors();
   renderTypoList();
   renderPreview();
+  bsRefreshColorSelect();
+  bsBindEditorInputs();
+  bsComposeAndPreview();
 }
 
 /* ============================================================
    SAVE
 ============================================================ */
+
+
+function bsProjectState(){
+  const p=P(); if(!p) return null;
+  p.brandStudio = p.brandStudio || { symbol:null, logo1:null, logo2:null, finalSVG:"", assets:[], folders:["01_SVG","02_PNG","03_GUIAS"] };
+  return p.brandStudio;
+}
+function bsSafeParse(svgText){
+  const d=new DOMParser().parseFromString(svgText||"",'image/svg+xml');
+  const svg=d.querySelector('svg');
+  if(!svg) throw new Error('SVG inválido');
+  return svg;
+}
+function bsReadFileText(f){ return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result||""));r.onerror=()=>rej(new Error('falha leitura'));r.readAsText(f);}); }
+async function bsHandleUpload(key,input){
+  const p=P(); const bs=bsProjectState(); if(!p||!bs) return;
+  const file=input?.files?.[0]; if(!file) return;
+  const raw=await bsReadFileText(file);
+  bsSafeParse(raw);
+  bs[key]={name:file.name,raw};
+  p.updatedAt=Date.now(); save(S.projects);
+  toast(`${file.name} carregado`,'success');
+  bsComposeAndPreview();
+}
+function bsComposeRaw(colorHex){
+  const bs=bsProjectState(); if(!bs?.symbol?.raw||!bs?.logo1?.raw) return "";
+  const NS='http://www.w3.org/2000/svg';
+  const sym=bsSafeParse(bs.symbol.raw); const l1=bsSafeParse(bs.logo1.raw); const l2=bs.logo2?.raw?bsSafeParse(bs.logo2.raw):null;
+  const out=document.createElementNS(NS,'svg'); out.setAttribute('xmlns',NS); out.setAttribute('viewBox','0 0 1400 500'); out.setAttribute('width','1400'); out.setAttribute('height','500');
+  const g=document.createElementNS(NS,'g'); g.setAttribute('transform','translate(80 80)');
+  const c=(node,x,y,scale)=>{ const n=document.importNode(node,true); n.setAttribute('transform',`translate(${x} ${y}) scale(${scale})`); return n; };
+  g.appendChild(c(sym,0,0,0.6));
+  g.appendChild(c(l1,420,20,0.6));
+  if(l2) g.appendChild(c(l2,420,190,0.6));
+  out.appendChild(g);
+  let raw=new XMLSerializer().serializeToString(out);
+  if(colorHex){ raw=raw.replace(/fill="(?!none)[^"]*"/g,`fill="${colorHex}"`).replace(/stroke="(?!none)[^"]*"/g,`stroke="${colorHex}"`); }
+  return raw;
+}
+function bsComposeAndPreview(){
+  const p=P(); const bs=bsProjectState(); if(!p||!bs) return;
+  const color=$('bsColorVariant')?.value || ((p.colors||[])[0]?.hex||'#111111');
+  const raw=bsComposeRaw(color);
+  bs.finalSVG=raw;
+  const prev=$('bsPreview'); if(prev) prev.textContent = raw ? raw.slice(0,600)+(raw.length>600?'…':'') : 'Envie Símbolo + Logo 1 para gerar composição';
+  save(S.projects);
+}
+function bsRefreshColorSelect(){
+  const p=P(); const sel=$('bsColorVariant'); if(!p||!sel) return;
+  const colors=(p.colors||[]).filter(c=>c?.hex);
+  sel.innerHTML=colors.map(c=>`<option value="${c.hex}">${esc(c.name||c.hex)} (${c.hex})</option>`).join('') || '<option value="#111111">#111111</option>';
+}
+function bsBindEditorInputs(){
+  [['bsSymbolFile','symbol'],['bsLogo1File','logo1'],['bsLogo2File','logo2']].forEach(([id,key])=>{
+    const el=$(id); if(!el||el.dataset.bound==='1') return;
+    el.dataset.bound='1'; el.addEventListener('change',()=>bsHandleUpload(key,el));
+  });
+}
+function bsGenerateAssets(){
+  const p=P(); const bs=bsProjectState(); if(!p||!bs) return;
+  const colors=(p.colors||[]).filter(c=>c?.hex);
+  bs.assets=[];
+  colors.forEach(c=>{ const raw=bsComposeRaw(c.hex); if(raw) bs.assets.push({id:uid('f'), kind:'svg', name:`${sanitizeName(p.name)}_${sanitizeName(c.name||c.hex)}.svg`, raw, color:c.hex}); });
+  save(S.projects); bsRenderAssets(); toast(`${bs.assets.length} arquivo(s) gerado(s)`,'success');
+}
+function bsRenderAssets(){
+  const bs=bsProjectState(); const list=$('bsAssetsList'); if(!bs||!list) return;
+  list.innerHTML=(bs.assets||[]).map(a=>`<div class="chip"><span>${esc(a.name)}</span></div>`).join('')||'<div style="color:var(--ink3)">Nenhum arquivo gerado ainda.</div>';
+  const fl=$('bsFoldersList'); if(fl) fl.innerHTML=(bs.folders||[]).map(f=>`<div class="chip"><span>${esc(f)}</span></div>`).join('');
+}
+function bsPresetFolders(){ const bs=bsProjectState(); if(!bs) return; bs.folders=['01_SVG','02_PNG','03_GUIAS']; save(S.projects); bsRenderAssets(); }
+function bsAddFolder(){ const bs=bsProjectState(); if(!bs) return; const n=prompt('Nome da pasta'); if(!n) return; bs.folders.push(n.trim()); save(S.projects); bsRenderAssets(); }
+async function bsExportZip(){
+  const p=P(); const bs=bsProjectState(); if(!p||!bs) return;
+  if(!bs.assets?.length){ toast('Gere os arquivos antes','error'); return; }
+  if(typeof JSZip==='undefined'){ toast('JSZip indisponível','error'); return; }
+  const zip=new JSZip(); const root=zip.folder(($('bsRootFolder')?.value||'BrandPackage').trim()||'BrandPackage');
+  (bs.folders||[]).forEach(f=>root.folder(f));
+  const svgFolder=root.folder((bs.folders||[])[0]||'01_SVG');
+  bs.assets.forEach(a=>svgFolder.file(a.name,a.raw));
+  const blob=await zip.generateAsync({type:'blob'});
+  downloadBlob(blob,`${sanitizeName(p.name||'brand')}_package.zip`);
+}
+
 function saveProject(){
   const p=P(); if(!p) return;
   p.name=($("inpName").value||"").trim()||"Projeto";
@@ -921,24 +1010,12 @@ function renderPreview(){
    BRAND BOARD + APLICAÇÕES
 ════════════════════════════════════════════ */
 
-const APP_TEMPLATES = [
-  {id:"ig-post",   name:"Post Instagram", type:"web", unit:"px", w:1080, h:1080, dpi:72,  bleed:0, safe:0},
-  {id:"ig-story",  name:"Story Instagram",type:"web", unit:"px", w:1080, h:1920, dpi:72,  bleed:0, safe:0},
-  {id:"banner-hd", name:"Banner 1920×1080",type:"web",unit:"px", w:1920, h:1080, dpi:72, bleed:0, safe:0},
-  {id:"a4",        name:"Flyer A4",        type:"print",unit:"mm", w:210, h:297, dpi:300, bleed:3, safe:5},
-  {id:"a3",        name:"Pôster A3",       type:"print",unit:"mm", w:297, h:420, dpi:300, bleed:3, safe:8},
-  {id:"bc-90x50",  name:"Cartão 90×50 mm", type:"print",unit:"mm", w:90,  h:50,  dpi:300, bleed:3, safe:5},
-  {id:"custom",    name:"Customizado…",    type:"print",unit:"mm", w:100, h:100, dpi:300, bleed:3, safe:5},
-];
-
 function fmtDate(ts){
   try{
     const d=new Date(ts);
     return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"})+" • "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   }catch{return "";}
 }
-
-function mmToPx(mm,dpi){ return (mm/25.4)*dpi; }
 
 function ensureApps(p){ if(!p.applications) p.applications=[]; }
 
@@ -1030,197 +1107,43 @@ function renderApps(){
   `).join("");
 }
 
+function createBasicApplicationSVG(p,name="Aplicação"){
+  const W=1400,H=900;
+  const famPri=(p?.fontPri||"Outfit").replace(/"/g,"");
+  const famSec=(p?.fontSec||"Inter").replace(/"/g,"");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="#ffffff"/>
+  <text id="title" data-editable="1" data-name="Título" x="100" y="140" font-family="${famPri}" font-size="64" font-weight="700" fill="#111111">${esc(name)}</text>
+  <text id="subtitle" data-editable="1" data-name="Subtítulo" x="100" y="190" font-family="${famSec}" font-size="26" fill="#555">Clique para editar conteúdo</text>
+  <rect id="shape_1" data-editable="1" data-name="Bloco" x="100" y="260" width="420" height="220" rx="24" fill="rgba(127,90,240,.18)"/>
+</svg>`;
+}
+
 function openAppConfigurator(){
   const p=P(); if(!p){toast("Abra um projeto primeiro","error");return;}
   ensureApps(p);
-  const b=$("appBackdrop");
-  b.classList.add("open");
-  fillTplSelect();
-
-  // default: last used or first
-  const first = APP_TEMPLATES[0];
-  setConfiguratorFromTpl(first);
-  updateAppPreview();
-  document.addEventListener("keydown", escCloseApp, {once:true});
-}
-function escCloseApp(e){ if(e.key==="Escape") closeAppConfigurator(); else document.addEventListener("keydown", escCloseApp, {once:true}); }
-
-function closeAppConfigurator(){ $("appBackdrop").classList.remove("open"); }
-
-function fillTplSelect(){
-  const sel=$("appTpl");
-  if(sel.dataset.filled==="1") return;
-  sel.innerHTML = APP_TEMPLATES.map(t=>`<option value="${t.id}">${esc(t.name)} (${t.w}×${t.h}${t.unit})</option>`).join("");
-  sel.dataset.filled="1";
-  sel.addEventListener("change", ()=>{
-    const tpl=APP_TEMPLATES.find(t=>t.id===sel.value) || APP_TEMPLATES[0];
-    setConfiguratorFromTpl(tpl);
-    updateAppPreview();
-  });
-  ["appType","appUnit","appOri","appDpi","appBleed","appSafe","appW","appH","appName"].forEach(id=>{
-    $(id).addEventListener("input", updateAppPreview);
-    $(id).addEventListener("change", updateAppPreview);
-  });
-}
-
-function setConfiguratorFromTpl(t){
-  $("appTpl").value=t.id;
-  $("appType").value=t.type;
-  $("appUnit").value=t.unit;
-  $("appW").value=t.w;
-  $("appH").value=t.h;
-  $("appDpi").value=String(t.dpi);
-  $("appBleed").value=String(t.bleed);
-  $("appSafe").value=String(t.safe);
-  $("appOri").value="auto";
-  $("appName").value = (P()?.name ? (P().name+" — ") : "") + t.name;
-}
-
-function getAppConfig(){
-  const type=$("appType").value;
-  const unit=$("appUnit").value;
-  let w=parseFloat($("appW").value||0);
-  let h=parseFloat($("appH").value||0);
-  const ori=$("appOri").value;
-  if(ori==="portrait" && w>h){ [w,h]=[h,w]; }
-  if(ori==="landscape" && h>w){ [w,h]=[h,w]; }
-  const dpi=parseInt($("appDpi").value||"300",10);
-  const bleed=parseFloat($("appBleed").value||0);
-  const safe=parseFloat($("appSafe").value||0);
-  const name=$("appName").value.trim()||"Aplicação";
-  return {type,unit,w,h,dpi,bleed,safe,name};
-}
-
-function updateAppPreview(){
-  const cfg=getAppConfig();
-  const p=P(); if(!p) return;
-  const svg=generateApplicationSVG(p,cfg,{preview:true});
-  $("appPreview").textContent = svg;
-}
-
-function generateApplicationSVG(p,cfg,{preview=false}={}){
-  // size
-  const dpi=cfg.dpi||300;
-  const unit=cfg.unit;
-  const w=cfg.w, h=cfg.h;
-  const bleed=cfg.type==="print" ? (cfg.bleed||0) : 0;
-  const safe=cfg.type==="print" ? (cfg.safe||0) : 0;
-
-  const wPx = unit==="mm" ? mmToPx(w,dpi) : w;
-  const hPx = unit==="mm" ? mmToPx(h,dpi) : h;
-  const bleedPx = unit==="mm" ? mmToPx(bleed,dpi) : bleed;
-  const safePx  = unit==="mm" ? mmToPx(safe,dpi)  : safe;
-
-  const W = Math.max(1, wPx + bleedPx*2);
-  const H = Math.max(1, hPx + bleedPx*2);
-
-  const margin = Math.max(18, Math.min(W,H)*0.05);
-  const colors=(p.colors||[]).filter(c=>c.hex);
-  const bg = "#ffffff"; // neutro: você aplica no editor
-  const assetLogo = p.logoWd || p.logoSq || null;
-  const logoHref = assetLogo?.type==="img" ? (assetLogo.data||"") : "";
-
-  const famPri = resolveFont(p, TOK_PRI).replace(/"/g,"");
-  const famSec = resolveFont(p, TOK_SEC).replace(/"/g,"");
-
-  const guides = `
-    <g id="guides" stroke="#00A3FF" stroke-width="1" fill="none" opacity="0.55" data-guide="1">
-      ${bleedPx>0 ? `<rect x="0.5" y="0.5" width="${W-1}" height="${H-1}" stroke-dasharray="6 4"/>` : ``}
-      <rect x="${bleedPx+0.5}" y="${bleedPx+0.5}" width="${W-bleedPx*2-1}" height="${H-bleedPx*2-1}" opacity="0.9"/>
-      ${safePx>0 ? `<rect x="${bleedPx+safePx+0.5}" y="${bleedPx+safePx+0.5}" width="${W-2*(bleedPx+safePx)-1}" height="${H-2*(bleedPx+safePx)-1}" stroke-dasharray="3 5" opacity="0.8"/>` : ``}
-    </g>`;
-
-  // swatches as named objects (helpful in Illustrator)
-  const swatches = colors.length ? `
-    <g id="swatches" data-guide="1" font-family="${famSec}" font-size="12" fill="#111">
-      ${colors.map((c,i)=>{
-        const y = H - margin - (colors.length-i)*(18+8) + 18;
-        const nm = (c.name||`Cor ${i+1}`).replace(/</g,"&lt;");
-        return `<g>
-          <rect x="${margin}" y="${y}" width="18" height="18" rx="4" fill="${c.hex}" stroke="rgba(0,0,0,.15)"/>
-          <text x="${margin+28}" y="${y+13}" fill="rgba(0,0,0,.70)">${nm} • ${c.hex}</text>
-        </g>`;
-      }).join("")}
-    </g>` : ``;
-
-  // editable placeholders (NO random styling)
-  const placeholders = `
-    <g id="content" data-layer="content">
-      <!-- Background block -->
-      <rect id="bg" data-editable="1" data-name="Fundo" x="${bleedPx}" y="${bleedPx}" width="${W-bleedPx*2}" height="${H-bleedPx*2}" rx="0" fill="${bg}"/>
-
-      <!-- Art layer (shapes/images) -->
-      <g id="art">
-        <!-- Image slot -->
-        <rect id="img_slot" data-editable="1" data-name="Imagem (slot)" x="${margin}" y="${margin+190}" width="${Math.min(520, W-margin*2)}" height="${Math.min(300, H-margin*2-260)}" rx="18" fill="rgba(0,0,0,.03)" stroke="rgba(0,0,0,.10)"/>
-        <text id="img_hint" data-editable="1" data-name="Legenda imagem" x="${margin+18}" y="${margin+220}" font-family="${famSec}" font-size="12" fill="rgba(0,0,0,.45)">Área de imagem (cole/importe depois no Illustrator)</text>
-
-        <!-- Accent shape -->
-        <rect id="accent" data-editable="1" data-name="Bloco / Acento" x="${margin}" y="${H-margin-120}" width="${Math.min(420, W-margin*2)}" height="72" rx="18" fill="rgba(127,90,240,.18)"/>
-
-        <!-- Button -->
-        <rect id="btn_shape" data-editable="1" data-name="Botão (forma)" x="${margin}" y="${H-margin-200}" width="220" height="52" rx="14" fill="rgba(0,0,0,.06)" stroke="rgba(0,0,0,.12)"/>
-      </g>
-
-      <!-- Logo layer -->
-      <g id="logo" data-layer="logo">
-        <rect id="logo_slot" data-editable="1" data-name="Logo (slot)" x="${W-margin-220}" y="${margin}" width="220" height="90" rx="12" fill="rgba(0,0,0,.03)" stroke="rgba(0,0,0,.10)"/>
-        ${logoHref ? `<image id="logo_img" data-editable="1" data-name="Logo" href="${logoHref}" x="${W-margin-220+14}" y="${margin+14}" width="192" height="62" preserveAspectRatio="xMidYMid meet" />`
-                  : `<text id="logo_txt" data-editable="1" data-name="Texto do Logo" x="${W-margin-220+18}" y="${margin+44}" font-family="${famSec}" font-size="12" fill="rgba(0,0,0,.55)">Envie um SVG e aplique aqui</text>`}
-      </g>
-
-      <!-- Type layer (texts) -->
-      <g id="type">
-        <text id="title" data-editable="1" data-type="text" data-name="Título" x="${margin}" y="${margin+64}" font-family="${famPri}" font-size="52" font-weight="700" fill="rgba(0,0,0,.85)">${esc(cfg.name)}</text>
-        <text id="subtitle" data-editable="1" data-type="text" data-name="Subtítulo" x="${margin}" y="${margin+104}" font-family="${famSec}" font-size="18" font-weight="400" fill="rgba(0,0,0,.60)">${esc(p.name)} • ${esc(cfg.type==="print"?"Impressão":"Web")}</text>
-
-        <text id="body" data-editable="1" data-type="text" data-name="Texto" x="${margin}" y="${margin+150}" font-family="${famSec}" font-size="16" font-weight="400" fill="rgba(0,0,0,.55)">
-          Clique e escreva. Depois aplique um estilo (H1/Body/Caption…)
-        </text>
-
-        <text id="caption" data-editable="1" data-type="text" data-name="Caption" x="${margin}" y="${H-margin-18}" font-family="${famSec}" font-size="12" font-weight="400" fill="rgba(0,0,0,.45)">Caption / informação de rodapé</text>
-
-        <text id="btn_text" data-editable="1" data-type="text" data-name="Texto do Botão" x="${margin+110}" y="${H-margin-200+33}" text-anchor="middle" dominant-baseline="middle" font-family="${famPri}" font-size="14" font-weight="600" fill="rgba(0,0,0,.75)">Botão</text>
-      </g>
-    </g>`;
-
-  const notes = `
-    <g id="notes" data-guide="1" font-family="${famSec}" font-size="11" fill="rgba(0,0,0,.45)">
-      <text x="${margin}" y="${H-margin}">Camadas: guides, content, swatches • Sangria: ${bleed}${unit==="mm"?"mm":""} • Safe: ${safe}${unit==="mm"?"mm":""}</text>
-    </g>`;
-
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <title>${esc(cfg.name)}</title>
-  <desc>Gerado pelo Goblins Faz Brand Studio. Ajuste estilos no App Editor antes de exportar.</desc>
-  ${guides}
-  ${placeholders}
-  ${swatches}
-  ${notes}
-</svg>`;
-
-  return svg;
-}
-
-function createApplication(){
-  const p=P(); if(!p) return;
-  ensureApps(p);
-  const cfg=getAppConfig();
-
-  if(!(cfg.w>0&&cfg.h>0)){ toast("Defina largura e altura","error"); return; }
-
-  const svg=generateApplicationSVG(p,cfg,{preview:false});
-  const app={ id:uid("a"), createdAt:Date.now(), svg,
-    name:cfg.name, type:cfg.type, unit:cfg.unit, w:cfg.w, h:cfg.h, dpi:cfg.dpi, bleed:cfg.bleed, safe:cfg.safe
+  const name=(p.name?`${p.name} — `:"")+`Aplicação ${((p.applications||[]).length+1)}`;
+  const app={
+    id:uid("a"), createdAt:Date.now(), name,
+    type:"web", unit:"px", w:1400, h:900, dpi:72, bleed:0, safe:0,
+    svg:createBasicApplicationSVG(p,name)
   };
   p.applications.unshift(app);
   p.updatedAt=Date.now();
   save(S.projects);
-
-  closeAppConfigurator();
-  toast("Aplicação criada — abra e aplique estilos","success");
+  renderApps();
+  toast("Aplicação criada","success");
   openAppEditor(app.id);
 }
+
+function closeAppConfigurator(){}
+function fillTplSelect(){}
+function setConfiguratorFromTpl(){}
+function getAppConfig(){ return null; }
+function updateAppPreview(){}
+function generateApplicationSVG(p,cfg,{preview=false}={}){ return createBasicApplicationSVG(p,cfg?.name||"Aplicação"); }
+function createApplication(){ openAppConfigurator(); }
 
 function downloadApp(id){
   const p=P(); if(!p) return;
@@ -1339,6 +1262,7 @@ ${p.colors.map((c,i)=>{
 
   window._exportData=cards;
   refreshIcons();
+  bsRenderAssets();
 }
 
 
