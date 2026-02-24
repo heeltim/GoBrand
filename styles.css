@@ -955,3 +955,39 @@ a { color: var(--accent); text-decoration: none; }
   width:14px;
   height:14px;
 }
+
+/* Brand Studio embedded module */
+.module-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, .76);
+  backdrop-filter: blur(8px);
+  z-index: 1200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.module-backdrop.open { display: flex; }
+.module-shell {
+  width: min(1440px, 96vw);
+  height: min(92vh, 980px);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 70px rgba(0,0,0,.45);
+  display: flex;
+  flex-direction: column;
+}
+.module-head {
+  height: 58px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.module-title { font-weight: 800; font-size: 13px; color: var(--ink); }
+.module-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.module-frame { width: 100%; height: 100%; border: 0; background: #0d0d0f; }

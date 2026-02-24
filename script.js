@@ -2137,3 +2137,27 @@ function geEnsureIframeLoaded(){
   }
   function geFit(){ gePost({type:'fit'}); }
   function geExportPNG(){ gePost({type:'exportPNG'}); }
+
+/* ============================================================
+   BRAND STUDIO MODULE (EMBED)
+============================================================ */
+function openBrandStudioModule(tab="brand"){
+  const backdrop = $("brandStudioBackdrop");
+  const frame = $("brandStudioFrame");
+  if(!backdrop || !frame) return;
+  backdrop.classList.add("open");
+  setTimeout(()=>{
+    frame.contentWindow?.postMessage({ type:"brand-module-open-tab", tab }, "*");
+  }, 120);
+}
+function closeBrandStudioModule(){
+  const backdrop = $("brandStudioBackdrop");
+  if(!backdrop) return;
+  backdrop.classList.remove("open");
+}
+(function wireBrandStudioModal(){
+  const backdrop = $("brandStudioBackdrop");
+  if(!backdrop) return;
+  backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) closeBrandStudioModule(); });
+  document.addEventListener("keydown", (e)=>{ if(e.key==="Escape" && backdrop.classList.contains("open")) closeBrandStudioModule(); });
+})();
