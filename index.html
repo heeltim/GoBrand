@@ -2137,7 +2137,7 @@ function setInteractionState(state){
     'selection': 'Modo seleção/transformação ativo (1 clique).',
     'edit': 'Modo edição ativo (2 cliques): clique no nó para ativar alças.',
     'edit-handles': 'Modo edição com alças ativas (3 cliques).',
-    'creating': 'Vetor: clique para ponto reto, arraste para alças. Enter finaliza, Esc desfaz.'
+    'creating': (vectorToolState.modelKey === 'vectorModelV2' ? 'Bézier V2: criação suave ativa (anti-duplo-clique reduzido). Enter finaliza, Esc desfaz.' : 'Vetor: clique para ponto reto, arraste para alças. Enter finaliza, Esc desfaz.')
   };
   if (labels[state]) setStatus(labels[state]);
 }
@@ -2602,8 +2602,11 @@ function addBezierPoint(pointer, e){
   if (maybeCloseBezierPath(pointer)) return;
   const now = performance.now();
   const lastPos = vectorToolState.lastPointAddedPos;
-  const tooFast = now - Number(vectorToolState.lastPointAddedAt || 0) < 170;
-  const tooClose = !!lastPos && distance(pointer, lastPos) < (5 / Math.max(zoom, 0.1));
+  const isV2 = (vectorToolState.modelKey === 'vectorModelV2' || activeTool === 'bezier-v2');
+  const minInterval = isV2 ? 70 : 170;
+  const minDistance = (isV2 ? 2.2 : 5) / Math.max(zoom, 0.1);
+  const tooFast = now - Number(vectorToolState.lastPointAddedAt || 0) < minInterval;
+  const tooClose = !!lastPos && distance(pointer, lastPos) < minDistance;
   if (tooFast && tooClose) return;
 
   const p = makeBezierPoint(pointer.x, pointer.y);
