@@ -1852,11 +1852,18 @@ canvas.on('mouse:dblclick', opt =&gt; {
   const pointer = canvas.getPointer(opt.e);
   if (!target) return;
   if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
-    finishBezierCreation({toEditing:true});
-    setActiveTool('direct-select');
+    const path = finishBezierCreation({toEditing:false});
+    if (path) {
+      canvas.setActiveObject(path);
+      setActiveTool('select');
+    }
     return;
   }
   if (pathIsBezierEditable(target)) {
+    if (activeTool === 'select') {
+      attachBezierEditor(target);
+      return;
+    }
     if (activeTool !== 'direct-select') setActiveTool('direct-select');
     if (bezierEditor.enabled &amp;&amp; bezierEditor.path === target) {
       const seg = getNearestBezierSegment(target, pointer);
@@ -1871,8 +1878,11 @@ window.addEventListener('keydown', e =&gt; {
   if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const path = finishBezierCreation({toEditing:true});
-      if (path) setActiveTool('direct-select');
+      const path = finishBezierCreation({toEditing:false});
+      if (path) {
+        canvas.setActiveObject(path);
+        setActiveTool('select');
+      }
       return;
     }
     if (e.key === 'Escape') {
@@ -2073,7 +2083,8 @@ function createCreationNode(x, y, kind='anchor'){
   const r = kind === 'cursor' ? getBezierHandleRadius('handle') : getBezierHandleRadius(isAnchor ? 'anchor' : 'handle');
   const sc = getHandleVisualScale();
   const node = new fabric.Circle({
-    left:x-r, top:y-r, radius:r,
+    left:x, top:y, radius:r,
+    originX:'center', originY:'center',
     fill: kind === 'cursor' ? '#fff' : (isAnchor ? '#ffffff' : '#111'),
     stroke:'#2f9bff', strokeWidth:2,
     selectable:false, evented:false, excludeFromExport:true
@@ -2259,7 +2270,11 @@ function maybeCloseBezierPath(pointer){
   const first = vectorToolState.points[0];
   if (distance(pointer, first) &gt; BEZIER_CREATE_HIT / Math.max(zoom, .1)) return false;
   vectorToolState.closed = true;
-  finishBezierCreation({toEditing:true});
+  const path = finishBezierCreation({toEditing:false});
+  if (path) {
+    canvas.setActiveObject(path);
+    setActiveTool('select');
+  }
   return true;
 }
 
@@ -2311,7 +2326,8 @@ function createBezierControl(x, y, role){
   const isAnchor = role.includes('anchor');
   const r = getBezierHandleRadius(isAnchor ? 'anchor' : 'handle');
   const c = new fabric.Circle({
-    left:x-r, top:y-r, radius:r,
+    left:x, top:y, radius:r,
+    originX:'center', originY:'center',
     fill:isAnchor ? '#ffffff' : '#111',
     stroke:'#2f9bff', strokeWidth:2,
     selectable:false, evented:true, hasControls:false, hasBorders:false,
@@ -2356,9 +2372,9 @@ function refreshBezierEditorControls(){
     const a = byRole[`anchor-${i}`];
     const hin = byRole[`in-${i}`];
     const hout = byRole[`out-${i}`];
-    if (a) a.set({ left:pt.x-a.radius, top:pt.y-a.radius, scaleX:sc, scaleY:sc });
-    if (hin) hin.set({ left:pt.inX-hin.radius, top:pt.inY-hin.radius, scaleX:sc, scaleY:sc });
-    if (hout) hout.set({ left:pt.outX-hout.radius, top:pt.outY-hout.radius, scaleX:sc, scaleY:sc });
+    if (a) a.set({ left:pt.x, top:pt.y, scaleX:sc, scaleY:sc });
+    if (hin) hin.set({ left:pt.inX, top:pt.inY, scaleX:sc, scaleY:sc });
+    if (hout) hout.set({ left:pt.outX, top:pt.outY, scaleX:sc, scaleY:sc });
 
     const style = { stroke:'rgba(47,155,255,.45)', strokeWidth:1.2*sc, selectable:false, evented:false, excludeFromExport:true };
     if (distance({x:pt.x,y:pt.y},{x:pt.inX,y:pt.inY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.inX,pt.inY], style));
@@ -2389,15 +2405,18 @@ function attachBezierEditor(pathObj){
   });
 
   controls.forEach(ctrl =&gt; {
+    ctrl.__moved = false;
+    ctrl.on('mousedown', () =&gt; { ctrl.__moved = false; });
     ctrl.on('moving', evt =&gt; {
+      ctrl.__moved = true;
       const m = getPathModel(bezierEditor.path);
       if (!m) return;
       const [role, idxStr] = String(ctrl.bziRole).split('-');
       const i = Number(idxStr);
       const pt = m.points[i];
       if (!pt) return;
-      const cx = ctrl.left + ctrl.radius;
-      const cy = ctrl.top + ctrl.radius;
+      const cx = ctrl.left;
+      const cy = ctrl.top;
 
       if (role === 'anchor') {
         const dx = cx - pt.x;
@@ -2422,11 +2441,12 @@ function attachBezierEditor(pathObj){
       applyVectorModelToPath(bezierEditor.path);
       refreshBezierEditorControls();
     });
-    ctrl.on('mousedblclick', () =&gt; {
+    ctrl.on('mouseup', () =&gt; {
+      if (ctrl.__moved) return;
       const m = getPathModel(bezierEditor.path);
       const [role, idxStr] = String(ctrl.bziRole).split('-');
       if (role !== 'anchor') return;
-      const pt = m.points[Number(idxStr)];
+      const pt = m?.points?.[Number(idxStr)];
       if (!pt) return;
       const isCorner = pt.kind === 'corner';
       pt.kind = isCorner ? 'smooth' : 'corner';
@@ -2447,7 +2467,7 @@ function attachBezierEditor(pathObj){
   bezierEditor.controls = controls;
   controls.forEach(c =&gt; canvas.add(c));
   refreshBezierEditorControls();
-  setStatus('Edição de nós ativa: arraste pontos/alças, duplo clique no nó alterna corner/smooth.');
+  setStatus('Edição de nós ativa: arraste pontos/alças, clique no nó alterna corner/smooth.');
 }
 
 function finalizeBezierEditor(){
@@ -3832,7 +3852,7 @@ function setBezierSubmenuMode(_enabled){
 }
 
 function setActiveTool(tool){
-  if (bezierEditor.enabled &amp;&amp; tool !== 'direct-select' &amp;&amp; tool !== 'bezier') finalizeBezierEditor();
+  if (bezierEditor.enabled &amp;&amp; tool !== 'direct-select' &amp;&amp; tool !== 'bezier' &amp;&amp; tool !== 'select') finalizeBezierEditor();
   activeTool = tool;
   const isText = tool === 'text';
   const isDirect = tool === 'direct-select';
