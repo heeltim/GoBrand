@@ -837,25 +837,12 @@ input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 .artboard-item.active{border-color:rgba(127,90,240,.45);background:rgba(127,90,240,.12)}
 .artboard-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11px}
 .artboard-size{font-size:10px;color:var(--ink3);font-family:var(--mono)}
-.library-cards{display:grid;gap:10px}
-.library-card{border:1px solid var(--border2);border-radius:12px;background:rgba(255,255,255,.015);overflow:hidden}
-.library-card-head{display:flex;justify-content:space-between;align-items:center;padding:10px 10px 8px;border-bottom:1px solid rgba(255,255,255,.06)}
-.library-card-title{font-size:11px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
-.library-card-note{font-size:10px;color:var(--ink3);font-family:var(--mono)}
-.library-card-body{padding:8px}
-.lib-palette-bar{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--border2);height:48px;margin-bottom:8px}
-.lib-palette-segment{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:rgba(255,255,255,.92);font-family:var(--mono)}
-.lib-color-swatches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.lib-color-swatch{display:flex;align-items:center;gap:7px;border:1px solid var(--border2);border-radius:9px;padding:6px 8px;background:rgba(255,255,255,.02);cursor:pointer}
-.lib-color-swatch:hover{border-color:rgba(127,90,240,.55);background:rgba(127,90,240,.12)}
-.lib-color-chip{width:24px;height:24px;border-radius:7px;border:1px solid rgba(255,255,255,.22);flex-shrink:0}
-.lib-color-label{font-size:11px;color:var(--ink);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lib-items{display:grid;gap:4px;max-height:240px;overflow:auto;padding-right:2px}
 .lib-item{
   display:flex;align-items:center;gap:8px;
   padding:7px 9px;border-radius:8px;
   border:1px solid transparent;
   cursor:pointer;transition:all .1s ease;
+  margin-bottom:3px;
 }
 .lib-item:hover{background:rgba(255,255,255,.04)}
 .lib-item[draggable="true"]{cursor:grab}
@@ -1104,7 +1091,7 @@ textarea.modal-textarea{
           Biblioteca
           &lt;span id="libCount" style="color:var(--ink3)"&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;div id="libraryList" class="library-cards"&gt;
+        &lt;div id="libraryList"&gt;
           &lt;div class="layer-empty"&gt;Sem itens de identidade&lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -4600,105 +4587,28 @@ function refreshLayers() {
 let brandLibrary=[];
 let draggedLibraryIndex = null;
 
-function esc(v){
-  return String(v ?? '').replace(/[&<>"']/g, ch =&gt; ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-}
-
-function buildLibraryCards(){
-  const colors = brandLibrary.filter(item =&gt; item.kind==='color');
-  const textStyles = brandLibrary.filter(item =&gt; item.kind==='text-style');
-  const graphics = brandLibrary.filter(item =&gt; item.kind==='logo' || item.kind==='graphic');
-
-  const colorTotal = colors.reduce((acc,item) =&gt; acc + Math.max(1, Number(item.weight||item.percent||item.ratio||1)), 0) || 1;
-  const paletteSegments = colors.length
-    ? colors.map(item =&gt; {
-        const raw = Math.max(1, Number(item.weight||item.percent||item.ratio||1));
-        const pct = Math.round((raw / colorTotal) * 100);
-        return `&lt;button class="lib-palette-segment" data-lib-idx="${item.__idx}" style="width:${Math.max(14,(raw/colorTotal)*100)}%;background:${esc(item.color||'#888')}" title="Aplicar ${esc(item.name||'Cor')}"&gt;${pct}%&lt;/button&gt;`;
-      }).join('')
-    : '&lt;div class="layer-empty" style="padding:10px 0"&gt;Sem cores&lt;/div&gt;';
-
-  const colorSwatches = colors.length
-    ? colors.map(item =&gt; `&lt;button class="lib-color-swatch" data-lib-idx="${item.__idx}" title="Aplicar ${esc(item.name||'Cor')}"&gt;&lt;span class="lib-color-chip" style="background:${esc(item.color||'#888')};"&gt;&lt;/span&gt;&lt;span class="lib-color-label"&gt;${esc(item.name||'Cor')}&lt;/span&gt;&lt;/button&gt;`).join('')
-    : '&lt;div class="layer-empty" style="padding:10px 0"&gt;Sem cores&lt;/div&gt;';
-
-  const renderItemList = (items, emptyMsg) =&gt; {
-    if(!items.length) return `&lt;div class="layer-empty" style="padding:10px 0"&gt;${emptyMsg}&lt;/div&gt;`;
-    return items.map(item =&gt; {
-      const icon = item.kind==='logo' ? 'image' : item.kind==='graphic' ? 'shapes' : item.kind==='color' ? 'droplets' : 'type';
-      const meta = item.kind==='logo' || item.kind==='graphic'
-        ? (item.meta || 'Arraste para inserir')
-        : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
-      const preview = item.kind==='logo' &amp;&amp; item.src
-        ? `background-image:url('${esc(item.src)}')`
-        : item.kind==='color'
-          ? `background:${esc(item.color||'#999')}`
-          : 'background:linear-gradient(135deg, rgba(127,90,240,.35), rgba(44,182,125,.35))';
-      return `&lt;div class="lib-item" draggable="true" data-lib-idx="${item.__idx}"&gt;&lt;div class="lib-preview" style="${preview}"&gt;&lt;/div&gt;&lt;div class="lib-icon"&gt;&lt;i data-lucide="${icon}" data-size="13"&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class="layer-name"&gt;${esc(item.name||item.kind)}&lt;/div&gt;&lt;div class="lib-meta"&gt;${esc(meta)}&lt;/div&gt;&lt;/div&gt;`;
-    }).join('');
-  };
-
-  return `
-    &lt;div class="library-card"&gt;
-      &lt;div class="library-card-head"&gt;
-        &lt;span class="library-card-title"&gt;Cores&lt;/span&gt;
-        &lt;span class="library-card-note"&gt;Clique para aplicar&lt;/span&gt;
-      &lt;/div&gt;
-      &lt;div class="library-card-body"&gt;
-        &lt;div class="lib-palette-bar"&gt;${paletteSegments}&lt;/div&gt;
-        &lt;div class="lib-color-swatches"&gt;${colorSwatches}&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-
-    &lt;div class="library-card"&gt;
-      &lt;div class="library-card-head"&gt;
-        &lt;span class="library-card-title"&gt;Textos&lt;/span&gt;
-        &lt;span class="library-card-note"&gt;Arraste para artboard&lt;/span&gt;
-      &lt;/div&gt;
-      &lt;div class="library-card-body"&gt;
-        &lt;div class="lib-items" data-lib-group="text"&gt;${renderItemList(textStyles, 'Sem estilos de texto')}&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-
-    &lt;div class="library-card"&gt;
-      &lt;div class="library-card-head"&gt;
-        &lt;span class="library-card-title"&gt;Elementos gráficos&lt;/span&gt;
-        &lt;span class="library-card-note"&gt;Arraste para artboard&lt;/span&gt;
-      &lt;/div&gt;
-      &lt;div class="library-card-body"&gt;
-        &lt;div class="lib-items" data-lib-group="graphic"&gt;${renderItemList(graphics, 'Sem elementos gráficos')}&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  `;
-}
-
 function refreshLibrary(){
   const list=$('libraryList');
   const cnt=$('libCount');
   if(!list) return;
   if(cnt) cnt.textContent=brandLibrary.length;
-
+  list.innerHTML='';
   if(!brandLibrary.length){
     list.innerHTML='&lt;div class="layer-empty"&gt;Sem itens de identidade&lt;/div&gt;';
     return;
   }
-
-  brandLibrary = brandLibrary.slice(0,80).map((item, idx) =&gt; ({...item, __idx:idx}));
-  list.innerHTML = buildLibraryCards();
-
-  list.querySelectorAll('[data-lib-idx]').forEach(node =&gt; {
-    const idx = Number(node.dataset.libIdx);
-    if(Number.isNaN(idx)) return;
-
-    if(node.classList.contains('lib-item')){
-      node.addEventListener('click',()=&gt;applyLibraryItem(idx));
-      node.addEventListener('dragstart',()=&gt;{ draggedLibraryIndex = idx; });
-      node.addEventListener('dragend',()=&gt;{ draggedLibraryIndex = null; });
-    } else {
-      node.addEventListener('click',()=&gt;applyLibraryItem(idx));
-    }
+  brandLibrary.forEach((item,idx)=&gt;{
+    const div=document.createElement('div');
+    div.className='lib-item';
+    const icon = item.kind==='logo' ? 'image' : item.kind==='color' ? 'droplets' : 'type';
+    const meta = item.kind==='logo' ? 'Logo' : item.kind==='color' ? (item.color||'Cor') : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
+    div.draggable = true;
+    const preview = item.kind==='logo' &amp;&amp; item.src ? `background-image:url('${item.src}')` : item.kind==='color' ? `background:${item.color||'#999'}` : 'background:linear-gradient(135deg, rgba(127,90,240,.35), rgba(44,182,125,.35))';
+    div.innerHTML=`&lt;div class="lib-preview" style="${preview}"&gt;&lt;/div&gt;&lt;div class="lib-icon"&gt;&lt;i data-lucide="${icon}" data-size="13"&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class="layer-name"&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class="lib-meta"&gt;${meta}&lt;/div&gt;`;
+    div.addEventListener('click',()=&gt;applyLibraryItem(idx));
+    div.addEventListener('dragstart',()=&gt;{ draggedLibraryIndex = idx; });
+    list.appendChild(div);
   });
-
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
 }
 
@@ -4736,7 +4646,7 @@ function applyLibraryItem(idx){
     setStatus('Estilo de texto adicionado da biblioteca');
     return;
   }
-  if((item.kind==='logo' || item.kind==='graphic') &amp;&amp; item.src){
+  if(item.kind==='logo' &amp;&amp; item.src){
     fabric.Image.fromURL(item.src, img=&gt;{
       if(!img) return;
       const maxW=docW*0.5, maxH=docH*0.35;
@@ -4745,29 +4655,12 @@ function applyLibraryItem(idx){
         left: artboard.left + docW/2 - (img.width*sc)/2,
         top: artboard.top + docH/2 - (img.height*sc)/2,
         scaleX: sc, scaleY: sc,
-        dataName: item.name || (item.kind==='graphic' ? 'Elemento gráfico' : 'Logo da biblioteca')
+        dataName: item.name || 'Logo da biblioteca'
       });
       canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
       refreshLayers(); refreshProps();
-      setStatus(item.kind==='graphic' ? 'Elemento gráfico inserido da biblioteca' : 'Logo inserido da biblioteca');
+      setStatus('Logo inserido da biblioteca');
     }, {crossOrigin:'anonymous'});
-    return;
-  }
-  if(item.kind==='graphic'){
-    const size = Math.max(72, Number(item.size)||128);
-    const shape = new fabric.Rect({
-      left: artboard.left + docW*0.5 - size/2,
-      top: artboard.top + docH*0.5 - size/2,
-      width: size,
-      height: size,
-      rx: Math.round(size*0.18),
-      ry: Math.round(size*0.18),
-      fill: item.color || '#7f5af0',
-      dataName: item.name || 'Elemento gráfico'
-    });
-    canvas.add(shape); canvas.setActiveObject(shape); canvas.requestRenderAll();
-    refreshLayers(); refreshProps();
-    setStatus('Elemento gráfico inserido da biblioteca');
   }
 }
 
