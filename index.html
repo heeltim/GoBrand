@@ -781,6 +781,18 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .top-tools{display:none}
 .floating-toolbar-wrap.show-top .top-tools{display:flex}
 
+.text-float-panel{position:absolute;left:24px;bottom:24px;z-index:13;width:300px;background:rgba(24,24,29,.96);border:1px solid var(--border2);border-radius:14px;box-shadow:0 20px 44px rgba(0,0,0,.45);display:none;overflow:hidden}
+.text-float-panel.open{display:block}
+.text-float-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.text-float-tabs{display:flex;gap:4px}
+.text-float-tab{height:28px;padding:0 10px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink2);font-size:11px;font-family:var(--mono)}
+.text-float-tab.active{background:rgba(127,90,240,.18);color:#fff;border-color:rgba(127,90,240,.35)}
+.text-float-close{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--ink2)}
+.text-float-body{padding:10px 12px;display:grid;gap:8px}
+.text-float-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.text-float-panel [data-pane]{display:none}
+.text-float-panel [data-pane].active{display:grid;gap:8px}
+
 /* ─── DOC INPUTS ──────────────────────────────────────── */
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
 .field-row.one{grid-template-columns:1fr}
@@ -1126,6 +1138,50 @@ textarea.modal-textarea{
       &lt;/div&gt;
     &lt;/div&gt;
 
+    &lt;div class=&quot;text-float-panel&quot; id=&quot;textFloatPanel&quot;&gt;
+      &lt;div class=&quot;text-float-head&quot;&gt;
+        &lt;div class=&quot;text-float-tabs&quot;&gt;
+          &lt;button class=&quot;text-float-tab active&quot; data-tf-tab=&quot;basico&quot;&gt;Básico&lt;/button&gt;
+          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;detalhes&quot;&gt;Detalhes&lt;/button&gt;
+          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;variavel&quot;&gt;Variável&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;text-float-close&quot; id=&quot;btnCloseTextFloat&quot;&gt;✕&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;text-float-body&quot;&gt;
+        &lt;div data-pane=&quot;basico&quot; class=&quot;active&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfFontSize&quot; type=&quot;number&quot; min=&quot;6&quot; step=&quot;1&quot; placeholder=&quot;Tamanho&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfColor&quot; type=&quot;color&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;seg&quot; id=&quot;tfAlignSeg&quot;&gt;
+            &lt;button class=&quot;seg-opt on&quot; data-val=&quot;left&quot;&gt;≡&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div data-pane=&quot;detalhes&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfLineHeight&quot; type=&quot;number&quot; min=&quot;0.6&quot; max=&quot;4&quot; step=&quot;0.1&quot; placeholder=&quot;Entrelinha&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfLetterSpacing&quot; type=&quot;number&quot; min=&quot;-50&quot; max=&quot;200&quot; step=&quot;1&quot; placeholder=&quot;Espaçamento&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;tfWeight&quot;&gt;&lt;option value=&quot;300&quot;&gt;Light&lt;/option&gt;&lt;option value=&quot;400&quot;&gt;Regular&lt;/option&gt;&lt;option value=&quot;500&quot;&gt;Medium&lt;/option&gt;&lt;option value=&quot;600&quot;&gt;SemiBold&lt;/option&gt;&lt;option value=&quot;700&quot;&gt;Bold&lt;/option&gt;&lt;/select&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;tfStyle&quot;&gt;&lt;option value=&quot;normal&quot;&gt;Normal&lt;/option&gt;&lt;option value=&quot;italic&quot;&gt;Itálico&lt;/option&gt;&lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div data-pane=&quot;variavel&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfUnderline&quot; style=&quot;justify-content:center&quot;&gt;Sublinhado&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfStrike&quot; style=&quot;justify-content:center&quot;&gt;Riscado&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfUppercase&quot; style=&quot;justify-content:center&quot;&gt;MAIÚSCULAS&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfLowercase&quot; style=&quot;justify-content:center&quot;&gt;minúsculas&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
     &lt;div class=&quot;zoom-bar&quot;&gt;
       &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomOut&quot;&gt;−&lt;/button&gt;
       &lt;button class=&quot;zbtn label&quot; id=&quot;btnZoomReset&quot;&gt;&lt;span id=&quot;zoomLabel&quot;&gt;100%&lt;/span&gt;&lt;/button&gt;
@@ -1237,7 +1293,7 @@ textarea.modal-textarea{
 
       &lt;!-- Text --&gt;
       &lt;div class=&quot;panel-section&quot; id=&quot;propText&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Texto&lt;/div&gt;
+        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;align-items:center;justify-content:space-between&quot;&gt;Texto &lt;button class=&quot;tbtn&quot; id=&quot;btnTypographyGear&quot; title=&quot;Abrir painel de tipografia&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;⚙&lt;/button&gt;&lt;/div&gt;
         &lt;div class=&quot;prop-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
             &lt;div class=&quot;field-label&quot;&gt;Fonte&lt;/div&gt;
@@ -2048,6 +2104,36 @@ function normalizeHex(c) {
   return null;
 }
 
+function isTextObject(obj){
+  return !!obj &amp;&amp; (obj.type==='textbox' || obj.type==='text' || obj.type==='i-text');
+}
+
+function focusTextPanel(show){
+  const tabsRoot = $('propTabs');
+  if (show &amp;&amp; tabsRoot) {
+    const corTab = tabsRoot.querySelector('[data-tab="cor"]');
+    corTab?.click();
+    $('propText')?.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+}
+
+function syncFloatingTextPanel(){
+  const obj = activeObj();
+  const panel = $('textFloatPanel');
+  if(!panel) return;
+  const disabled = !isTextObject(obj);
+  ['tfFontSize','tfColor','tfLineHeight','tfLetterSpacing','tfWeight','tfStyle'].forEach(id=&gt;{ const el=$(id); if(el) el.disabled = disabled; });
+  if(disabled) return;
+  if($('tfFontSize')) $('tfFontSize').value = Math.round(obj.fontSize||16);
+  if($('tfColor')) $('tfColor').value = normalizeHex(obj.fill)||'#111111';
+  if($('tfLineHeight')) $('tfLineHeight').value = Number(obj.lineHeight||1.2).toFixed(1);
+  if($('tfLetterSpacing')) $('tfLetterSpacing').value = Math.round((obj.charSpacing||0)/50);
+  if($('tfWeight')) $('tfWeight').value = String(obj.fontWeight||400);
+  if($('tfStyle')) $('tfStyle').value = obj.fontStyle||'normal';
+  const align = obj.textAlign||'left';
+  document.querySelectorAll('#tfAlignSeg .seg-opt').forEach(btn=&gt;btn.classList.toggle('on', btn.dataset.val===align));
+}
+
 function refreshProps() {
   const obj = activeObj();
   const info = $('selInfo');
@@ -2059,6 +2145,7 @@ function refreshProps() {
     if (info) info.textContent = 'Nada selecionado';
     const c1=$('ctxSelectionState'); if(c1) c1.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
     const c2=$('canvasSelectionState'); if(c2) c2.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
+    syncFloatingTextPanel();
     return;
   }
 
@@ -2089,6 +2176,7 @@ function refreshProps() {
   if(UI.rx) UI.rx.value = Math.round(obj.rx??obj.ry??0);
 
   if (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text') {
+    focusTextPanel(true);
     if(UI.font &amp;&amp; obj.fontFamily) UI.font.value = obj.fontFamily;
     if(UI.fontSize) UI.fontSize.value = obj.fontSize??'';
     const align = obj.textAlign || 'left';
@@ -2096,6 +2184,7 @@ function refreshProps() {
       s.classList.toggle('on', s.dataset.val === align);
     });
   }
+  syncFloatingTextPanel();
 }
 
 function applyProps(key) {
@@ -2571,10 +2660,58 @@ function setActiveTool(tool){
   const toolbar = $('floatingToolbar');
   if (toolbar) toolbar.classList.toggle('show-top', tool === 'bezier');
   if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
-  if (tool === 'text') setStatus('Texto: clique para artístico, arraste para caixa.');
+  if (tool === 'text') { setStatus('Texto: clique para artístico, arraste para caixa.'); focusTextPanel(true); }
   if (tool === 'bezier') setStatus('Bezier ativa: menu superior exibido.');
   canvas.requestRenderAll();
 }
+
+// ─── Floating typography panel ──────────────────────────
+(function initTextFloatPanel(){
+  const panel = $('textFloatPanel');
+  if(!panel) return;
+  $('btnTypographyGear')?.addEventListener('click', (e)=&gt;{
+    e.stopPropagation();
+    panel.classList.toggle('open');
+    focusTextPanel(true);
+    syncFloatingTextPanel();
+  });
+  $('btnCloseTextFloat')?.addEventListener('click', ()=&gt; panel.classList.remove('open'));
+  document.addEventListener('click', e =&gt; {
+    if(!panel.classList.contains('open')) return;
+    if(panel.contains(e.target) || e.target.id==='btnTypographyGear') return;
+    panel.classList.remove('open');
+  });
+  document.querySelectorAll('[data-tf-tab]').forEach(btn =&gt; {
+    btn.addEventListener('click', () =&gt; {
+      document.querySelectorAll('[data-tf-tab]').forEach(b=&gt;b.classList.remove('active'));
+      btn.classList.add('active');
+      const key=btn.dataset.tfTab;
+      panel.querySelectorAll('[data-pane]').forEach(p=&gt;p.classList.toggle('active', p.dataset.pane===key));
+    });
+  });
+
+  const applyText = (fn)=&gt;{
+    const obj = activeObj();
+    if(!isTextObject(obj)) { setStatus('Selecione um texto para editar.'); return; }
+    fn(obj);
+    syncTextStyleRender(obj);
+    canvas.requestRenderAll();
+    refreshProps();
+  };
+  $('tfFontSize')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({fontSize: clamp(Number($('tfFontSize').value)||16,6,512)})));
+  $('tfColor')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({fill:$('tfColor').value||obj.fill})));
+  $('tfLineHeight')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({lineHeight: clamp(Number($('tfLineHeight').value)||1.2,0.6,4)})));
+  $('tfLetterSpacing')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({charSpacing: (Number($('tfLetterSpacing').value)||0)*50})));
+  $('tfWeight')?.addEventListener('change', ()=&gt; applyText(obj=&gt;obj.set({fontWeight: Number($('tfWeight').value)||400})));
+  $('tfStyle')?.addEventListener('change', ()=&gt; applyText(obj=&gt;obj.set({fontStyle: $('tfStyle').value||'normal'})));
+  document.querySelectorAll('#tfAlignSeg .seg-opt').forEach(btn =&gt; {
+    btn.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({textAlign: btn.dataset.val||'left'})));
+  });
+  $('tfUnderline')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({underline: !obj.underline})));
+  $('tfStrike')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({linethrough: !obj.linethrough})));
+  $('tfUppercase')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.text &amp;&amp; obj.set({text: String(obj.text).toUpperCase()})));
+  $('tfLowercase')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.text &amp;&amp; obj.set({text: String(obj.text).toLowerCase()})));
+})();
 
 // ─── Bind toolbar buttons ─────────────────────────────────
 $('btnSelect')?.addEventListener('click', () =&gt; setActiveTool('select'));
