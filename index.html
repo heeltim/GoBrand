@@ -2069,13 +2069,17 @@ function ensureBezierPreview(){
 }
 
 function createCreationNode(x, y, kind='anchor'){
-  const r = kind === 'cursor' ? 4.5 : 4;
-  return new fabric.Circle({
+  const isAnchor = kind === 'anchor';
+  const r = kind === 'cursor' ? getBezierHandleRadius('handle') : getBezierHandleRadius(isAnchor ? 'anchor' : 'handle');
+  const sc = getHandleVisualScale();
+  const node = new fabric.Circle({
     left:x-r, top:y-r, radius:r,
-    fill: kind === 'cursor' ? '#fff' : '#111',
+    fill: kind === 'cursor' ? '#fff' : (isAnchor ? '#ffffff' : '#111'),
     stroke:'#2f9bff', strokeWidth:2,
     selectable:false, evented:false, excludeFromExport:true
   });
+  node.set({ scaleX:sc, scaleY:sc });
+  return node;
 }
 
 function createCreationGuide(x1,y1,x2,y2){
@@ -2133,12 +2137,8 @@ function updateBezierCreationPreview(pointer=null){
   bezierCreateViz.nodes = [];
   bezierCreateViz.guides = [];
 
-  points.forEach((pt, i) =&gt; {
+  points.forEach((pt) =&gt; {
     bezierCreateViz.nodes.push(createCreationNode(pt.x, pt.y));
-    if (i &gt; 0) {
-      const prev = points[i-1];
-      bezierCreateViz.guides.push(createCreationGuide(prev.x, prev.y, pt.x, pt.y));
-    }
     if (Math.hypot(pt.outX - pt.x, pt.outY - pt.y) &gt; 0.5) {
       bezierCreateViz.guides.push(createCreationGuide(pt.x, pt.y, pt.outX, pt.outY));
       bezierCreateViz.nodes.push(createCreationNode(pt.outX, pt.outY, 'handle'));
@@ -2151,10 +2151,6 @@ function updateBezierCreationPreview(pointer=null){
 
   if (pointer) {
     bezierCreateViz.cursor = createCreationNode(pointer.x, pointer.y, 'cursor');
-    if (points.length) {
-      const last = points[points.length - 1];
-      bezierCreateViz.guides.push(createCreationGuide(last.x, last.y, pointer.x, pointer.y));
-    }
   } else {
     bezierCreateViz.cursor = null;
   }
@@ -2307,9 +2303,13 @@ function getHandleVisualScale(){
   return 1 / Math.max(zoom, 0.05);
 }
 
+function getBezierHandleRadius(kind='handle'){
+  return kind === 'anchor' ? 5.5 : 4.5;
+}
+
 function createBezierControl(x, y, role){
   const isAnchor = role.includes('anchor');
-  const r = isAnchor ? 5.5 : 4.5;
+  const r = getBezierHandleRadius(isAnchor ? 'anchor' : 'handle');
   const c = new fabric.Circle({
     left:x-r, top:y-r, radius:r,
     fill:isAnchor ? '#ffffff' : '#111',
@@ -2626,9 +2626,18 @@ canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); });
 
 // ─── Delete / Duplicate ──────────────────────────────────
 function del() {
-  const o = activeObj(); if(!o) return;
-  canvas.remove(o); canvas.discardActiveObject(); canvas.requestRenderAll();
-  refreshProps(); refreshLayers();
+  const objs = selectedObjects();
+  if(!objs.length) return;
+
+  if (bezierEditor.enabled && objs.includes(bezierEditor.path)) {
+    clearBezierEditor();
+  }
+
+  objs.forEach(o => canvas.remove(o));
+  canvas.discardActiveObject();
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
 }
 function duplicate() {
   const o = activeObj(); if(!o) return;
@@ -3827,8 +3836,9 @@ function setActiveTool(tool){
   activeTool = tool;
   const isText = tool === 'text';
   const isDirect = tool === 'direct-select';
+  const isBezier = tool === 'bezier';
   canvas.defaultCursor = isText ? 'text' : 'default';
-  canvas.selection = !isText;
+  canvas.selection = !(isText || isDirect || isBezier);
   canvas.forEachObject(o =&gt; {
     if (isGuide(o) || o.isBezierEditorControl) return;
     o.selectable = !isText;
