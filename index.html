@@ -1894,6 +1894,9 @@ canvas.on('mouse:down', opt =&gt; {
     if (bezierEditor.enabled) finalizeBezierEditor();
     vectorToolState.pendingEditTarget = null;
     vectorToolState.pendingEditAt = 0;
+    vectorToolState.pendingStateTarget = null;
+    vectorToolState.pendingStateCount = 0;
+    vectorToolState.pendingStateMode = '';
     canvas.discardActiveObject();
     if (activeTool !== 'select') setActiveTool('select');
     setInteractionState('idle');
@@ -1908,16 +1911,24 @@ canvas.on('mouse:down', opt =&gt; {
         attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
       } else if (activeTool === 'select') {
         const now = performance.now();
-        const samePending = vectorToolState.pendingEditTarget === target &amp;&amp; (now - Number(vectorToolState.pendingEditAt || 0)) &lt; 900;
         const alreadySelected = activeObj() === target;
-        if (samePending &amp;&amp; alreadySelected) {
-          vectorToolState.pendingEditTarget = null;
-          vectorToolState.pendingEditAt = 0;
+        const sameFlow = alreadySelected &amp;&amp; vectorToolState.pendingStateMode === 'to-edit' &amp;&amp; vectorToolState.pendingStateTarget === target &amp;&amp; (now - Number(vectorToolState.pendingEditAt || 0)) &lt; 1100;
+        if (sameFlow) {
+          vectorToolState.pendingStateCount += 1;
+        } else {
+          vectorToolState.pendingStateMode = 'to-edit';
+          vectorToolState.pendingStateTarget = target;
+          vectorToolState.pendingStateCount = 1;
+        }
+        vectorToolState.pendingEditTarget = target;
+        vectorToolState.pendingEditAt = now;
+        if (vectorToolState.pendingStateCount &gt;= 2 &amp;&amp; alreadySelected) {
+          vectorToolState.pendingStateTarget = null;
+          vectorToolState.pendingStateCount = 0;
+          vectorToolState.pendingStateMode = '';
           canvas.setActiveObject(target);
           attachBezierEditor(target, { handlesActive:false, modelKey:resolveBezierModelKey(target) });
         } else {
-          vectorToolState.pendingEditTarget = target;
-          vectorToolState.pendingEditAt = now;
           setInteractionState('selection');
         }
       }
@@ -1928,16 +1939,39 @@ canvas.on('mouse:down', opt =&gt; {
       finalizeBezierEditor();
       canvas.setActiveObject(target);
       if (activeTool === 'direct-select') attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
-      else { vectorToolState.pendingEditTarget = target; vectorToolState.pendingEditAt = performance.now(); setInteractionState('selection'); }
+      else { vectorToolState.pendingEditTarget = target; vectorToolState.pendingEditAt = performance.now(); vectorToolState.pendingStateTarget = target; vectorToolState.pendingStateCount = 0; vectorToolState.pendingStateMode = 'to-edit'; setInteractionState('selection'); }
       return;
     }
 
     if (activeTool === 'select') {
+      const now = performance.now();
       if (!bezierEditor.handlesActive) {
-        bezierEditor.handlesActive = true;
-        setInteractionState('edit-handles');
-        refreshBezierEditorControls();
+        const sameFlow = vectorToolState.pendingStateMode === 'to-select' &amp;&amp; vectorToolState.pendingStateTarget === target &amp;&amp; (now - Number(vectorToolState.pendingEditAt || 0)) &lt; 1100;
+        if (sameFlow) vectorToolState.pendingStateCount += 1;
+        else {
+          vectorToolState.pendingStateMode = 'to-select';
+          vectorToolState.pendingStateTarget = target;
+          vectorToolState.pendingStateCount = 1;
+        }
+        vectorToolState.pendingEditAt = now;
+        if (vectorToolState.pendingStateCount &gt;= 2) {
+          vectorToolState.pendingStateTarget = null;
+          vectorToolState.pendingStateCount = 0;
+          vectorToolState.pendingStateMode = '';
+          finalizeBezierEditor();
+        } else {
+          setInteractionState('edit');
+        }
+        return;
       }
+      // handles already active: one click regresses to edit points
+      bezierEditor.handlesActive = false;
+      vectorToolState.pendingStateMode = 'to-select';
+      vectorToolState.pendingStateTarget = target;
+      vectorToolState.pendingStateCount = 0;
+      vectorToolState.pendingEditAt = now;
+      setInteractionState('edit');
+      refreshBezierEditorControls();
       return;
     }
 
@@ -2140,7 +2174,10 @@ const vectorToolState = {
   lastPointAddedPos: null,
   modelKey: 'vectorModel',
   pendingEditTarget: null,
-  pendingEditAt: 0
+  pendingEditAt: 0,
+  pendingStateTarget: null,
+  pendingStateCount: 0,
+  pendingStateMode: ''
 };
 
 const bezierEditor = {
@@ -2946,6 +2983,9 @@ function finalizeBezierEditor(){
   canvas.setActiveObject(p);
   vectorToolState.pendingEditTarget = p;
   vectorToolState.pendingEditAt = performance.now();
+  vectorToolState.pendingStateTarget = p;
+  vectorToolState.pendingStateCount = 0;
+  vectorToolState.pendingStateMode = 'to-edit';
   setInteractionState('selection');
   canvas.requestRenderAll();
 }
