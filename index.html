@@ -570,15 +570,15 @@
 
 <template id="geEditorTemplate">
 &lt;!doctype html&gt;
-&lt;html lang=&quot;pt-BR&quot;&gt;
+&lt;html lang="pt-BR"&gt;
 &lt;head&gt;
-&lt;meta charset=&quot;utf-8&quot;/&gt;
-&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;/&gt;
+&lt;meta charset="utf-8"/&gt;
+&lt;meta name="viewport" content="width=device-width,initial-scale=1"/&gt;
 &lt;title&gt;Studio&lt;/title&gt;
-&lt;script src=&quot;https://unpkg.com/fabric@5.3.0/dist/fabric.min.js&quot;&gt;&lt;/script&gt;
-&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
-&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
-&lt;link href=&quot;https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;family=Syne:wght@400;500;600;700;800&amp;family=Outfit:wght@300;400;500;600;700;800;900&amp;family=Sora:wght@300;400;600;700;800&amp;family=DM+Sans:wght@300;400;500;600;700&amp;family=Nunito:wght@300;400;600;700;800&amp;family=Poppins:wght@300;400;600;700;800&amp;family=Montserrat:wght@300;400;600;700;800&amp;family=IBM+Plex+Sans:wght@300;400;600;700&amp;family=Raleway:wght@300;400;600;700;800&amp;family=Manrope:wght@300;400;600;700;800&amp;family=Inter:wght@300;400;600;800&amp;family=Roboto:wght@300;400;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;script src="https://unpkg.com/fabric@5.3.0/dist/fabric.min.js"&gt;&lt;/script&gt;
+&lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;
+&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;
+&lt;link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;family=Syne:wght@400;500;600;700;800&amp;family=Outfit:wght@300;400;500;600;700;800;900&amp;family=Sora:wght@300;400;600;700;800&amp;family=DM+Sans:wght@300;400;500;600;700&amp;family=Nunito:wght@300;400;600;700;800&amp;family=Poppins:wght@300;400;600;700;800&amp;family=Montserrat:wght@300;400;600;700;800&amp;family=IBM+Plex+Sans:wght@300;400;600;700&amp;family=Raleway:wght@300;400;600;700;800&amp;family=Manrope:wght@300;400;600;700;800&amp;family=Inter:wght@300;400;600;800&amp;family=Roboto:wght@300;400;700&amp;display=swap" rel="stylesheet"&gt;
 &lt;style&gt;
 :root {
   --bg:       #0e0e11;
@@ -801,7 +801,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
   color:var(--ink);font-family:'JetBrains Mono', ui-monospace, monospace;font-size:12px;
 }
 .field-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(127,90,240,.14)}
-input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
+input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 
 /* ─── SEPARATOR ───────────────────────────────────────── */
 .sep{height:1px;background:var(--border);margin:12px -12px}
@@ -945,6 +945,21 @@ textarea.modal-textarea{
 
 /* ─── SHORTCUTS POPUP ─────────────────────────────────── */
 .shortcuts-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center}
+
+.smart-two-overlay{position:absolute;inset:0;pointer-events:none;z-index:15}
+.smart-swap-btn,.smart-gap-handle{position:absolute;display:none;pointer-events:auto}
+.smart-swap-btn{
+  width:24px;height:24px;border-radius:999px;border:1px solid rgba(255,77,141,.9);
+  background:rgba(23,19,35,.95);color:#ff6aa3;font-size:13px;font-family:var(--mono);cursor:pointer
+}
+.smart-swap-btn:hover{background:rgba(41,31,60,.95)}
+.smart-gap-handle{
+  border:1px solid rgba(255,77,141,.9);border-radius:999px;background:rgba(255,77,141,.15);cursor:ew-resize
+}
+.smart-two-overlay.show-swap .smart-swap-btn{display:block}
+.smart-two-overlay.show-gap .smart-gap-handle{display:block}
+.is-dragging-gap{cursor:ew-resize!important}
+
 .sc-key{font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;
   background:rgba(255,255,255,.07);border:1px solid var(--border2);
   padding:3px 8px;border-radius:6px;color:var(--accent);white-space:nowrap;text-align:center}
@@ -962,260 +977,260 @@ textarea.modal-textarea{
 &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
-&lt;div class=&quot;app&quot;&gt;
+&lt;div class="app"&gt;
 
-  &lt;div class=&quot;menu-bar&quot;&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuFileRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn active&quot; id=&quot;btnMenuFile&quot;&gt;Arquivo&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuFilePanel&quot;&gt;&lt;/div&gt;
+  &lt;div class="menu-bar"&gt;
+    &lt;div class="menu-dd" id="menuFileRoot"&gt;
+      &lt;button class="menu-item menu-item-btn active" id="btnMenuFile"&gt;Arquivo&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuFilePanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuEditRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuEdit&quot;&gt;Editar&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuEditPanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuEditRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuEdit"&gt;Editar&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuEditPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuSelectRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuSelect&quot;&gt;Seleção&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuSelectPanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuSelectRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuSelect"&gt;Seleção&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuSelectPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuCreateRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuCreate&quot;&gt;Criar&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuCreatePanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuCreateRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuCreate"&gt;Criar&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuCreatePanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuTransformRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuTransform&quot;&gt;Transformar&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuTransformPanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuTransformRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuTransform"&gt;Transformar&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuTransformPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuAppearanceRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuAppearance&quot;&gt;Aparência&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuAppearancePanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuAppearanceRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuAppearance"&gt;Aparência&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuAppearancePanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuOrganizeRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuOrganize&quot;&gt;Organizar&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuOrganizePanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuOrganizeRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuOrganize"&gt;Organizar&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuOrganizePanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuBooleanRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuBoolean&quot;&gt;Boolean&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuBooleanPanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuBooleanRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuBoolean"&gt;Boolean&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuBooleanPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuTextRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuText&quot;&gt;Texto&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuTextPanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuTextRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuText"&gt;Texto&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuTextPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuViewRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuView&quot;&gt;Exibir&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuViewPanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuViewRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuView"&gt;Exibir&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuViewPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuAdvancedRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuAdvanced&quot;&gt;Avançado&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuAdvancedPanel&quot;&gt;&lt;/div&gt;
+    &lt;div class="menu-dd" id="menuAdvancedRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuAdvanced"&gt;Avançado&lt;/button&gt;
+      &lt;div class="menu-dd-panel compact" id="menuAdvancedPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;menu-dd&quot; id=&quot;menuDocRoot&quot;&gt;
-      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuDocumento&quot;&gt;Documento&lt;/button&gt;
-      &lt;div class=&quot;menu-dd-panel&quot; id=&quot;menuDocumentoPanel&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Documento&lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;W px&lt;/div&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;docW&quot; type=&quot;number&quot; value=&quot;1200&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
+    &lt;div class="menu-dd" id="menuDocRoot"&gt;
+      &lt;button class="menu-item menu-item-btn" id="btnMenuDocumento"&gt;Documento&lt;/button&gt;
+      &lt;div class="menu-dd-panel" id="menuDocumentoPanel"&gt;
+        &lt;div class="panel-section-label"&gt;Documento&lt;/div&gt;
+        &lt;div class="field-row"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;W px&lt;/div&gt;
+            &lt;input class="field-input" id="docW" type="number" value="1200" min="200" max="5000"&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;H px&lt;/div&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;docH&quot; type=&quot;number&quot; value=&quot;750&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Mesa&lt;/div&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;docBg&quot; type=&quot;color&quot; value=&quot;#0f1626&quot;&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;H px&lt;/div&gt;
+            &lt;input class="field-input" id="docH" type="number" value="750" min="200" max="5000"&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Tema da mesa&lt;/div&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;deskTheme&quot; style=&quot;height:32px&quot;&gt;
-              &lt;option value=&quot;nebula&quot; selected&gt;Nebula&lt;/option&gt;
-              &lt;option value=&quot;clean&quot;&gt;Clean&lt;/option&gt;
-              &lt;option value=&quot;paper&quot;&gt;Paper&lt;/option&gt;
-              &lt;option value=&quot;mint&quot;&gt;Mint&lt;/option&gt;
+        &lt;div class="field-row one"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Mesa&lt;/div&gt;
+            &lt;input class="field-input" id="docBg" type="color" value="#0f1626"&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="field-row one"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Tema da mesa&lt;/div&gt;
+            &lt;select class="field-input" id="deskTheme" style="height:32px"&gt;
+              &lt;option value="nebula" selected&gt;Nebula&lt;/option&gt;
+              &lt;option value="clean"&gt;Clean&lt;/option&gt;
+              &lt;option value="paper"&gt;Paper&lt;/option&gt;
+              &lt;option value="mint"&gt;Mint&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot; style=&quot;margin-top:6px&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Referência de alinhamento&lt;/div&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
-              &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
-              &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
+        &lt;div class="field-row one" style="margin-top:6px"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Referência de alinhamento&lt;/div&gt;
+            &lt;select class="field-input" id="alignTarget" style="height:32px"&gt;
+              &lt;option value="layout"&gt;Layout (prancheta)&lt;/option&gt;
+              &lt;option value="object"&gt;Objeto âncora&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
-        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
+        &lt;button class="tbtn" id="btnArtboardMode" style="width:100%;justify-content:center;height:32px;margin-top:6px"&gt;Modo pranchetas&lt;/button&gt;
+        &lt;div style="display:flex;gap:6px;margin-top:6px"&gt;
+          &lt;button class="tbtn" id="btnApplyDoc" style="flex:1;justify-content:center;height:32px"&gt;Aplicar&lt;/button&gt;
+          &lt;button class="tbtn" id="btnCenterAll" style="flex:1;justify-content:center;height:32px"&gt;Centralizar&lt;/button&gt;
         &lt;/div&gt;
       &lt;/div&gt;
     &lt;/div&gt;
-    &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
+    &lt;span class="menu-spacer"&gt;&lt;/span&gt;
   &lt;/div&gt;
 
-  &lt;header class=&quot;topbar&quot;&gt;
-    &lt;div class=&quot;topbar-brand&quot;&gt;
-      &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
-      &lt;input id=&quot;projectNameInline&quot; class=&quot;field-input topbar-name-input&quot; type=&quot;text&quot; value=&quot;Aplicação&quot; /&gt;
-      &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
+  &lt;header class="topbar"&gt;
+    &lt;div class="topbar-brand"&gt;
+      &lt;div class="brand-dot"&gt;&lt;/div&gt;
+      &lt;input id="projectNameInline" class="field-input topbar-name-input" type="text" value="Aplicação" /&gt;
+      &lt;button class="tbtn active"&gt;Vetor&lt;/button&gt;
+      &lt;button class="tbtn"&gt;Pixel&lt;/button&gt;
+      &lt;button class="tbtn"&gt;Layout&lt;/button&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;topbar-status&quot;&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
+    &lt;div class="topbar-status"&gt;
+      &lt;button class="tbtn" id="btnUndo" title="Undo (Ctrl+Z)"&gt;
+        &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="1 4 1 10 7 10"/&gt;&lt;path d="M3.51 15a9 9 0 1 0 .49-4.5"/&gt;&lt;/svg&gt;
       &lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnRedo&quot; title=&quot;Redo (Ctrl+Y)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;23 4 23 10 17 10&quot;/&gt;&lt;path d=&quot;M20.49 15a9 9 0 1 1-.49-4.5&quot;/&gt;&lt;/svg&gt;
+      &lt;button class="tbtn" id="btnRedo" title="Redo (Ctrl+Y)"&gt;
+        &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="23 4 23 10 17 10"/&gt;&lt;path d="M20.49 15a9 9 0 1 1-.49-4.5"/&gt;&lt;/svg&gt;
       &lt;/button&gt;
-      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt; &lt;span id=&quot;zoomTopLabel&quot; style=&quot;color:var(--ink2)&quot;&gt;ZOOM 100%&lt;/span&gt;
+      &lt;span id="statusText"&gt;Pronto&lt;/span&gt; &lt;span id="zoomTopLabel" style="color:var(--ink2)"&gt;ZOOM 100%&lt;/span&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;topbar-actions&quot;&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnDelete&quot; title=&quot;Apagar seleção (Del)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;3 6 5 6 21 6&quot;/&gt;&lt;path d=&quot;M19 6l-1 14H6L5 6&quot;/&gt;&lt;path d=&quot;M10 11v6M14 11v6&quot;/&gt;&lt;/svg&gt;
+    &lt;div class="topbar-actions"&gt;
+      &lt;button class="tbtn" id="btnDelete" title="Apagar seleção (Del)"&gt;
+        &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="3 6 5 6 21 6"/&gt;&lt;path d="M19 6l-1 14H6L5 6"/&gt;&lt;path d="M10 11v6M14 11v6"/&gt;&lt;/svg&gt;
       &lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
+      &lt;button class="tbtn" id="btnDuplicate" title="Duplicar"&gt;
+        &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;rect x="9" y="9" width="13" height="13" rx="2"/&gt;&lt;path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/&gt;&lt;/svg&gt;
       &lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnCloseEditor&quot; title=&quot;Fechar editor&quot;&gt;✕&lt;/button&gt;
+      &lt;button class="tbtn" id="btnCloseEditor" title="Fechar editor"&gt;✕&lt;/button&gt;
     &lt;/div&gt;
   &lt;/header&gt;
 
 
   &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
-  &lt;aside class=&quot;panel&quot;&gt;
-    &lt;div class=&quot;panel-body&quot;&gt;
+  &lt;aside class="panel"&gt;
+    &lt;div class="panel-body"&gt;
 
-      &lt;div class=&quot;panel-section&quot;&gt;&lt;div class=&quot;layer-empty&quot;&gt;Configurações de documento no menu superior &lt;strong&gt;Documento&lt;/strong&gt;.&lt;/div&gt;&lt;/div&gt;
+      &lt;div class="panel-section"&gt;&lt;div class="layer-empty"&gt;Configurações de documento no menu superior &lt;strong&gt;Documento&lt;/strong&gt;.&lt;/div&gt;&lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
-      &lt;div class=&quot;panel-section&quot; id=&quot;vectorNodePanel&quot; style=&quot;display:none&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Vetor · Estilizar nó&lt;/div&gt;
-        &lt;div class=&quot;layer-empty&quot; id=&quot;vectorNodeHint&quot;&gt;Selecione um nó.&lt;/div&gt;
-        &lt;div id=&quot;vectorNodeControls&quot; style=&quot;display:none&quot;&gt;
-          &lt;div class=&quot;field-label&quot; style=&quot;margin-bottom:6px&quot;&gt;Tipo do nó&lt;/div&gt;
-          &lt;div style=&quot;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px&quot;&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeCorner&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Canto&lt;/button&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeSmooth&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Suave&lt;/button&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeMirrored&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Espelhado&lt;/button&gt;
+      &lt;div class="panel-section" id="vectorNodePanel" style="display:none"&gt;
+        &lt;div class="panel-section-label"&gt;Vetor · Estilizar nó&lt;/div&gt;
+        &lt;div class="layer-empty" id="vectorNodeHint"&gt;Selecione um nó.&lt;/div&gt;
+        &lt;div id="vectorNodeControls" style="display:none"&gt;
+          &lt;div class="field-label" style="margin-bottom:6px"&gt;Tipo do nó&lt;/div&gt;
+          &lt;div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px"&gt;
+            &lt;button class="tbtn" id="btnNodeCorner" style="justify-content:center;height:30px"&gt;Canto&lt;/button&gt;
+            &lt;button class="tbtn" id="btnNodeSmooth" style="justify-content:center;height:30px"&gt;Suave&lt;/button&gt;
+            &lt;button class="tbtn" id="btnNodeMirrored" style="justify-content:center;height:30px"&gt;Espelhado&lt;/button&gt;
           &lt;/div&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeBreak&quot; style=&quot;width:100%;justify-content:center;height:30px;margin-top:8px&quot;&gt;Quebrar alças&lt;/button&gt;
+          &lt;button class="tbtn" id="btnNodeBreak" style="width:100%;justify-content:center;height:30px;margin-top:8px"&gt;Quebrar alças&lt;/button&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;panel-section&quot; style=&quot;max-height:360px;display:flex;flex-direction:column&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
+      &lt;div class="panel-section" style="max-height:360px;display:flex;flex-direction:column"&gt;
+        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between"&gt;
           Camadas
-          &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
+          &lt;span id="layerCount" style="color:var(--ink3)"&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;layer-tools&quot;&gt;
-          &lt;div class=&quot;layer-toolbar-note&quot;&gt;Arraste para ordenar • duplo clique para renomear&lt;/div&gt;
+        &lt;div class="layer-tools"&gt;
+          &lt;div class="layer-toolbar-note"&gt;Arraste para ordenar • duplo clique para renomear&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div id=&quot;folderList&quot; style=&quot;margin-bottom:8px&quot;&gt;&lt;/div&gt;
-        &lt;div id=&quot;layersList&quot; style=&quot;flex:1;overflow-y:auto;overflow-x:hidden&quot;&gt;&lt;/div&gt;
+        &lt;div id="folderList" style="margin-bottom:8px"&gt;&lt;/div&gt;
+        &lt;div id="layersList" style="flex:1;overflow-y:auto;overflow-x:hidden"&gt;&lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
       &lt;!-- Library --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
+      &lt;div class="panel-section"&gt;
+        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between"&gt;
           Biblioteca
-          &lt;span id=&quot;libCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
+          &lt;span id="libCount" style="color:var(--ink3)"&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;div id=&quot;libraryList&quot;&gt;
-          &lt;div class=&quot;layer-empty&quot;&gt;Sem itens de identidade&lt;/div&gt;
+        &lt;div id="libraryList"&gt;
+          &lt;div class="layer-empty"&gt;Sem itens de identidade&lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
     &lt;/div&gt;
 
-    &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;.svg,.png,.jpg,.jpeg,.webp,.ai,.eps,application/postscript,image/*&quot; style=&quot;display:none&quot;&gt;
+    &lt;input id="fileInput" type="file" accept=".svg,.png,.jpg,.jpeg,.webp,.ai,.eps,application/postscript,image/*" style="display:none"&gt;
   &lt;/aside&gt;
 
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
-  &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
-    &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
-    &lt;div class=&quot;artboard-plus-ui&quot; id=&quot;artboardPlusUI&quot;&gt;
-      &lt;button class=&quot;ab-plus top&quot; id=&quot;btnAddArtTop&quot; title=&quot;Adicionar acima&quot;&gt;+&lt;/button&gt;
-      &lt;button class=&quot;ab-plus right&quot; id=&quot;btnAddArtRight&quot; title=&quot;Adicionar à direita&quot;&gt;+&lt;/button&gt;
-      &lt;button class=&quot;ab-plus bottom&quot; id=&quot;btnAddArtBottom&quot; title=&quot;Adicionar abaixo&quot;&gt;+&lt;/button&gt;
-      &lt;button class=&quot;ab-plus left&quot; id=&quot;btnAddArtLeft&quot; title=&quot;Adicionar à esquerda&quot;&gt;+&lt;/button&gt;
+  &lt;main class="canvas-area" id="canvasStage"&gt;
+    &lt;div id="fabricCanvas"&gt;&lt;/div&gt;
+    &lt;div class="artboard-plus-ui" id="artboardPlusUI"&gt;
+      &lt;button class="ab-plus top" id="btnAddArtTop" title="Adicionar acima"&gt;+&lt;/button&gt;
+      &lt;button class="ab-plus right" id="btnAddArtRight" title="Adicionar à direita"&gt;+&lt;/button&gt;
+      &lt;button class="ab-plus bottom" id="btnAddArtBottom" title="Adicionar abaixo"&gt;+&lt;/button&gt;
+      &lt;button class="ab-plus left" id="btnAddArtLeft" title="Adicionar à esquerda"&gt;+&lt;/button&gt;
     &lt;/div&gt;
 
-    &lt;div class=&quot;floating-toolbar-wrap&quot; id=&quot;floatingToolbar&quot;&gt;
-      &lt;div class=&quot;floating-toolbar-row top-tools&quot; id=&quot;floatingTopTools&quot;&gt;
-        &lt;button class=&quot;float-tool-btn active&quot; id=&quot;btnToolVector&quot;&gt;Vetor&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMove&quot; data-tool=&quot;move&quot;&gt;Mover&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolLasso&quot;&gt;Laço&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolPaint&quot;&gt;Pintar&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCurve&quot;&gt;Curvar&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCut&quot;&gt;Cortar&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMore&quot;&gt;Mais ▾&lt;/button&gt;
+    &lt;div class="floating-toolbar-wrap" id="floatingToolbar"&gt;
+      &lt;div class="floating-toolbar-row top-tools" id="floatingTopTools"&gt;
+        &lt;button class="float-tool-btn active" id="btnToolVector"&gt;Vetor&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnToolMove" data-tool="move"&gt;Mover&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnToolLasso"&gt;Laço&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnToolPaint"&gt;Pintar&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnToolCurve"&gt;Curvar&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnToolCut"&gt;Cortar&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnToolMore"&gt;Mais ▾&lt;/button&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;floating-toolbar-row fixed-tools&quot;&gt;
-        &lt;button class=&quot;float-tool-btn icon active&quot; id=&quot;btnSelect&quot; data-tool=&quot;select&quot; title=&quot;Selecionar / mover&quot;&gt;↖&lt;/button&gt;
-        &lt;div class=&quot;tool-submenu&quot; id=&quot;selectToolSubmenu&quot;&gt;
-          &lt;button class=&quot;tool-submenu-btn active&quot; id=&quot;btnSelectNormal&quot; data-tool=&quot;select&quot;&gt;&lt;span&gt;Seleção&lt;/span&gt;&lt;span&gt;V&lt;/span&gt;&lt;/button&gt;
-          &lt;button class=&quot;tool-submenu-btn&quot; id=&quot;btnSelectDirect&quot; data-tool=&quot;direct-select&quot;&gt;&lt;span&gt;Seleção direta&lt;/span&gt;&lt;span&gt;A&lt;/span&gt;&lt;/button&gt;
+      &lt;div class="floating-toolbar-row fixed-tools"&gt;
+        &lt;button class="float-tool-btn icon active" id="btnSelect" data-tool="select" title="Selecionar / mover"&gt;↖&lt;/button&gt;
+        &lt;div class="tool-submenu" id="selectToolSubmenu"&gt;
+          &lt;button class="tool-submenu-btn active" id="btnSelectNormal" data-tool="select"&gt;&lt;span&gt;Seleção&lt;/span&gt;&lt;span&gt;V&lt;/span&gt;&lt;/button&gt;
+          &lt;button class="tool-submenu-btn" id="btnSelectDirect" data-tool="direct-select"&gt;&lt;span&gt;Seleção direta&lt;/span&gt;&lt;span&gt;A&lt;/span&gt;&lt;/button&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnBezier&quot; title=&quot;Bezier&quot;&gt;∿&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnTextTool&quot; data-tool=&quot;text&quot; title=&quot;Texto: clique (artístico) / arraste (caixa)&quot;&gt;T&lt;/button&gt;
-        &lt;div class=&quot;float-tool-sep&quot;&gt;&lt;/div&gt;
-        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
-        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
+        &lt;button class="float-tool-btn icon" id="btnRect" title="Retângulo"&gt;▭&lt;/button&gt;
+        &lt;button class="float-tool-btn icon" id="btnCircle" title="Círculo"&gt;◯&lt;/button&gt;
+        &lt;button class="float-tool-btn icon" id="btnLine" title="Linha"&gt;／&lt;/button&gt;
+        &lt;button class="float-tool-btn icon" id="btnBezier" title="Bezier"&gt;∿&lt;/button&gt;
+        &lt;button class="float-tool-btn icon" id="btnTextTool" data-tool="text" title="Texto: clique (artístico) / arraste (caixa)"&gt;T&lt;/button&gt;
+        &lt;div class="float-tool-sep"&gt;&lt;/div&gt;
+        &lt;button class="float-tool-btn icon" id="btnUpload" title="Inserir imagem"&gt;▣&lt;/button&gt;
+        &lt;button class="float-tool-btn icon" id="btnHelp" title="Atalhos"&gt;?&lt;/button&gt;
       &lt;/div&gt;
     &lt;/div&gt;
 
-    &lt;div class=&quot;text-float-panel&quot; id=&quot;textFloatPanel&quot;&gt;
-      &lt;div class=&quot;text-float-head&quot;&gt;
-        &lt;div class=&quot;text-float-tabs&quot;&gt;
-          &lt;button class=&quot;text-float-tab active&quot; data-tf-tab=&quot;basico&quot;&gt;Básico&lt;/button&gt;
-          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;detalhes&quot;&gt;Detalhes&lt;/button&gt;
-          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;variavel&quot;&gt;Variável&lt;/button&gt;
+    &lt;div class="text-float-panel" id="textFloatPanel"&gt;
+      &lt;div class="text-float-head"&gt;
+        &lt;div class="text-float-tabs"&gt;
+          &lt;button class="text-float-tab active" data-tf-tab="basico"&gt;Básico&lt;/button&gt;
+          &lt;button class="text-float-tab" data-tf-tab="detalhes"&gt;Detalhes&lt;/button&gt;
+          &lt;button class="text-float-tab" data-tf-tab="variavel"&gt;Variável&lt;/button&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;text-float-close&quot; id=&quot;btnCloseTextFloat&quot;&gt;✕&lt;/button&gt;
+        &lt;button class="text-float-close" id="btnCloseTextFloat"&gt;✕&lt;/button&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;text-float-body&quot;&gt;
-        &lt;div data-pane=&quot;basico&quot; class=&quot;active&quot;&gt;
-          &lt;div class=&quot;text-float-grid2&quot;&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;tfFontSize&quot; type=&quot;number&quot; min=&quot;6&quot; step=&quot;1&quot; placeholder=&quot;Tamanho&quot;&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;tfColor&quot; type=&quot;color&quot;&gt;
+      &lt;div class="text-float-body"&gt;
+        &lt;div data-pane="basico" class="active"&gt;
+          &lt;div class="text-float-grid2"&gt;
+            &lt;input class="field-input" id="tfFontSize" type="number" min="6" step="1" placeholder="Tamanho"&gt;
+            &lt;input class="field-input" id="tfColor" type="color"&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;seg&quot; id=&quot;tfAlignSeg&quot;&gt;
-            &lt;button class=&quot;seg-opt on&quot; data-val=&quot;left&quot;&gt;≡&lt;/button&gt;
-            &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
-            &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div data-pane=&quot;detalhes&quot;&gt;
-          &lt;div class=&quot;text-float-grid2&quot;&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;tfLineHeight&quot; type=&quot;number&quot; min=&quot;0.6&quot; max=&quot;4&quot; step=&quot;0.1&quot; placeholder=&quot;Entrelinha&quot;&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;tfLetterSpacing&quot; type=&quot;number&quot; min=&quot;-50&quot; max=&quot;200&quot; step=&quot;1&quot; placeholder=&quot;Espaçamento&quot;&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;text-float-grid2&quot;&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;tfWeight&quot;&gt;&lt;option value=&quot;300&quot;&gt;Light&lt;/option&gt;&lt;option value=&quot;400&quot;&gt;Regular&lt;/option&gt;&lt;option value=&quot;500&quot;&gt;Medium&lt;/option&gt;&lt;option value=&quot;600&quot;&gt;SemiBold&lt;/option&gt;&lt;option value=&quot;700&quot;&gt;Bold&lt;/option&gt;&lt;/select&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;tfStyle&quot;&gt;&lt;option value=&quot;normal&quot;&gt;Normal&lt;/option&gt;&lt;option value=&quot;italic&quot;&gt;Itálico&lt;/option&gt;&lt;/select&gt;
+          &lt;div class="seg" id="tfAlignSeg"&gt;
+            &lt;button class="seg-opt on" data-val="left"&gt;≡&lt;/button&gt;
+            &lt;button class="seg-opt" data-val="center"&gt;≣&lt;/button&gt;
+            &lt;button class="seg-opt" data-val="right"&gt;≡&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div data-pane=&quot;variavel&quot;&gt;
-          &lt;div class=&quot;text-float-grid2&quot;&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;tfUnderline&quot; style=&quot;justify-content:center&quot;&gt;Sublinhado&lt;/button&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;tfStrike&quot; style=&quot;justify-content:center&quot;&gt;Riscado&lt;/button&gt;
+        &lt;div data-pane="detalhes"&gt;
+          &lt;div class="text-float-grid2"&gt;
+            &lt;input class="field-input" id="tfLineHeight" type="number" min="0.6" max="4" step="0.1" placeholder="Entrelinha"&gt;
+            &lt;input class="field-input" id="tfLetterSpacing" type="number" min="-50" max="200" step="1" placeholder="Espaçamento"&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;text-float-grid2&quot;&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;tfUppercase&quot; style=&quot;justify-content:center&quot;&gt;MAIÚSCULAS&lt;/button&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;tfLowercase&quot; style=&quot;justify-content:center&quot;&gt;minúsculas&lt;/button&gt;
+          &lt;div class="text-float-grid2"&gt;
+            &lt;select class="field-input" id="tfWeight"&gt;&lt;option value="300"&gt;Light&lt;/option&gt;&lt;option value="400"&gt;Regular&lt;/option&gt;&lt;option value="500"&gt;Medium&lt;/option&gt;&lt;option value="600"&gt;SemiBold&lt;/option&gt;&lt;option value="700"&gt;Bold&lt;/option&gt;&lt;/select&gt;
+            &lt;select class="field-input" id="tfStyle"&gt;&lt;option value="normal"&gt;Normal&lt;/option&gt;&lt;option value="italic"&gt;Itálico&lt;/option&gt;&lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div data-pane="variavel"&gt;
+          &lt;div class="text-float-grid2"&gt;
+            &lt;button class="tbtn" id="tfUnderline" style="justify-content:center"&gt;Sublinhado&lt;/button&gt;
+            &lt;button class="tbtn" id="tfStrike" style="justify-content:center"&gt;Riscado&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class="text-float-grid2"&gt;
+            &lt;button class="tbtn" id="tfUppercase" style="justify-content:center"&gt;MAIÚSCULAS&lt;/button&gt;
+            &lt;button class="tbtn" id="tfLowercase" style="justify-content:center"&gt;minúsculas&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -1224,234 +1239,234 @@ textarea.modal-textarea{
   &lt;/main&gt;
 
   &lt;!-- ═══ RIGHT PANEL ════════════════════════════════════ --&gt;
-  &lt;aside class=&quot;panel right&quot;&gt;
-    &lt;div class=&quot;panel-body&quot;&gt;
-      &lt;div class=&quot;panel-tabs&quot; id=&quot;propTabs&quot;&gt;
-        &lt;button class=&quot;panel-tab active&quot; data-tab=&quot;cor&quot;&gt;Cor&lt;/button&gt;
-                &lt;button class=&quot;panel-tab&quot; data-tab=&quot;tracado&quot;&gt;Traçado&lt;/button&gt;
-        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;aparencia&quot;&gt;Aparência&lt;/button&gt;
+  &lt;aside class="panel right"&gt;
+    &lt;div class="panel-body"&gt;
+      &lt;div class="panel-tabs" id="propTabs"&gt;
+        &lt;button class="panel-tab active" data-tab="cor"&gt;Cor&lt;/button&gt;
+                &lt;button class="panel-tab" data-tab="tracado"&gt;Traçado&lt;/button&gt;
+        &lt;button class="panel-tab" data-tab="aparencia"&gt;Aparência&lt;/button&gt;
       &lt;/div&gt;
-      &lt;div data-tab-panel=&quot;cor&quot;&gt;
+      &lt;div data-tab-panel="cor"&gt;
 
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Informações&lt;/div&gt;
-        &lt;div id=&quot;docInfoLabel&quot; style=&quot;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);padding:4px 0&quot;&gt;Web • 1920×1080px • 72dpi&lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Artboard&lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Clip content&lt;/div&gt;&lt;input id=&quot;abClipContent&quot; type=&quot;checkbox&quot;&gt;&lt;/label&gt;
-          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Exportável&lt;/div&gt;&lt;input id=&quot;abExportEnabled&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Background&lt;/div&gt;&lt;input id=&quot;abBgEnabled&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
-          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Lock BG&lt;/div&gt;&lt;input id=&quot;abBgLock&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor BG&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;abBgColor&quot; type=&quot;color&quot; value=&quot;#ffffff&quot;&gt;&lt;/label&gt;
-          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;BG no export&lt;/div&gt;&lt;input id=&quot;abBgExport&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
-        &lt;/div&gt;
+      &lt;div class="panel-section"&gt;
+        &lt;div class="panel-section-label"&gt;Informações&lt;/div&gt;
+        &lt;div id="docInfoLabel" style="font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);padding:4px 0"&gt;Web • 1920×1080px • 72dpi&lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Alinhamento&lt;/div&gt;
-        &lt;div style=&quot;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟸&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; title=&quot;Centralizar horizontal&quot; style=&quot;height:30px;justify-content:center&quot;&gt;↔&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; title=&quot;Alinhar à direita&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟹&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; title=&quot;Alinhar no topo&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟰&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; title=&quot;Centralizar vertical&quot; style=&quot;height:30px;justify-content:center&quot;&gt;↕&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; title=&quot;Alinhar na base&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟱&lt;/button&gt;
+      &lt;div class="panel-section"&gt;
+        &lt;div class="panel-section-label"&gt;Artboard&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Clip content&lt;/div&gt;&lt;input id="abClipContent" type="checkbox"&gt;&lt;/label&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Exportável&lt;/div&gt;&lt;input id="abExportEnabled" type="checkbox" checked&gt;&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Background&lt;/div&gt;&lt;input id="abBgEnabled" type="checkbox" checked&gt;&lt;/label&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Lock BG&lt;/div&gt;&lt;input id="abBgLock" type="checkbox" checked&gt;&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Cor BG&lt;/div&gt;&lt;input class="field-input" id="abBgColor" type="color" value="#ffffff"&gt;&lt;/label&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;BG no export&lt;/div&gt;&lt;input id="abBgExport" type="checkbox" checked&gt;&lt;/label&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Exportar&lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnExportPanelPng&quot; style=&quot;width:100%;justify-content:center;height:32px&quot;&gt;Exportar PNG&lt;/button&gt;
+      &lt;div class="panel-section"&gt;
+        &lt;div class="panel-section-label"&gt;Alinhamento&lt;/div&gt;
+        &lt;div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px"&gt;
+          &lt;button class="tbtn" id="btnAlignLeft" title="Alinhar à esquerda" style="height:30px;justify-content:center"&gt;⟸&lt;/button&gt;
+          &lt;button class="tbtn" id="btnAlignCenter" title="Centralizar horizontal" style="height:30px;justify-content:center"&gt;↔&lt;/button&gt;
+          &lt;button class="tbtn" id="btnAlignRight" title="Alinhar à direita" style="height:30px;justify-content:center"&gt;⟹&lt;/button&gt;
+          &lt;button class="tbtn" id="btnAlignTop" title="Alinhar no topo" style="height:30px;justify-content:center"&gt;⟰&lt;/button&gt;
+          &lt;button class="tbtn" id="btnAlignMiddle" title="Centralizar vertical" style="height:30px;justify-content:center"&gt;↕&lt;/button&gt;
+          &lt;button class="tbtn" id="btnAlignBottom" title="Alinhar na base" style="height:30px;justify-content:center"&gt;⟱&lt;/button&gt;
+        &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
+
+      &lt;div class="panel-section"&gt;
+        &lt;div class="panel-section-label"&gt;Exportar&lt;/div&gt;
+        &lt;button class="tbtn" id="btnExportPanelPng" style="width:100%;justify-content:center;height:32px"&gt;Exportar PNG&lt;/button&gt;
+      &lt;/div&gt;
+
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
       &lt;!-- Selection info --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Seleção&lt;/div&gt;
-        &lt;div id=&quot;selInfo&quot; style=&quot;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);padding:4px 0&quot;&gt;
+      &lt;div class="panel-section"&gt;
+        &lt;div class="panel-section-label"&gt;Seleção&lt;/div&gt;
+        &lt;div id="selInfo" style="font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);padding:4px 0"&gt;
           Nada selecionado
         &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
       &lt;!-- Transform --&gt;
-      &lt;div class=&quot;panel-section&quot; id=&quot;propTransform&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Transformação&lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;X&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pX&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Y&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pY&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
+      &lt;div class="panel-section" id="propTransform"&gt;
+        &lt;div class="panel-section-label"&gt;Transformação&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;X&lt;/div&gt;&lt;input class="field-input" id="pX" type="number" step="1"&gt;&lt;/div&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Y&lt;/div&gt;&lt;input class="field-input" id="pY" type="number" step="1"&gt;&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;W&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pW&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;1&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;H&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pH&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;1&quot;&gt;&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;W&lt;/div&gt;&lt;input class="field-input" id="pW" type="number" step="1" min="1"&gt;&lt;/div&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;H&lt;/div&gt;&lt;input class="field-input" id="pH" type="number" step="1" min="1"&gt;&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Rot°&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pR&quot; type=&quot;number&quot; step=&quot;1&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Transp.&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pO&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;1&quot; step=&quot;0.01&quot;&gt;&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Rot°&lt;/div&gt;&lt;input class="field-input" id="pR" type="number" step="1"&gt;&lt;/div&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Transp.&lt;/div&gt;&lt;input class="field-input" id="pO" type="range" min="0" max="1" step="0.01"&gt;&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Blend mode&lt;/div&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;pBlend&quot; style=&quot;height:32px&quot;&gt;
-              &lt;option value=&quot;source-over&quot;&gt;Normal&lt;/option&gt;
-              &lt;option value=&quot;multiply&quot;&gt;Multiply&lt;/option&gt;
-              &lt;option value=&quot;screen&quot;&gt;Screen&lt;/option&gt;
-              &lt;option value=&quot;overlay&quot;&gt;Overlay&lt;/option&gt;
-              &lt;option value=&quot;darken&quot;&gt;Darken&lt;/option&gt;
-              &lt;option value=&quot;lighten&quot;&gt;Lighten&lt;/option&gt;
-              &lt;option value=&quot;color-dodge&quot;&gt;Color Dodge&lt;/option&gt;
-              &lt;option value=&quot;color-burn&quot;&gt;Color Burn&lt;/option&gt;
-              &lt;option value=&quot;difference&quot;&gt;Difference&lt;/option&gt;
-              &lt;option value=&quot;exclusion&quot;&gt;Exclusion&lt;/option&gt;
+        &lt;div class="prop-row"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Blend mode&lt;/div&gt;
+            &lt;select class="field-input" id="pBlend" style="height:32px"&gt;
+              &lt;option value="source-over"&gt;Normal&lt;/option&gt;
+              &lt;option value="multiply"&gt;Multiply&lt;/option&gt;
+              &lt;option value="screen"&gt;Screen&lt;/option&gt;
+              &lt;option value="overlay"&gt;Overlay&lt;/option&gt;
+              &lt;option value="darken"&gt;Darken&lt;/option&gt;
+              &lt;option value="lighten"&gt;Lighten&lt;/option&gt;
+              &lt;option value="color-dodge"&gt;Color Dodge&lt;/option&gt;
+              &lt;option value="color-burn"&gt;Color Burn&lt;/option&gt;
+              &lt;option value="difference"&gt;Difference&lt;/option&gt;
+              &lt;option value="exclusion"&gt;Exclusion&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
       &lt;!-- Style --&gt;
-      &lt;div class=&quot;panel-section&quot; id=&quot;propStyle&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Estilo&lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Fill&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pFill&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Stroke&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStroke&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
+      &lt;div class="panel-section" id="propStyle"&gt;
+        &lt;div class="panel-section-label"&gt;Estilo&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Fill&lt;/div&gt;&lt;input class="field-input" id="pFill" type="color"&gt;&lt;/div&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Stroke&lt;/div&gt;&lt;input class="field-input" id="pStroke" type="color"&gt;&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Espessura&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStrokeW&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;0&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Raio&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pRx&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;0&quot;&gt;&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Espessura&lt;/div&gt;&lt;input class="field-input" id="pStrokeW" type="number" step="1" min="0"&gt;&lt;/div&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Raio&lt;/div&gt;&lt;input class="field-input" id="pRx" type="number" step="1" min="0"&gt;&lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+      &lt;div class="sep"&gt;&lt;/div&gt;
 
       &lt;!-- Text --&gt;
-      &lt;div class=&quot;panel-section&quot; id=&quot;propText&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;align-items:center;justify-content:space-between&quot;&gt;Texto &lt;button class=&quot;tbtn&quot; id=&quot;btnTypographyGear&quot; title=&quot;Abrir painel de tipografia&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;⚙&lt;/button&gt;&lt;/div&gt;
-        &lt;div class=&quot;prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Fonte&lt;/div&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;pFont&quot; style=&quot;height:32px&quot;&gt;
-              &lt;option value=&quot;Outfit&quot;&gt;Outfit&lt;/option&gt;
-              &lt;option value=&quot;Syne&quot;&gt;Syne&lt;/option&gt;
-              &lt;option value=&quot;Sora&quot;&gt;Sora&lt;/option&gt;
-              &lt;option value=&quot;DM Sans&quot;&gt;DM Sans&lt;/option&gt;
-              &lt;option value=&quot;Nunito&quot;&gt;Nunito&lt;/option&gt;
-              &lt;option value=&quot;Poppins&quot;&gt;Poppins&lt;/option&gt;
-              &lt;option value=&quot;Montserrat&quot;&gt;Montserrat&lt;/option&gt;
-              &lt;option value=&quot;IBM Plex Sans&quot;&gt;IBM Plex Sans&lt;/option&gt;
-              &lt;option value=&quot;Raleway&quot;&gt;Raleway&lt;/option&gt;
-              &lt;option value=&quot;Manrope&quot;&gt;Manrope&lt;/option&gt;
-              &lt;option value=&quot;Inter&quot;&gt;Inter&lt;/option&gt;
-              &lt;option value=&quot;Roboto&quot;&gt;Roboto&lt;/option&gt;
+      &lt;div class="panel-section" id="propText"&gt;
+        &lt;div class="panel-section-label" style="display:flex;align-items:center;justify-content:space-between"&gt;Texto &lt;button class="tbtn" id="btnTypographyGear" title="Abrir painel de tipografia" style="height:24px;padding:0 8px"&gt;⚙&lt;/button&gt;&lt;/div&gt;
+        &lt;div class="prop-row"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Fonte&lt;/div&gt;
+            &lt;select class="field-input" id="pFont" style="height:32px"&gt;
+              &lt;option value="Outfit"&gt;Outfit&lt;/option&gt;
+              &lt;option value="Syne"&gt;Syne&lt;/option&gt;
+              &lt;option value="Sora"&gt;Sora&lt;/option&gt;
+              &lt;option value="DM Sans"&gt;DM Sans&lt;/option&gt;
+              &lt;option value="Nunito"&gt;Nunito&lt;/option&gt;
+              &lt;option value="Poppins"&gt;Poppins&lt;/option&gt;
+              &lt;option value="Montserrat"&gt;Montserrat&lt;/option&gt;
+              &lt;option value="IBM Plex Sans"&gt;IBM Plex Sans&lt;/option&gt;
+              &lt;option value="Raleway"&gt;Raleway&lt;/option&gt;
+              &lt;option value="Manrope"&gt;Manrope&lt;/option&gt;
+              &lt;option value="Inter"&gt;Inter&lt;/option&gt;
+              &lt;option value="Roboto"&gt;Roboto&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Google Font&lt;/div&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;pGoogleFont&quot; placeholder=&quot;Ex: Playfair Display&quot;&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Google Font&lt;/div&gt;
+            &lt;input class="field-input" id="pGoogleFont" placeholder="Ex: Playfair Display"&gt;
           &lt;/div&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnLoadFont&quot; style=&quot;justify-content:center;height:32px;align-self:end&quot;&gt;Carregar&lt;/button&gt;
+          &lt;button class="tbtn" id="btnLoadFont" style="justify-content:center;height:32px;align-self:end"&gt;Carregar&lt;/button&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Tamanho&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pFontSize&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;6&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pTextColor&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Tamanho&lt;/div&gt;&lt;input class="field-input" id="pFontSize" type="number" step="1" min="6"&gt;&lt;/div&gt;
+          &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Cor&lt;/div&gt;&lt;input class="field-input" id="pTextColor" type="color"&gt;&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;prop-row&quot;&gt;
-          &lt;div class=&quot;field-label&quot; style=&quot;margin-bottom:6px&quot;&gt;Alinhamento&lt;/div&gt;
-          &lt;div class=&quot;seg&quot; id=&quot;alignSeg&quot;&gt;
-            &lt;button class=&quot;seg-opt on&quot; data-val=&quot;left&quot;&gt;≡&lt;/button&gt;
-            &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
-            &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div data-tab-panel=&quot;tracado&quot; style=&quot;display:none&quot;&gt;
-        &lt;div class=&quot;panel-section&quot;&gt;
-          &lt;div class=&quot;panel-section-label&quot;&gt;Traçado&lt;/div&gt;
-          &lt;div class=&quot;rp-row&quot;&gt;
-            &lt;span class=&quot;rp-chip&quot;&gt;Estilo&lt;/span&gt;
-            &lt;button class=&quot;rp-icon-btn active&quot; data-stroke-style=&quot;solid&quot;&gt;Sólido&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-style=&quot;dash&quot;&gt;Tracejado&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-style=&quot;dot&quot;&gt;Pontilhado&lt;/button&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-            &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor de traço&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStroke2&quot; type=&quot;color&quot;&gt;&lt;/div&gt;
-            &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Espessura&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;pStrokeW2&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;0&quot;&gt;&lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;rp-row&quot;&gt;
-            &lt;input class=&quot;rp-stroke-range rp-grow&quot; id=&quot;pStrokeWRange2&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;120&quot; step=&quot;1&quot;&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;rp-row&quot;&gt;
-            &lt;span class=&quot;rp-chip&quot;&gt;Tampa&lt;/span&gt;
-            &lt;button class=&quot;rp-icon-btn active&quot; data-stroke-cap=&quot;butt&quot;&gt;▮&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-cap=&quot;round&quot;&gt;◖&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-cap=&quot;square&quot;&gt;▭&lt;/button&gt;
-            &lt;span class=&quot;rp-chip&quot; style=&quot;margin-left:auto&quot;&gt;Mitra&lt;/span&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;pMiter2&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;10&quot; step=&quot;0.5&quot; value=&quot;1.5&quot; style=&quot;width:64px&quot;&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;rp-row&quot;&gt;
-            &lt;span class=&quot;rp-chip&quot;&gt;Unir&lt;/span&gt;
-            &lt;button class=&quot;rp-icon-btn active&quot; data-stroke-join=&quot;miter&quot;&gt;┌&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-join=&quot;round&quot;&gt;◜&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; data-stroke-join=&quot;bevel&quot;&gt;⌟&lt;/button&gt;
+        &lt;div class="prop-row"&gt;
+          &lt;div class="field-label" style="margin-bottom:6px"&gt;Alinhamento&lt;/div&gt;
+          &lt;div class="seg" id="alignSeg"&gt;
+            &lt;button class="seg-opt on" data-val="left"&gt;≡&lt;/button&gt;
+            &lt;button class="seg-opt" data-val="center"&gt;≣&lt;/button&gt;
+            &lt;button class="seg-opt" data-val="right"&gt;≡&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div data-tab-panel=&quot;aparencia&quot; style=&quot;display:none&quot;&gt;
-        &lt;div class=&quot;panel-section&quot;&gt;
-          &lt;div class=&quot;panel-section-label&quot;&gt;Aparência&lt;/div&gt;
-          &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-            &lt;div class=&quot;field-item&quot;&gt;
-              &lt;div class=&quot;field-label&quot;&gt;Modo de mesclagem&lt;/div&gt;
-              &lt;select class=&quot;field-input&quot; id=&quot;pBlend2&quot; style=&quot;height:32px&quot;&gt;
-                &lt;option value=&quot;source-over&quot;&gt;Normal&lt;/option&gt;
-                &lt;option value=&quot;multiply&quot;&gt;Multiply&lt;/option&gt;
-                &lt;option value=&quot;screen&quot;&gt;Screen&lt;/option&gt;
-                &lt;option value=&quot;overlay&quot;&gt;Overlay&lt;/option&gt;
-                &lt;option value=&quot;darken&quot;&gt;Darken&lt;/option&gt;
-                &lt;option value=&quot;lighten&quot;&gt;Lighten&lt;/option&gt;
+      &lt;div data-tab-panel="tracado" style="display:none"&gt;
+        &lt;div class="panel-section"&gt;
+          &lt;div class="panel-section-label"&gt;Traçado&lt;/div&gt;
+          &lt;div class="rp-row"&gt;
+            &lt;span class="rp-chip"&gt;Estilo&lt;/span&gt;
+            &lt;button class="rp-icon-btn active" data-stroke-style="solid"&gt;Sólido&lt;/button&gt;
+            &lt;button class="rp-icon-btn" data-stroke-style="dash"&gt;Tracejado&lt;/button&gt;
+            &lt;button class="rp-icon-btn" data-stroke-style="dot"&gt;Pontilhado&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class="prop-grid2 prop-row"&gt;
+            &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Cor de traço&lt;/div&gt;&lt;input class="field-input" id="pStroke2" type="color"&gt;&lt;/div&gt;
+            &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Espessura&lt;/div&gt;&lt;input class="field-input" id="pStrokeW2" type="number" step="1" min="0"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="rp-row"&gt;
+            &lt;input class="rp-stroke-range rp-grow" id="pStrokeWRange2" type="range" min="0" max="120" step="1"&gt;
+          &lt;/div&gt;
+          &lt;div class="rp-row"&gt;
+            &lt;span class="rp-chip"&gt;Tampa&lt;/span&gt;
+            &lt;button class="rp-icon-btn active" data-stroke-cap="butt"&gt;▮&lt;/button&gt;
+            &lt;button class="rp-icon-btn" data-stroke-cap="round"&gt;◖&lt;/button&gt;
+            &lt;button class="rp-icon-btn" data-stroke-cap="square"&gt;▭&lt;/button&gt;
+            &lt;span class="rp-chip" style="margin-left:auto"&gt;Mitra&lt;/span&gt;
+            &lt;input class="field-input" id="pMiter2" type="number" min="1" max="10" step="0.5" value="1.5" style="width:64px"&gt;
+          &lt;/div&gt;
+          &lt;div class="rp-row"&gt;
+            &lt;span class="rp-chip"&gt;Unir&lt;/span&gt;
+            &lt;button class="rp-icon-btn active" data-stroke-join="miter"&gt;┌&lt;/button&gt;
+            &lt;button class="rp-icon-btn" data-stroke-join="round"&gt;◜&lt;/button&gt;
+            &lt;button class="rp-icon-btn" data-stroke-join="bevel"&gt;⌟&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div data-tab-panel="aparencia" style="display:none"&gt;
+        &lt;div class="panel-section"&gt;
+          &lt;div class="panel-section-label"&gt;Aparência&lt;/div&gt;
+          &lt;div class="prop-grid2 prop-row"&gt;
+            &lt;div class="field-item"&gt;
+              &lt;div class="field-label"&gt;Modo de mesclagem&lt;/div&gt;
+              &lt;select class="field-input" id="pBlend2" style="height:32px"&gt;
+                &lt;option value="source-over"&gt;Normal&lt;/option&gt;
+                &lt;option value="multiply"&gt;Multiply&lt;/option&gt;
+                &lt;option value="screen"&gt;Screen&lt;/option&gt;
+                &lt;option value="overlay"&gt;Overlay&lt;/option&gt;
+                &lt;option value="darken"&gt;Darken&lt;/option&gt;
+                &lt;option value="lighten"&gt;Lighten&lt;/option&gt;
               &lt;/select&gt;
             &lt;/div&gt;
-            &lt;div class=&quot;field-item&quot;&gt;
-              &lt;div class=&quot;field-label&quot;&gt;Opacidade&lt;/div&gt;
-              &lt;input class=&quot;field-input&quot; id=&quot;pOpacity2&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;100&quot; step=&quot;1&quot; value=&quot;100&quot;&gt;
+            &lt;div class="field-item"&gt;
+              &lt;div class="field-label"&gt;Opacidade&lt;/div&gt;
+              &lt;input class="field-input" id="pOpacity2" type="number" min="0" max="100" step="1" value="100"&gt;
             &lt;/div&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;rp-row&quot;&gt;
-            &lt;input class=&quot;rp-stroke-range rp-grow&quot; id=&quot;pOpacityRange2&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;100&quot; step=&quot;1&quot; value=&quot;100&quot;&gt;
+          &lt;div class="rp-row"&gt;
+            &lt;input class="rp-stroke-range rp-grow" id="pOpacityRange2" type="range" min="0" max="100" step="1" value="100"&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-          &lt;div class=&quot;panel-section-label&quot;&gt;Clip mask&lt;/div&gt;
-          &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnClipMask&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Aplicar clip&lt;/button&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnReleaseClip&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Soltar clip&lt;/button&gt;
+          &lt;div class="sep"&gt;&lt;/div&gt;
+          &lt;div class="panel-section-label"&gt;Clip mask&lt;/div&gt;
+          &lt;div class="prop-grid2 prop-row"&gt;
+            &lt;button class="tbtn" id="btnClipMask" style="justify-content:center;height:30px"&gt;Aplicar clip&lt;/button&gt;
+            &lt;button class="tbtn" id="btnReleaseClip" style="justify-content:center;height:30px"&gt;Soltar clip&lt;/button&gt;
           &lt;/div&gt;
-          &lt;div class=&quot;rp-row&quot;&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Iniciar&quot;&gt;Início&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Fim&quot;&gt;Fim&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Inverter&quot;&gt;↕&lt;/button&gt;
-            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Limpar estilo&quot;&gt;🗑&lt;/button&gt;
+          &lt;div class="rp-row"&gt;
+            &lt;button class="rp-icon-btn" title="Iniciar"&gt;Início&lt;/button&gt;
+            &lt;button class="rp-icon-btn" title="Fim"&gt;Fim&lt;/button&gt;
+            &lt;button class="rp-icon-btn" title="Inverter"&gt;↕&lt;/button&gt;
+            &lt;button class="rp-icon-btn" title="Limpar estilo"&gt;🗑&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -1462,26 +1477,26 @@ textarea.modal-textarea{
 &lt;/div&gt;&lt;!-- .app --&gt;
 
 
-&lt;div class=&quot;ctx-pop&quot; id=&quot;canvasCtx&quot;&gt;
-  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;paste&quot;&gt;&lt;span&gt;Colar&lt;/span&gt;&lt;span&gt;Ctrl+V&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;group&quot;&gt;&lt;span&gt;Agrupar&lt;/span&gt;&lt;span&gt;Ctrl+G&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;ungroup&quot;&gt;&lt;span&gt;Desagrupar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+G&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-sep&quot;&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;front&quot;&gt;&lt;span&gt;Trazer para frente&lt;/span&gt;&lt;span&gt;]&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;back&quot;&gt;&lt;span&gt;Enviar para trás&lt;/span&gt;&lt;span&gt;[&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-sep&quot;&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;duplicate&quot;&gt;&lt;span&gt;Duplicar&lt;/span&gt;&lt;span&gt;Ctrl+D&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;delete&quot;&gt;&lt;span&gt;Excluir&lt;/span&gt;&lt;span&gt;Del&lt;/span&gt;&lt;/div&gt;
+&lt;div class="ctx-pop" id="canvasCtx"&gt;
+  &lt;div class="ctx-pop-item" data-act="paste"&gt;&lt;span&gt;Colar&lt;/span&gt;&lt;span&gt;Ctrl+V&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="group"&gt;&lt;span&gt;Agrupar&lt;/span&gt;&lt;span&gt;Ctrl+G&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="ungroup"&gt;&lt;span&gt;Desagrupar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+G&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-sep"&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="front"&gt;&lt;span&gt;Trazer para frente&lt;/span&gt;&lt;span&gt;]&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="back"&gt;&lt;span&gt;Enviar para trás&lt;/span&gt;&lt;span&gt;[&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-sep"&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="duplicate"&gt;&lt;span&gt;Duplicar&lt;/span&gt;&lt;span&gt;Ctrl+D&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="delete"&gt;&lt;span&gt;Excluir&lt;/span&gt;&lt;span&gt;Del&lt;/span&gt;&lt;/div&gt;
 &lt;/div&gt;
 
 &lt;!-- ═══ MODAL ════════════════════════════════════════════ --&gt;
-&lt;div class=&quot;modal-bg&quot; id=&quot;modalBg&quot;&gt;
-  &lt;div class=&quot;modal-box&quot;&gt;
-    &lt;div class=&quot;modal-head&quot;&gt;
-      &lt;div class=&quot;modal-title&quot; id=&quot;modalTitle&quot;&gt;Modal&lt;/div&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnCloseModal&quot;&gt;✕&lt;/button&gt;
+&lt;div class="modal-bg" id="modalBg"&gt;
+  &lt;div class="modal-box"&gt;
+    &lt;div class="modal-head"&gt;
+      &lt;div class="modal-title" id="modalTitle"&gt;Modal&lt;/div&gt;
+      &lt;button class="tbtn" id="btnCloseModal"&gt;✕&lt;/button&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;modal-body&quot; id=&quot;modalBody&quot;&gt;&lt;/div&gt;
+    &lt;div class="modal-body" id="modalBody"&gt;&lt;/div&gt;
   &lt;/div&gt;
 &lt;/div&gt;
 
@@ -1544,6 +1559,408 @@ const ENABLE_BEZIER_V2 = true;
 let textDragStart = null;
 let textDragMoved = false;
 
+const smartOverlayState = {
+  guides: [],
+  measurements: [],
+  equalSpacing: []
+};
+const smartSnapState = { enabled:true, threshold:6 };
+let isAltMeasureDown = false;
+const twoItemOverlay = {
+  root: null,
+  swap: null,
+  gap: null,
+  drag: null,
+  refs: null
+};
+
+function isEditorAuxObject(obj){
+  return !obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.excludeFromExport;
+}
+
+function getBounds(obj){
+  const b = obj.getBoundingRect(true, true);
+  return {
+    left:b.left,
+    top:b.top,
+    right:b.left + b.width,
+    bottom:b.top + b.height,
+    width:b.width,
+    height:b.height,
+    centerX:b.left + b.width/2,
+    centerY:b.top + b.height/2
+  };
+}
+
+function getUnionBounds(objs=[]){
+  if(!objs.length) return null;
+  const list = objs.map(getBounds);
+  const left = Math.min(...list.map(b=&gt;b.left));
+  const top = Math.min(...list.map(b=&gt;b.top));
+  const right = Math.max(...list.map(b=&gt;b.right));
+  const bottom = Math.max(...list.map(b=&gt;b.bottom));
+  return { left, top, right, bottom, width:right-left, height:bottom-top, centerX:(left+right)/2, centerY:(top+bottom)/2 };
+}
+
+function worldToScreen(x,y){
+  const v = canvas.viewportTransform || [1,0,0,1,0,0];
+  return { x:x*v[0] + v[4], y:y*v[3] + v[5] };
+}
+
+function ensureTwoItemOverlay(){
+  if(twoItemOverlay.root) return;
+  const root = document.createElement('div');
+  root.className = 'smart-two-overlay';
+  root.innerHTML = `
+    &lt;button class="smart-swap-btn" id="smartSwapBtn" title="Inverter ordem (swap)"&gt;⇄&lt;/button&gt;
+    &lt;button class="smart-gap-handle" id="smartGapHandle" title="Ajustar espaçamento"&gt;&lt;/button&gt;
+  `;
+  stageEl.appendChild(root);
+  twoItemOverlay.root = root;
+  twoItemOverlay.swap = root.querySelector('#smartSwapBtn');
+  twoItemOverlay.gap = root.querySelector('#smartGapHandle');
+
+  twoItemOverlay.swap.addEventListener('click', e =&gt; {
+    e.preventDefault(); e.stopPropagation();
+    const refs = twoItemOverlay.refs;
+    if(!refs || refs.items.length !== 2) return;
+    const [a,b] = refs.items;
+    const ap = a.getCenterPoint();
+    const bp = b.getCenterPoint();
+    a.setPositionByOrigin(bp, 'center', 'center');
+    b.setPositionByOrigin(ap, 'center', 'center');
+    a.setCoords();
+    b.setCoords();
+    canvas.requestRenderAll();
+    refreshProps();
+    refreshLayers();
+    snapshot();
+    setStatus('Posições invertidas');
+  });
+
+  twoItemOverlay.gap.addEventListener('mousedown', e =&gt; {
+    e.preventDefault(); e.stopPropagation();
+    const refs = twoItemOverlay.refs;
+    if(!refs || refs.items.length !== 2) return;
+    const [rawA,rawB] = refs.items;
+    const axis = refs.axis;
+    const [a,b] = axis === 'x'
+      ? [rawA,rawB].sort((x,y)=&gt;getBounds(x).left - getBounds(y).left)
+      : [rawA,rawB].sort((x,y)=&gt;getBounds(x).top - getBounds(y).top);
+    const ba = getBounds(a);
+    const bb = getBounds(b);
+    const gapStart = axis === 'x' ? bb.left - ba.right : bb.top - ba.bottom;
+    twoItemOverlay.drag = {
+      axis,
+      a,
+      b,
+      startMouse: { x:e.clientX, y:e.clientY },
+      startGap: gapStart
+    };
+    document.body.classList.add('is-dragging-gap');
+  });
+
+  window.addEventListener('mousemove', e =&gt; {
+    const drag = twoItemOverlay.drag;
+    if(!drag) return;
+    const axis = drag.axis;
+    const delta = axis === 'x' ? (e.clientX - drag.startMouse.x) / (canvas.getZoom() || 1) : (e.clientY - drag.startMouse.y) / (canvas.getZoom() || 1);
+    const nextGap = drag.startGap + delta;
+    const aBounds = getBounds(drag.a);
+    const bBounds = getBounds(drag.b);
+    if(axis === 'x') {
+      const targetLeft = aBounds.right + nextGap;
+      drag.b.set({ left: (drag.b.left || 0) + (targetLeft - bBounds.left) });
+    } else {
+      const targetTop = aBounds.bottom + nextGap;
+      drag.b.set({ top: (drag.b.top || 0) + (targetTop - bBounds.top) });
+    }
+    drag.b.setCoords();
+    refreshSmartMeasurementState();
+    canvas.requestRenderAll();
+    refreshProps();
+  });
+
+  const stopDrag = () =&gt; {
+    if(!twoItemOverlay.drag) return;
+    twoItemOverlay.drag = null;
+    document.body.classList.remove('is-dragging-gap');
+    refreshLayers();
+    snapshot();
+  };
+  window.addEventListener('mouseup', stopDrag);
+}
+
+function hideTwoItemOverlay(){
+  ensureTwoItemOverlay();
+  twoItemOverlay.root?.classList.remove('show-swap','show-gap');
+  twoItemOverlay.refs = null;
+}
+
+function updateTwoItemOverlay(){
+  ensureTwoItemOverlay();
+  const objs = selectedObjects();
+  if(objs.length &lt; 2){ hideTwoItemOverlay(); return; }
+
+  const union = getUnionBounds(objs);
+  if(!union){ hideTwoItemOverlay(); return; }
+
+  const c = worldToScreen(union.centerX, union.centerY);
+  twoItemOverlay.swap.style.left = `${Math.round(c.x - 12)}px`;
+  twoItemOverlay.swap.style.top = `${Math.round(c.y - 12)}px`;
+  twoItemOverlay.root.classList.add('show-swap');
+  twoItemOverlay.refs = { items: objs.slice(), axis:'x' };
+
+  if(objs.length !== 2){
+    twoItemOverlay.root.classList.remove('show-gap');
+    return;
+  }
+
+  const b0 = getBounds(objs[0]);
+  const b1 = getBounds(objs[1]);
+  const horizontal = Math.abs(b0.centerY - b1.centerY) &lt;= Math.abs(b0.centerX - b1.centerX);
+  const axis = horizontal ? 'x' : 'y';
+  twoItemOverlay.refs = { items: objs.slice(), axis };
+
+  if(horizontal){
+    const leftObj = b0.left &lt;= b1.left ? b0 : b1;
+    const rightObj = leftObj === b0 ? b1 : b0;
+    const x = (leftObj.right + rightObj.left) / 2;
+    const y = (leftObj.centerY + rightObj.centerY) / 2;
+    const p = worldToScreen(x, y);
+    twoItemOverlay.gap.style.left = `${Math.round(p.x - 2)}px`;
+    twoItemOverlay.gap.style.top = `${Math.round(p.y - 12)}px`;
+    twoItemOverlay.gap.style.width = `4px`;
+    twoItemOverlay.gap.style.height = `24px`;
+  } else {
+    const topObj = b0.top &lt;= b1.top ? b0 : b1;
+    const bottomObj = topObj === b0 ? b1 : b0;
+    const x = (topObj.centerX + bottomObj.centerX) / 2;
+    const y = (topObj.bottom + bottomObj.top) / 2;
+    const p = worldToScreen(x, y);
+    twoItemOverlay.gap.style.left = `${Math.round(p.x - 12)}px`;
+    twoItemOverlay.gap.style.top = `${Math.round(p.y - 2)}px`;
+    twoItemOverlay.gap.style.width = `24px`;
+    twoItemOverlay.gap.style.height = `4px`;
+  }
+  twoItemOverlay.root.classList.add('show-gap');
+}
+
+function renderSmartOverlays(){
+  const ctx = canvas.contextTop;
+  if(!ctx) return;
+  const v = canvas.viewportTransform || [1,0,0,1,0,0];
+  const toScreen = p =&gt; ({ x:p.x * v[0] + v[4], y:p.y * v[3] + v[5] });
+
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.lineWidth = 1;
+  ctx.font = '11px "JetBrains Mono", monospace';
+
+  const drawLine = (a,b,color='#ff4d8d',dash=[]) =&gt; {
+    const p1 = toScreen(a); const p2 = toScreen(b);
+    ctx.strokeStyle = color;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    return { p1, p2 };
+  };
+
+  const drawLabel = (txt, x, y, color='#ff4d8d') =&gt; {
+    const p = toScreen({x,y});
+    const w = ctx.measureText(txt).width + 8;
+    ctx.fillStyle = 'rgba(15,18,28,.88)';
+    ctx.fillRect(p.x - w/2, p.y - 9, w, 16);
+    ctx.strokeStyle = color;
+    ctx.strokeRect(p.x - w/2, p.y - 9, w, 16);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(txt, p.x - w/2 + 4, p.y + 3);
+  };
+
+  smartOverlayState.guides.forEach(g =&gt; {
+    drawLine(g.a, g.b, '#ff5d87');
+    if(g.label) drawLabel(g.label, (g.a.x+g.b.x)/2, (g.a.y+g.b.y)/2 - 10, '#ff5d87');
+  });
+
+  smartOverlayState.measurements.forEach(m =&gt; {
+    drawLine(m.a, m.b, '#ff4d8d', m.dash || []);
+    drawLabel(m.label, (m.a.x+m.b.x)/2, (m.a.y+m.b.y)/2, '#ff4d8d');
+  });
+
+  smartOverlayState.equalSpacing.forEach(g =&gt; {
+    drawLine(g.a, g.b, '#32d296', [4,4]);
+    if(g.label) drawLabel(g.label, (g.a.x+g.b.x)/2, (g.a.y+g.b.y)/2 - 10, '#32d296');
+  });
+
+  ctx.restore();
+}
+
+function refreshSmartMeasurementState(){
+  smartOverlayState.measurements = [];
+  const sel = selectedObjects();
+  if(!isAltMeasureDown || !sel.length) return;
+
+  const bounds = getUnionBounds(sel);
+  if(!bounds) return;
+  const others = canvas.getObjects().filter(o =&gt; !isEditorAuxObject(o) &amp;&amp; !sel.includes(o));
+
+  const pick = { left:null, right:null, top:null, bottom:null };
+  others.forEach(obj =&gt; {
+    const b = getBounds(obj);
+    const overlapY = Math.min(bounds.bottom, b.bottom) - Math.max(bounds.top, b.top);
+    const overlapX = Math.min(bounds.right, b.right) - Math.max(bounds.left, b.left);
+
+    if(overlapY &gt; 0){
+      if(b.right &lt;= bounds.left){
+        const d = bounds.left - b.right;
+        if(!pick.left || d &lt; pick.left.d) pick.left = { d, a:{x:b.right, y:(Math.max(bounds.top,b.top)+Math.min(bounds.bottom,b.bottom))/2}, b:{x:bounds.left, y:(Math.max(bounds.top,b.top)+Math.min(bounds.bottom,b.bottom))/2} };
+      }
+      if(b.left &gt;= bounds.right){
+        const d = b.left - bounds.right;
+        if(!pick.right || d &lt; pick.right.d) pick.right = { d, a:{x:bounds.right, y:(Math.max(bounds.top,b.top)+Math.min(bounds.bottom,b.bottom))/2}, b:{x:b.left, y:(Math.max(bounds.top,b.top)+Math.min(bounds.bottom,b.bottom))/2} };
+      }
+    }
+
+    if(overlapX &gt; 0){
+      if(b.bottom &lt;= bounds.top){
+        const d = bounds.top - b.bottom;
+        if(!pick.top || d &lt; pick.top.d) pick.top = { d, a:{x:(Math.max(bounds.left,b.left)+Math.min(bounds.right,b.right))/2, y:b.bottom}, b:{x:(Math.max(bounds.left,b.left)+Math.min(bounds.right,b.right))/2, y:bounds.top} };
+      }
+      if(b.top &gt;= bounds.bottom){
+        const d = b.top - bounds.bottom;
+        if(!pick.bottom || d &lt; pick.bottom.d) pick.bottom = { d, a:{x:(Math.max(bounds.left,b.left)+Math.min(bounds.right,b.right))/2, y:bounds.bottom}, b:{x:(Math.max(bounds.left,b.left)+Math.min(bounds.right,b.right))/2, y:b.top} };
+      }
+    }
+  });
+
+  Object.values(pick).forEach(v =&gt; {
+    if(!v) return;
+    smartOverlayState.measurements.push({ a:v.a, b:v.b, label:`${Math.round(v.d)} px` });
+  });
+
+  if(sel.length===2){
+    const b0 = getBounds(sel[0]);
+    const b1 = getBounds(sel[1]);
+    const overlapY = Math.min(b0.bottom,b1.bottom) - Math.max(b0.top,b1.top);
+    const overlapX = Math.min(b0.right,b1.right) - Math.max(b0.left,b1.left);
+    if(overlapY &gt; 0){
+      const left = b0.left &lt; b1.left ? b0 : b1;
+      const right = left===b0 ? b1 : b0;
+      const d = right.left - left.right;
+      smartOverlayState.measurements.push({ a:{x:left.right,y:(left.centerY+right.centerY)/2}, b:{x:right.left,y:(left.centerY+right.centerY)/2}, label:`${Math.round(d)} px` });
+    }
+    if(overlapX &gt; 0){
+      const top = b0.top &lt; b1.top ? b0 : b1;
+      const bottom = top===b0 ? b1 : b0;
+      const d = bottom.top - top.bottom;
+      smartOverlayState.measurements.push({ a:{x:(top.centerX+bottom.centerX)/2,y:top.bottom}, b:{x:(top.centerX+bottom.centerX)/2,y:bottom.top}, label:`${Math.round(d)} px` });
+    }
+  }
+}
+
+function refreshEqualSpacingHints(){
+  smartOverlayState.equalSpacing = [];
+  const sel = selectedObjects();
+  if(sel.length &lt; 3) return;
+  const sortedX = sel.slice().sort((a,b)=&gt;getBounds(a).left - getBounds(b).left).map(getBounds);
+  const gapX1 = sortedX[1].left - sortedX[0].right;
+  const gapX2 = sortedX[2].left - sortedX[1].right;
+  if (Number.isFinite(gapX1) &amp;&amp; Number.isFinite(gapX2) &amp;&amp; Math.abs(gapX1-gapX2) &lt;= 2) {
+    smartOverlayState.equalSpacing.push({
+      a:{x:sortedX[0].right, y:sortedX[0].centerY},
+      b:{x:sortedX[1].left, y:sortedX[1].centerY},
+      label:`=${Math.round(gapX1)}px`
+    });
+    smartOverlayState.equalSpacing.push({
+      a:{x:sortedX[1].right, y:sortedX[1].centerY},
+      b:{x:sortedX[2].left, y:sortedX[2].centerY},
+      label:`=${Math.round(gapX2)}px`
+    });
+  }
+}
+
+function refreshAlignmentAssist(){
+  refreshSmartMeasurementState();
+  refreshEqualSpacingHints();
+  updateTwoItemOverlay();
+}
+
+function applySmartSnap(target){
+  smartOverlayState.guides = [];
+  if(!smartSnapState.enabled || !target || isEditorAuxObject(target)) return;
+  const moving = getBounds(target);
+  const members = target.type === 'activeSelection' ? target.getObjects() : [target];
+  const others = canvas.getObjects().filter(o =&gt; !isEditorAuxObject(o) &amp;&amp; !members.includes(o));
+  if(!others.length) return;
+  const threshold = smartSnapState.threshold / (canvas.getZoom() || 1);
+
+  let bestX = null;
+  let bestY = null;
+
+  const own = {
+    left:moving.left,
+    right:moving.right,
+    centerX:moving.centerX,
+    top:moving.top,
+    bottom:moving.bottom,
+    centerY:moving.centerY,
+    width:moving.width,
+    height:moving.height
+  };
+
+  others.forEach(obj =&gt; {
+    const b = getBounds(obj);
+    const xPairs = [
+      { self:own.left, other:b.left, label:'L' },
+      { self:own.left, other:b.right, label:'↔' },
+      { self:own.right, other:b.left, label:'↔' },
+      { self:own.right, other:b.right, label:'R' },
+      { self:own.centerX, other:b.centerX, label:'C' }
+    ];
+    xPairs.forEach(pair =&gt; {
+      const d = pair.other - pair.self;
+      if(Math.abs(d) &lt;= threshold &amp;&amp; (!bestX || Math.abs(d) &lt; Math.abs(bestX.delta))) {
+        bestX = { delta:d, x:pair.other, minY:Math.min(own.top,b.top), maxY:Math.max(own.bottom,b.bottom), label:pair.label };
+      }
+    });
+
+    const yPairs = [
+      { self:own.top, other:b.top, label:'T' },
+      { self:own.top, other:b.bottom, label:'↕' },
+      { self:own.bottom, other:b.top, label:'↕' },
+      { self:own.bottom, other:b.bottom, label:'B' },
+      { self:own.centerY, other:b.centerY, label:'M' }
+    ];
+    yPairs.forEach(pair =&gt; {
+      const d = pair.other - pair.self;
+      if(Math.abs(d) &lt;= threshold &amp;&amp; (!bestY || Math.abs(d) &lt; Math.abs(bestY.delta))) {
+        bestY = { delta:d, y:pair.other, minX:Math.min(own.left,b.left), maxX:Math.max(own.right,b.right), label:pair.label };
+      }
+    });
+
+    if(Math.abs(own.width - b.width) &lt;= threshold){
+      smartOverlayState.guides.push({ a:{x:Math.min(own.left,b.left), y:Math.max(own.top,b.top)-8}, b:{x:Math.max(own.right,b.right), y:Math.max(own.top,b.top)-8}, label:'Equal W' });
+    }
+    if(Math.abs(own.height - b.height) &lt;= threshold){
+      smartOverlayState.guides.push({ a:{x:Math.max(own.left,b.left)-8, y:Math.min(own.top,b.top)}, b:{x:Math.max(own.left,b.left)-8, y:Math.max(own.bottom,b.bottom)}, label:'Equal H' });
+    }
+  });
+
+  if(bestX){
+    target.set({ left:(target.left||0) + bestX.delta });
+    smartOverlayState.guides.push({ a:{x:bestX.x, y:bestX.minY-40}, b:{x:bestX.x, y:bestX.maxY+40} });
+  }
+  if(bestY){
+    target.set({ top:(target.top||0) + bestY.delta });
+    smartOverlayState.guides.push({ a:{x:bestY.minX-40, y:bestY.y}, b:{x:bestY.maxX+40, y:bestY.y} });
+  }
+
+  if(bestX || bestY) target.setCoords();
+}
+
+
 // Artboard objects
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
 const artboards = [];
@@ -1597,11 +2014,11 @@ function setDeskTheme(theme) {
 const artboardCreateState = { active:false, start:null, ghost:null };
 
 function isGuide(o) {
-  return artboards.some(a => o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
 }
 
 function getArtboardById(id){
-  return artboards.find(a => a.id === id) || null;
+  return artboards.find(a =&gt; a.id === id) || null;
 }
 
 function getActiveArtboard() {
@@ -1609,7 +2026,7 @@ function getActiveArtboard() {
 }
 
 function getArtboardByBoard(boardObj){
-  return artboards.find(a => a.board === boardObj) || null;
+  return artboards.find(a =&gt; a.board === boardObj) || null;
 }
 
 function syncActiveArtboardRefs() {
@@ -1629,20 +2046,20 @@ function syncActiveArtboardRefs() {
 function pointInArtboard(ab, point){
   if (!ab || !point) return false;
   const L = ab.board.left, T = ab.board.top, R = L + ab.w, B = T + ab.h;
-  return point.x >= L && point.x <= R && point.y >= T && point.y <= B;
+  return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
 }
 
 function pickArtboardForPoint(point){
-  const candidates = artboards.filter(ab => pointInArtboard(ab, point));
+  const candidates = artboards.filter(ab =&gt; pointInArtboard(ab, point));
   if (!candidates.length) return null;
-  candidates.sort((a,b) => (a.w*a.h) - (b.w*b.h));
+  candidates.sort((a,b) =&gt; (a.w*a.h) - (b.w*b.h));
   return candidates[0];
 }
 
 function removeObjectFromArtboard(obj){
-  artboards.forEach(ab => {
+  artboards.forEach(ab =&gt; {
     const idx = ab.children.indexOf(obj.id);
-    if (idx >= 0) ab.children.splice(idx, 1);
+    if (idx &gt;= 0) ab.children.splice(idx, 1);
   });
   obj.dataArtboardId = null;
 }
@@ -1666,8 +2083,8 @@ function applyArtboardClipToChild(ab, obj){
 
 function refreshArtboardChildrenClipping(ab){
   if (!ab) return;
-  (ab.children || []).forEach(id => {
-    const obj = canvas.getObjects().find(o => o.id === id);
+  (ab.children || []).forEach(id =&gt; {
+    const obj = canvas.getObjects().find(o =&gt; o.id === id);
     if (!obj) return;
     applyArtboardClipToChild(ab, obj);
   });
@@ -1676,7 +2093,7 @@ function refreshArtboardChildrenClipping(ab){
 function assignObjectToArtboard(obj, nextArtboard){
   if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
   const prev = getArtboardById(obj.dataArtboardId);
-  if (prev && prev.id === nextArtboard?.id) {
+  if (prev &amp;&amp; prev.id === nextArtboard?.id) {
     applyArtboardClipToChild(prev, obj);
     return;
   }
@@ -1711,7 +2128,7 @@ function syncArtboardAuxGeometry(ab){
   ab.shadow.set({ left:left+8, top:top+12, width:ab.w, height:ab.h });
   ab.bleed.set({ left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:ab.w+2*GUIDES.bleed, height:ab.h+2*GUIDES.bleed });
   ab.safe.set({ left:left+GUIDES.safe, top:top+GUIDES.safe, width:ab.w-2*GUIDES.safe, height:ab.h-2*GUIDES.safe });
-  [ab.board, ab.shadow, ab.bleed, ab.safe].forEach(o => o.setCoords());
+  [ab.board, ab.shadow, ab.bleed, ab.safe].forEach(o =&gt; o.setCoords());
 }
 
 function applyArtboardVisualState(ab){
@@ -1756,7 +2173,7 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
   const bleed = new fabric.Rect({
     left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:w+2*GUIDES.bleed, height:h+2*GUIDES.bleed,
     fill:'transparent', stroke:'rgba(241,58,161,.5)', strokeDashArray:[6,6], strokeWidth:1,
-    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed > 0 ? 1 : 0
+    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed &gt; 0 ? 1 : 0
   });
   const safe = new fabric.Rect({
     left:left+GUIDES.safe, top:top+GUIDES.safe, width:w-2*GUIDES.safe, height:h-2*GUIDES.safe,
@@ -1809,14 +2226,14 @@ function addAdjacentArtboard(dir) {
 }
 
 function orderArtboard() {
-  artboards.forEach(a => {
+  artboards.forEach(a =&gt; {
     if (a.shadow) canvas.sendToBack(a.shadow);
     if (a.board) canvas.sendToBack(a.board);
     if (a.bleed) canvas.bringToFront(a.bleed);
     if (a.safe) canvas.bringToFront(a.safe);
   });
-  canvas.getObjects().forEach(o => {
-    if (!isGuide(o) && !o.isBezierEditorControl && !o.isBezierOverlay) canvas.bringToFront(o);
+  canvas.getObjects().forEach(o =&gt; {
+    if (!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay) canvas.bringToFront(o);
   });
 }
 
@@ -1927,7 +2344,7 @@ canvas.on('mouse:down', opt =&gt; {
     return;
   }
 
-  if (artboardMode && e.button === 0 && !target) {
+  if (artboardMode &amp;&amp; e.button === 0 &amp;&amp; !target) {
     const pointer = canvas.getPointer(e);
     artboardCreateState.active = true;
     artboardCreateState.start = { x:pointer.x, y:pointer.y };
@@ -1986,7 +2403,7 @@ canvas.on('mouse:move', opt =&gt; {
     return;
   }
 
-  if (artboardCreateState.active && artboardCreateState.start && artboardCreateState.ghost) {
+  if (artboardCreateState.active &amp;&amp; artboardCreateState.start &amp;&amp; artboardCreateState.ghost) {
     const pointer = canvas.getPointer(opt.e);
     const sx = artboardCreateState.start.x;
     const sy = artboardCreateState.start.y;
@@ -2059,7 +2476,7 @@ canvas.on('mouse:up', opt =&gt; {
     const top = Math.min(start?.y || pointer.y, pointer.y);
     const width = Math.abs(pointer.x - (start?.x || pointer.x));
     const height = Math.abs(pointer.y - (start?.y || pointer.y));
-    if (ghost && canvas.getObjects().includes(ghost)) canvas.remove(ghost);
+    if (ghost &amp;&amp; canvas.getObjects().includes(ghost)) canvas.remove(ghost);
     artboardCreateState.active = false;
     artboardCreateState.start = null;
     artboardCreateState.ghost = null;
@@ -2073,7 +2490,7 @@ canvas.on('mouse:up', opt =&gt; {
 
   if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; vectorToolState.mode === 'creating') {
     const i = vectorToolState.dragPointIndex;
-    if (i >= 0 &amp;&amp; !vectorToolState.dragStarted &amp;&amp; !vectorToolState.pendingClose) resetCreatePointToCorner(vectorToolState.points[i]);
+    if (i &gt;= 0 &amp;&amp; !vectorToolState.dragStarted &amp;&amp; !vectorToolState.pendingClose) resetCreatePointToCorner(vectorToolState.points[i]);
     vectorToolState.dragPointIndex = -1;
     vectorToolState.dragStart = null;
     vectorToolState.dragStarted = false;
@@ -2327,6 +2744,22 @@ window.addEventListener('keydown', e =&gt; {
 
 window.addEventListener('keyup', e =&gt; {
   if (e.code === 'Space') { isSpaceDown = false; canvas.setCursor('default'); }
+});
+
+window.addEventListener('keydown', e =&gt; {
+  if (e.key === 'Alt') {
+    isAltMeasureDown = true;
+    refreshSmartMeasurementState();
+    canvas.requestRenderAll();
+  }
+});
+
+window.addEventListener('keyup', e =&gt; {
+  if (e.key === 'Alt') {
+    isAltMeasureDown = false;
+    refreshSmartMeasurementState();
+    canvas.requestRenderAll();
+  }
 });
 
 // ─── Status text ─────────────────────────────────────────
@@ -2887,7 +3320,7 @@ function finishBezierCreation({toEditing=true}={}){
 function undoBezierCreationAndFinalize(){
   if (vectorToolState.mode !== 'creating') return false;
   if (vectorToolState.points.length) vectorToolState.points.pop();
-  if (vectorToolState.points.length >= 2) {
+  if (vectorToolState.points.length &gt;= 2) {
     const path = finishBezierCreation({toEditing:false});
     if (path) {
       canvas.setActiveObject(path);
@@ -2946,9 +3379,9 @@ function resetCreatePointToCorner(pt){
 }
 
 function maybeCloseBezierPath(pointer){
-  if (vectorToolState.points.length < 3) return false;
+  if (vectorToolState.points.length &lt; 3) return false;
   const first = vectorToolState.points[0];
-  if (distance(pointer, first) > BEZIER_CREATE_HIT / Math.max(zoom, .1)) return false;
+  if (distance(pointer, first) &gt; BEZIER_CREATE_HIT / Math.max(zoom, .1)) return false;
   vectorToolState.closed = true;
   vectorToolState.pendingClose = true;
   vectorToolState.dragPointIndex = 0;
@@ -2964,10 +3397,10 @@ function addBezierPoint(pointer, e){
   const isV2 = (vectorToolState.modelKey === 'vectorModelV2' || activeTool === 'bezier-v2');
   const minInterval = isV2 ? 110 : 170;
   const minDistance = (isV2 ? 3.4 : 5) / Math.max(zoom, 0.1);
-  const tooFast = now - Number(vectorToolState.lastPointAddedAt || 0) < minInterval;
-  const tooClose = !!lastPos && distance(pointer, lastPos) < minDistance;
-  const repeatedClick = Number(e?.detail || 1) > 1;
-  if ((tooFast && tooClose) || (isV2 && repeatedClick)) return;
+  const tooFast = now - Number(vectorToolState.lastPointAddedAt || 0) &lt; minInterval;
+  const tooClose = !!lastPos &amp;&amp; distance(pointer, lastPos) &lt; minDistance;
+  const repeatedClick = Number(e?.detail || 1) &gt; 1;
+  if ((tooFast &amp;&amp; tooClose) || (isV2 &amp;&amp; repeatedClick)) return;
 
   const p = makeBezierPoint(pointer.x, pointer.y);
   const pts = vectorToolState.points;
@@ -2982,14 +3415,14 @@ function addBezierPoint(pointer, e){
 
 function updateDraggedCreatePoint(pointer, e){
   const i = vectorToolState.dragPointIndex;
-  if (i < 0) return;
+  if (i &lt; 0) return;
 
   if (vectorToolState.pendingClose) {
     const first = vectorToolState.points[0];
     if (!first) return;
     const start = vectorToolState.dragStart || { x:first.x, y:first.y };
     const moved = Math.hypot(pointer.x - start.x, pointer.y - start.y);
-    if (!vectorToolState.dragStarted &amp;&amp; moved < 4) return;
+    if (!vectorToolState.dragStarted &amp;&amp; moved &lt; 4) return;
     vectorToolState.dragStarted = true;
     let dx = pointer.x - first.x;
     let dy = pointer.y - first.y;
@@ -3012,7 +3445,7 @@ function updateDraggedCreatePoint(pointer, e){
   const pt = vectorToolState.points[i];
   const start = vectorToolState.dragStart || { x: pt.x, y: pt.y };
   const moved = Math.hypot(pointer.x - start.x, pointer.y - start.y);
-  if (!vectorToolState.dragStarted &amp;&amp; moved < 4) return;
+  if (!vectorToolState.dragStarted &amp;&amp; moved &lt; 4) return;
   vectorToolState.dragStarted = true;
   let dx = pointer.x - pt.x;
   let dy = pointer.y - pt.y;
@@ -3330,7 +3763,7 @@ function removePointAtIndex(pathObj, index){
   const m = ensurePathVectorModel(pathObj);
   if (!m || !Number.isFinite(index) || !m.points[index]) return;
   const minAllowed = m.closed ? 3 : 2;
-  if (m.points.length <= minAllowed) {
+  if (m.points.length &lt;= minAllowed) {
     setStatus('Não é possível remover mais nós desta curva.');
     return;
   }
@@ -3344,7 +3777,7 @@ function removePointAtIndex(pathObj, index){
 
 function addLayer() {
   ensureArtboard();
-  const idx = canvas.getObjects().filter(o=>!isGuide(o)).length + 1;
+  const idx = canvas.getObjects().filter(o=&gt;!isGuide(o)).length + 1;
   const l = new fabric.Rect({
     left: artboard.left + 100, top: artboard.top + 100,
     width: 260, height: 160, rx: 12, ry: 12,
@@ -3370,22 +3803,22 @@ function importExternalFile(file){
   if(!file) return;
   const name = String(file.name||'').toLowerCase();
   const isSvg = file.type==='image/svg+xml' || name.endsWith('.svg');
-  const isRaster = file.type.startsWith('image/') || ['.png','.jpg','.jpeg','.webp','.gif'].some(ext=>name.endsWith(ext));
-  const isVectorUnsupported = ['.ai','.eps'].some(ext=>name.endsWith(ext));
+  const isRaster = file.type.startsWith('image/') || ['.png','.jpg','.jpeg','.webp','.gif'].some(ext=&gt;name.endsWith(ext));
+  const isVectorUnsupported = ['.ai','.eps'].some(ext=&gt;name.endsWith(ext));
 
   if (isSvg) {
     const fr = new FileReader();
-    fr.onload = ev => loadSVGFromParent(String(ev.target?.result||''));
+    fr.onload = ev =&gt; loadSVGFromParent(String(ev.target?.result||''));
     fr.readAsText(file);
     return;
   }
   if (isRaster) {
     const fr = new FileReader();
-    fr.onload = ev => {
-      fabric.Image.fromURL(ev.target.result, img => {
+    fr.onload = ev =&gt; {
+      fabric.Image.fromURL(ev.target.result, img =&gt; {
         ensureArtboard();
         const maxW = Math.min(docW * 0.8, 600);
-        if (img.width > maxW) img.scaleToWidth(maxW);
+        if (img.width &gt; maxW) img.scaleToWidth(maxW);
         img.set({ left: artboard.left + 40, top: artboard.top + 40, dataName:file.name || 'Imagem colada' });
         canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
         refreshLayers();
@@ -3494,6 +3927,22 @@ canvas.on('object:modified', e =&gt; {
   trackPathPosition(obj);
 });
 
+canvas.on('object:moving', e =&gt; {
+  applySmartSnap(e.target);
+  refreshAlignmentAssist();
+});
+canvas.on('object:scaling', () =&gt; refreshAlignmentAssist());
+canvas.on('object:rotating', () =&gt; refreshAlignmentAssist());
+canvas.on('mouse:up', () =&gt; {
+  smartOverlayState.guides = [];
+  refreshAlignmentAssist();
+});
+canvas.on('after:render', () =&gt; {
+  renderSmartOverlays();
+  updateTwoItemOverlay();
+});
+
+
 // ─── Delete / Duplicate ──────────────────────────────────
 function del() {
   if (vectorToolState.mode === 'creating') {
@@ -3509,11 +3958,11 @@ function del() {
   const objs = selectedObjects();
   if(!objs.length) return;
 
-  if (bezierEditor.enabled && objs.includes(bezierEditor.path)) {
+  if (bezierEditor.enabled &amp;&amp; objs.includes(bezierEditor.path)) {
     clearBezierEditor();
   }
 
-  objs.forEach(o => canvas.remove(o));
+  objs.forEach(o =&gt; canvas.remove(o));
   canvas.discardActiveObject();
   canvas.requestRenderAll();
   refreshProps();
@@ -3590,8 +4039,10 @@ function alignSelection(mode) {
   });
 
   canvas.requestRenderAll();
+  refreshAlignmentAssist();
   refreshProps();
   refreshLayers();
+  snapshot();
   setStatus('Alinhamento aplicado');
 }
 
@@ -3653,34 +4104,38 @@ function distributeSelection(axis='x') {
   }
 
   const sorted = objs.slice().sort((a,b) =&gt; {
-    const ba = a.getBoundingRect(true, true);
-    const bb = b.getBoundingRect(true, true);
+    const ba = getBounds(a);
+    const bb = getBounds(b);
     return axis === 'x' ? ba.left - bb.left : ba.top - bb.top;
   });
 
-  const centers = sorted.map(obj =&gt; {
-    const b = obj.getBoundingRect(true, true);
-    return axis === 'x' ? (b.left + b.width / 2) : (b.top + b.height / 2);
-  });
+  const firstB = getBounds(sorted[0]);
+  const lastB = getBounds(sorted[sorted.length - 1]);
+  const occupied = sorted.reduce((sum,obj) =&gt; {
+    const b = getBounds(obj);
+    return sum + (axis === 'x' ? b.width : b.height);
+  }, 0);
 
-  const first = centers[0];
-  const last = centers[centers.length - 1];
-  if(Math.abs(last - first) &lt; 1) return;
-  const step = (last - first) / (sorted.length - 1);
+  const span = axis === 'x' ? (lastB.right - firstB.left) : (lastB.bottom - firstB.top);
+  const gap = (span - occupied) / (sorted.length - 1);
 
-  sorted.forEach((obj, i) =&gt; {
-    if(i === 0 || i === sorted.length - 1) return;
-    const b = obj.getBoundingRect(true, true);
-    const current = axis === 'x' ? (b.left + b.width / 2) : (b.top + b.height / 2);
-    const target = first + step * i;
-    const delta = target - current;
-    if(axis === 'x') nudgeBy(obj, delta, 0);
-    else nudgeBy(obj, 0, delta);
+  let cursor = axis === 'x' ? firstB.left : firstB.top;
+  sorted.forEach(obj =&gt; {
+    const b = getBounds(obj);
+    if(axis === 'x') {
+      nudgeBy(obj, cursor - b.left, 0);
+      cursor += b.width + gap;
+    } else {
+      nudgeBy(obj, 0, cursor - b.top);
+      cursor += b.height + gap;
+    }
   });
 
   canvas.requestRenderAll();
+  refreshAlignmentAssist();
   refreshProps();
   refreshLayers();
+  snapshot();
   setStatus(axis === 'x' ? 'Distribuição horizontal aplicada' : 'Distribuição vertical aplicada');
 }
 
@@ -3877,6 +4332,7 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
     if (pathIsBezierEditable(obj)) attachBezierEditor(obj, { handlesActive:true, modelKey:resolveBezierModelKey(obj) });
   }
   ensureBezierNodePanel();
+  refreshAlignmentAssist();
 }));
 
 // ─── Layers ──────────────────────────────────────────────
@@ -3898,7 +4354,7 @@ function ensureFoldersForObjects(objs){
 function renderFolderChips(){
   const root = $('folderList');
   if(!root) return;
-  root.innerHTML = layerFolders.map(name =&gt; `&lt;span class=&quot;folder-chip&quot;&gt;📁 ${name}&lt;/span&gt;`).join('');
+  root.innerHTML = layerFolders.map(name =&gt; `&lt;span class="folder-chip"&gt;📁 ${name}&lt;/span&gt;`).join('');
 }
 
 function moveLayerByDisplayIndex(obj, displayIndex){
@@ -3970,8 +4426,8 @@ function toggleLayerVisibility(obj){
   const nextVisible = !(obj.visible !== false);
   obj.visible = nextVisible;
   obj.evented = nextVisible;
-  obj.selectable = nextVisible && activeTool !== 'text' && activeTool !== 'bezier' && activeTool !== 'bezier-v2';
-  if (!nextVisible && canvas.getActiveObject() === obj) canvas.discardActiveObject();
+  obj.selectable = nextVisible &amp;&amp; activeTool !== 'text' &amp;&amp; activeTool !== 'bezier' &amp;&amp; activeTool !== 'bezier-v2';
+  if (!nextVisible &amp;&amp; canvas.getActiveObject() === obj) canvas.discardActiveObject();
   canvas.requestRenderAll();
   refreshProps();
   refreshLayers();
@@ -3981,18 +4437,18 @@ function refreshLayers() {
   const list = $('layersList');
   const cnt = $('layerCount');
   if (!list) return;
-  const objs = canvas.getObjects().filter(o=>!isGuide(o) && !o.isBezierEditorControl && !o.isBezierOverlay).slice().reverse();
+  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay).slice().reverse();
   ensureFoldersForObjects(objs);
   renderFolderChips();
   if (cnt) cnt.textContent = objs.length;
   const active = canvas.getActiveObject();
   list.innerHTML = '';
   if (!objs.length) {
-    list.innerHTML = '<div class="layer-empty">Sem objetos ainda</div>';
+    list.innerHTML = '&lt;div class="layer-empty"&gt;Sem objetos ainda&lt;/div&gt;';
     return;
   }
 
-  objs.forEach((obj, i) => {
+  objs.forEach((obj, i) =&gt; {
     const isAct = obj === active;
     const isVisible = obj.visible !== false;
     const name = String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
@@ -4005,25 +4461,25 @@ function refreshLayers() {
     div.draggable = true;
     div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
     div.innerHTML = `
-      <span class="layer-marker"></span>
-      <div class="layer-main">
-        <div class="layer-name" title="${name}">${name}</div>
-      </div>
-      <div class="layer-row-meta">
-        <div class="layer-meta">${opacity}%</div>
-        <div class="layer-meta">${folder}</div>
-        <button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}">
-          <i data-lucide="${visIcon}" data-size="12"></i>
-        </button>
-      </div>`;
+      &lt;span class="layer-marker"&gt;&lt;/span&gt;
+      &lt;div class="layer-main"&gt;
+        &lt;div class="layer-name" title="${name}"&gt;${name}&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="layer-row-meta"&gt;
+        &lt;div class="layer-meta"&gt;${opacity}%&lt;/div&gt;
+        &lt;div class="layer-meta"&gt;${folder}&lt;/div&gt;
+        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}"&gt;
+          &lt;i data-lucide="${visIcon}" data-size="12"&gt;&lt;/i&gt;
+        &lt;/button&gt;
+      &lt;/div&gt;`;
 
     const visBtn = div.querySelector('.layer-vis-btn');
-    visBtn?.addEventListener('click', e => {
+    visBtn?.addEventListener('click', e =&gt; {
       e.stopPropagation();
       toggleLayerVisibility(obj);
     });
 
-    div.addEventListener('click', () => {
+    div.addEventListener('click', () =&gt; {
       if (obj.visible === false) return;
       canvas.setActiveObject(obj);
       canvas.requestRenderAll();
@@ -4031,20 +4487,20 @@ function refreshLayers() {
       refreshLayers();
     });
 
-    div.addEventListener('dblclick', e => {
+    div.addEventListener('dblclick', e =&gt; {
       e.preventDefault();
       e.stopPropagation();
       renameLayerObject(obj);
     });
 
-    div.addEventListener('dragstart', () => { draggingLayerId = div.dataset.layerId; });
-    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
-    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
-    div.addEventListener('drop', e => {
+    div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
+    div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
+    div.addEventListener('drop', e =&gt; {
       e.preventDefault();
       div.classList.remove('drag-over');
       if(!draggingLayerId || draggingLayerId===div.dataset.layerId) return;
-      const draggedObj = objs.find(o => o.__uid===draggingLayerId);
+      const draggedObj = objs.find(o =&gt; o.__uid===draggingLayerId);
       if(!draggedObj) return;
       moveLayerByDisplayIndex(draggedObj, i);
       refreshLayers();
@@ -4065,19 +4521,19 @@ function refreshLibrary(){
   if(cnt) cnt.textContent=brandLibrary.length;
   list.innerHTML='';
   if(!brandLibrary.length){
-    list.innerHTML='&lt;div class=&quot;layer-empty&quot;&gt;Sem itens de identidade&lt;/div&gt;';
+    list.innerHTML='&lt;div class="layer-empty"&gt;Sem itens de identidade&lt;/div&gt;';
     return;
   }
-  brandLibrary.forEach((item,idx)=>{
+  brandLibrary.forEach((item,idx)=&gt;{
     const div=document.createElement('div');
     div.className='lib-item';
     const icon = item.kind==='logo' ? 'image' : item.kind==='color' ? 'droplets' : 'type';
     const meta = item.kind==='logo' ? 'Logo' : item.kind==='color' ? (item.color||'Cor') : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
     div.draggable = true;
     const preview = item.kind==='logo' &amp;&amp; item.src ? `background-image:url('${item.src}')` : item.kind==='color' ? `background:${item.color||'#999'}` : 'background:linear-gradient(135deg, rgba(127,90,240,.35), rgba(44,182,125,.35))';
-    div.innerHTML=`&lt;div class=&quot;lib-preview&quot; style=&quot;${preview}&quot;&gt;&lt;/div&gt;&lt;div class=&quot;lib-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${meta}&lt;/div&gt;`;
-    div.addEventListener('click',()=>applyLibraryItem(idx));
-    div.addEventListener('dragstart',()=>{ draggedLibraryIndex = idx; });
+    div.innerHTML=`&lt;div class="lib-preview" style="${preview}"&gt;&lt;/div&gt;&lt;div class="lib-icon"&gt;&lt;i data-lucide="${icon}" data-size="13"&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class="layer-name"&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class="lib-meta"&gt;${meta}&lt;/div&gt;`;
+    div.addEventListener('click',()=&gt;applyLibraryItem(idx));
+    div.addEventListener('dragstart',()=&gt;{ draggedLibraryIndex = idx; });
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
@@ -4117,8 +4573,8 @@ function applyLibraryItem(idx){
     setStatus('Estilo de texto adicionado da biblioteca');
     return;
   }
-  if(item.kind==='logo' && item.src){
-    fabric.Image.fromURL(item.src, img=>{
+  if(item.kind==='logo' &amp;&amp; item.src){
+    fabric.Image.fromURL(item.src, img=&gt;{
       if(!img) return;
       const maxW=docW*0.5, maxH=docH*0.35;
       const sc=Math.min(maxW/img.width, maxH/img.height, 1);
@@ -4243,9 +4699,9 @@ function exportSVGToParent() {
 
 function loadSVGFromParent(svgText) {
   const raw = String(svgText||'').trim();
-  const keep = canvas.getObjects().filter(o => isGuide(o));
-  canvas.getObjects().forEach(o => canvas.remove(o));
-  keep.forEach(o => canvas.add(o));
+  const keep = canvas.getObjects().filter(o =&gt; isGuide(o));
+  canvas.getObjects().forEach(o =&gt; canvas.remove(o));
+  keep.forEach(o =&gt; canvas.add(o));
 
   if (!raw) {
     canvas.requestRenderAll();
@@ -4261,14 +4717,14 @@ function loadSVGFromParent(svgText) {
       let w = Number((svg.getAttribute('width')||'').replace(/[^\d.]/g,''));
       let h = Number((svg.getAttribute('height')||'').replace(/[^\d.]/g,''));
       const vb = (svg.getAttribute('viewBox')||'').trim().split(/\s+/).map(Number);
-      if ((!w || !h) && vb.length===4 && vb.every(Number.isFinite)) {
+      if ((!w || !h) &amp;&amp; vb.length===4 &amp;&amp; vb.every(Number.isFinite)) {
         w = vb[2]; h = vb[3];
       }
-      if (w>0 && h>0) setArtboardSize(w, h);
+      if (w&gt;0 &amp;&amp; h&gt;0) setArtboardSize(w, h);
     }
   } catch(_err) {}
 
-  fabric.loadSVGFromString(raw, (objects) => {
+  fabric.loadSVGFromString(raw, (objects) =&gt; {
     if (!objects || !objects.length) {
       canvas.requestRenderAll();
       setStatus('Não foi possível carregar SVG anterior');
@@ -4281,7 +4737,7 @@ function loadSVGFromParent(svgText) {
     const dx = (artboard?.left||0) - box.left;
     const dy = (artboard?.top||0) - box.top;
 
-    objects.forEach(o => {
+    objects.forEach(o =&gt; {
       o.set({
         left: (o.left||0) + dx,
         top: (o.top||0) + dy,
@@ -4305,27 +4761,27 @@ function loadSVGFromParent(svgText) {
 function saveJSON() {
   const json = JSON.stringify(canvas.toJSON(SERIALIZE_PROPS), null, 2);
   openModal('Salvar JSON', `
-    &lt;textarea class=&quot;modal-textarea&quot;&gt;${json}&lt;/textarea&gt;
-    &lt;div style=&quot;display:flex;gap:8px;margin-top:12px&quot;&gt;
-      &lt;button class=&quot;tbtn accent&quot; onclick=&quot;navigator.clipboard.writeText(document.querySelector('.modal-textarea').value).then(()=&gt;{this.textContent='Copiado!';setTimeout(()=&gt;{this.textContent='Copiar'},2000)})&quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Copiar&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; onclick=&quot;closeModal()&quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Fechar&lt;/button&gt;
+    &lt;textarea class="modal-textarea"&gt;${json}&lt;/textarea&gt;
+    &lt;div style="display:flex;gap:8px;margin-top:12px"&gt;
+      &lt;button class="tbtn accent" onclick="navigator.clipboard.writeText(document.querySelector('.modal-textarea').value).then(()=&gt;{this.textContent='Copiado!';setTimeout(()=&gt;{this.textContent='Copiar'},2000)})" style="flex:1;justify-content:center;height:36px"&gt;Copiar&lt;/button&gt;
+      &lt;button class="tbtn" onclick="closeModal()" style="flex:1;justify-content:center;height:36px"&gt;Fechar&lt;/button&gt;
     &lt;/div&gt;
   `);
 }
 
 function loadJSON() {
   openModal('Carregar JSON', `
-    &lt;p style=&quot;font-size:12px;color:var(--ink2);margin-bottom:10px;font-family:var(--mono)&quot;&gt;Cole o JSON abaixo:&lt;/p&gt;
-    &lt;textarea class=&quot;modal-textarea&quot; id=&quot;jsonInput&quot; placeholder='{&quot;version&quot;:&quot;5.3.0&quot;,&quot;objects&quot;:[...]}'&gt;&lt;/textarea&gt;
-    &lt;div style=&quot;display:flex;gap:8px;margin-top:12px&quot;&gt;
-      &lt;button class=&quot;tbtn accent&quot; onclick=&quot;
+    &lt;p style="font-size:12px;color:var(--ink2);margin-bottom:10px;font-family:var(--mono)"&gt;Cole o JSON abaixo:&lt;/p&gt;
+    &lt;textarea class="modal-textarea" id="jsonInput" placeholder='{"version":"5.3.0","objects":[...]}'&gt;&lt;/textarea&gt;
+    &lt;div style="display:flex;gap:8px;margin-top:12px"&gt;
+      &lt;button class="tbtn accent" onclick="
         try{
           const json=JSON.parse(document.getElementById('jsonInput').value);
           canvas.loadFromJSON(json,()=&gt;{refreshObjectCoords();canvas.getObjects().forEach(o=&gt;{if(pathIsBezierEditable(o))trackPathPosition(o);});canvas.requestRenderAll();refreshLayers();refreshProps();setStatus('JSON carregado')});
           closeModal();
         }catch(e){alert('JSON inválido')}
-      &quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Carregar&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; onclick=&quot;closeModal()&quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Cancelar&lt;/button&gt;
+      " style="flex:1;justify-content:center;height:36px"&gt;Carregar&lt;/button&gt;
+      &lt;button class="tbtn" onclick="closeModal()" style="flex:1;justify-content:center;height:36px"&gt;Cancelar&lt;/button&gt;
     &lt;/div&gt;
   `);
 }
@@ -4812,7 +5268,7 @@ function normalizeShortcutKey(e){
 
 function setBezierSubmenuMode(_enabled){
   const labels = { btnToolVector:'Vetor', btnToolMove:'Mover', btnToolLasso:'Laço', btnToolPaint:'Pintar', btnToolCurve:'Curvar', btnToolCut:'Cortar', btnToolMore:'Mais ▾' };
-  Object.entries(labels).forEach(([id, txt]) => {
+  Object.entries(labels).forEach(([id, txt]) =&gt; {
     const el = $(id);
     if (el) el.textContent = txt;
   });
@@ -4955,7 +5411,7 @@ $('btnDuplicate')?.addEventListener('click', duplicate);
 $('btnUndo')?.addEventListener('click', undo);
 $('btnRedo')?.addEventListener('click', redo);
 $('btnExportPanelPng')?.addEventListener('click', exportPNG);
-$('btnCloseEditor')?.addEventListener('click', () => window.parent.postMessage({ type: 'geCloseEditor' }, '*'));
+$('btnCloseEditor')?.addEventListener('click', () =&gt; window.parent.postMessage({ type: 'geCloseEditor' }, '*'));
 $('btnSaveJson')?.addEventListener('click', saveJSON);
 $('btnLoadJson')?.addEventListener('click', loadJSON);
 $('btnApplyDoc')?.addEventListener('click', () =&gt; {
@@ -4986,7 +5442,7 @@ const applyArtboardInspectorChanges = () =&gt; {
   ab.background.enabled = !!$('abBgEnabled')?.checked;
   ab.background.locked = !!$('abBgLock')?.checked;
   ab.background.includeInExport = !!$('abBgExport')?.checked;
-  if (!ab.background.locked && $('abBgColor')?.value) ab.background.color = $('abBgColor').value;
+  if (!ab.background.locked &amp;&amp; $('abBgColor')?.value) ab.background.color = $('abBgColor').value;
   applyArtboardVisualState(ab);
   canvas.requestRenderAll();
 };
@@ -5087,16 +5543,16 @@ bindStrokeOptionGroup('[data-stroke-join]', data =&gt; {
 
 $('btnHelp')?.addEventListener('click', () =&gt; {
   openModal('Atalhos de teclado', `
-    &lt;div class=&quot;shortcuts-grid&quot; style=&quot;gap:8px 16px&quot;&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Z&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Desfazer&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Y&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Refazer&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+D&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Duplicar&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+G&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Agrupar seleção&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Ctrl+Shift+G&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Desagrupar seleção&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Del&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Apagar seleção&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Espaço&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Arrastar viewport&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Scroll&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Zoom suave&lt;/span&gt;
-      &lt;span class=&quot;sc-key&quot;&gt;Botão do meio&lt;/span&gt;&lt;span class=&quot;sc-desc&quot;&gt;Pan&lt;/span&gt;
+    &lt;div class="shortcuts-grid" style="gap:8px 16px"&gt;
+      &lt;span class="sc-key"&gt;Ctrl+Z&lt;/span&gt;&lt;span class="sc-desc"&gt;Desfazer&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Ctrl+Y&lt;/span&gt;&lt;span class="sc-desc"&gt;Refazer&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Ctrl+D&lt;/span&gt;&lt;span class="sc-desc"&gt;Duplicar&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Ctrl+G&lt;/span&gt;&lt;span class="sc-desc"&gt;Agrupar seleção&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Ctrl+Shift+G&lt;/span&gt;&lt;span class="sc-desc"&gt;Desagrupar seleção&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Del&lt;/span&gt;&lt;span class="sc-desc"&gt;Apagar seleção&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Espaço&lt;/span&gt;&lt;span class="sc-desc"&gt;Arrastar viewport&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Scroll&lt;/span&gt;&lt;span class="sc-desc"&gt;Zoom suave&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Botão do meio&lt;/span&gt;&lt;span class="sc-desc"&gt;Pan&lt;/span&gt;
     &lt;/div&gt;
   `);
 });
