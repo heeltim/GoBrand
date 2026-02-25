@@ -1745,6 +1745,7 @@ canvas.on('mouse:wheel', opt =&gt; {
 
 canvas.on('mouse:down', opt =&gt; {
   const e = opt.e;
+  const target = opt.target;
   if (e.button === 1 || isSpaceDown) {
     isPanning = true; canvas.setCursor('grab');
     lastX = e.clientX; lastY = e.clientY;
@@ -1755,6 +1756,20 @@ canvas.on('mouse:down', opt =&gt; {
   if (activeTool === 'bezier') {
     if (bezierEditor.enabled) return;
     const pointer = canvas.getPointer(e);
+    if (bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
+      if (target?.isBezierEditorControl) {
+        const [role, idxStr] = String(target.bziRole || '').split('-');
+        if (role === 'anchor') removePointAtIndex(bezierEditor.path, Number(idxStr));
+        opt.e.preventDefault();
+        return;
+      }
+      if (target === bezierEditor.path) {
+        const seg = getNearestBezierSegment(bezierEditor.path, pointer);
+        if (seg &gt;= 0) insertPointOnSegment(bezierEditor.path, seg);
+        opt.e.preventDefault();
+        return;
+      }
+    }
     if (vectorToolState.mode !== 'creating') startBezierCreation();
     addBezierPoint(pointer, e);
     vectorToolState.dragStart = { x:pointer.x, y:pointer.y };
@@ -1790,6 +1805,14 @@ canvas.on('mouse:move', opt =&gt; {
     } else {
       updateBezierCreationPreview(pointer);
     }
+    return;
+  }
+
+  if (activeTool === 'bezier' &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
+    const t = opt.target;
+    if (t?.isBezierEditorControl &amp;&amp; String(t.bziRole || '').startsWith('anchor-')) canvas.defaultCursor = 'not-allowed';
+    else if (t === bezierEditor.path) canvas.defaultCursor = 'copy';
+    else canvas.defaultCursor = 'crosshair';
     return;
   }
 
@@ -1870,7 +1893,7 @@ canvas.on('mouse:down', opt =&gt; {
     if (bezierEditor.enabled) finalizeBezierEditor();
     canvas.discardActiveObject();
     if (activeTool !== 'select') setActiveTool('select');
-    setStatus('Sem seleção.');
+    setInteractionState('idle');
     canvas.requestRenderAll();
     return;
   }
@@ -1887,7 +1910,7 @@ canvas.on('mouse:down', opt =&gt; {
         canvas.setActiveObject(target);
         attachBezierEditor(target, { handlesActive:false });
       } else if (activeTool === 'select') {
-        setStatus('Modo seleção/transformação ativo (1 clique).');
+        setInteractionState('selection');
       }
       return;
     }
@@ -1896,7 +1919,7 @@ canvas.on('mouse:down', opt =&gt; {
       finalizeBezierEditor();
       canvas.setActiveObject(target);
       if (activeTool === 'direct-select') attachBezierEditor(target, { handlesActive:true });
-      else setStatus('Modo seleção/transformação ativo (1 clique).');
+      else setInteractionState('selection');
       return;
     }
 
@@ -2061,7 +2084,7 @@ function addLine() {
 function addBezier() {
   setActiveTool('bezier');
   if (bezierEditor.enabled &amp;&amp; bezierEditor.path) {
-    setStatus('Bézier ativo na edição: clique no segmento para inserir nó, duplo clique no nó para remover.');
+    setInteractionState(bezierEditor.handlesActive ? 'edit-handles' : 'edit');
     ensureBezierNodePanel();
     return;
   }
@@ -2071,6 +2094,7 @@ function addBezier() {
 // ─── Bezier tool (Figma-like states) ─────────────────────
 const vectorToolState = {
   mode: 'idle', // idle | creating | editing | transforming
+  interaction: 'idle', // idle | selection | edit | edit-handles | creating
   points: [],
   closed: false,
   previewPath: null,
@@ -2091,6 +2115,18 @@ const bezierEditor = {
 };
 
 const BEZIER_CREATE_HIT = 12;
+
+function setInteractionState(state){
+  vectorToolState.interaction = state;
+  const labels = {
+    'idle': 'Sem seleção.',
+    'selection': 'Modo seleção/transformação ativo (1 clique).',
+    'edit': 'Modo edição ativo (2 cliques): clique no nó para ativar alças.',
+    'edit-handles': 'Modo edição com alças ativas (3 cliques).',
+    'creating': 'Vetor: clique para ponto reto, arraste para alças. Enter finaliza, Esc desfaz.'
+  };
+  if (labels[state]) setStatus(labels[state]);
+}
 
 function makeBezierPoint(x, y) {
   return { x, y, inX:x, inY:y, outX:x, outY:y, kind:'corner' };
@@ -2448,13 +2484,14 @@ function startBezierCreation(){
   vectorToolState.dragStarted = false;
   vectorToolState.pendingClose = false;
   clearBezierPreview();
-  setStatus('Vetor: clique para ponto reto, arraste para alças. Enter finaliza, Esc desfaz.');
+  setInteractionState('creating');
 }
 
 function finishBezierCreation({toEditing=true}={}){
   const pts = vectorToolState.points;
   if (pts.length &lt; 2) {
     vectorToolState.mode = 'idle';
+    setInteractionState('idle');
     clearBezierPreview();
     return null;
   }
@@ -2478,7 +2515,8 @@ function finishBezierCreation({toEditing=true}={}){
   vectorToolState.dragStarted = false;
   vectorToolState.pendingClose = false;
   vectorToolState.mode = toEditing ? 'editing' : 'idle';
-  if (toEditing) attachBezierEditor(path);
+  if (toEditing) attachBezierEditor(path, { handlesActive:false });
+  else setInteractionState('selection');
   canvas.requestRenderAll();
   snapshot();
   return path;
@@ -2634,6 +2672,7 @@ function clearBezierEditor(){
   bezierEditor.links = [];
   bezierEditor.enabled = false;
   bezierEditor.handlesActive = false;
+  setInteractionState('idle');
   bezierEditor.selectedAnchors = [];
   vectorToolState.segmentDrag = null;
   ensureBezierNodePanel();
@@ -2691,6 +2730,7 @@ function attachBezierEditor(pathObj, { handlesActive=false } = {}){
   bezierEditor.enabled = true;
   bezierEditor.handlesActive = !!handlesActive;
   vectorToolState.mode = 'editing';
+  setInteractionState(bezierEditor.handlesActive ? 'edit-handles' : 'edit');
 
   const controls = [];
   model.points.forEach((pt, i) =&gt; {
@@ -2747,7 +2787,7 @@ function attachBezierEditor(pathObj, { handlesActive=false } = {}){
       if (role !== 'anchor') return;
       if (!bezierEditor.handlesActive) {
         bezierEditor.handlesActive = true;
-        setStatus('Modo edição com alças ativas (3 cliques).');
+        setInteractionState('edit-handles');
         refreshBezierEditorControls();
         return;
       }
@@ -2775,9 +2815,7 @@ function attachBezierEditor(pathObj, { handlesActive=false } = {}){
   controls.forEach(c =&gt; canvas.add(c));
   selectBezierAnchorIndices([0]);
   refreshBezierEditorControls();
-  setStatus(bezierEditor.handlesActive
-    ? 'Modo edição com alças ativas (3 cliques).'
-    : 'Modo edição ativo (2 cliques): clique no nó para ativar alças.');
+  setInteractionState(bezierEditor.handlesActive ? 'edit-handles' : 'edit');
 }
 
 function finalizeBezierEditor(){
@@ -2787,6 +2825,7 @@ function finalizeBezierEditor(){
   clearBezierEditor();
   vectorToolState.mode = 'idle';
   canvas.setActiveObject(p);
+  setInteractionState('selection');
   canvas.requestRenderAll();
 }
 
@@ -2855,7 +2894,7 @@ function insertPointOnSegment(pathObj, segIndex){
   const mid = { x:S.x, y:S.y, inX:R0.x, inY:R0.y, outX:R1.x, outY:R1.y, kind:'smooth' };
   m.points.splice(i1, 0, mid);
   applyVectorModelToPath(pathObj);
-  attachBezierEditor(pathObj);
+  attachBezierEditor(pathObj, { handlesActive: bezierEditor.handlesActive });
   selectBezierAnchorIndices([i1]);
   snapshot();
 }
@@ -2872,7 +2911,7 @@ function removePointAtIndex(pathObj, index){
   }
   m.points.splice(index, 1);
   applyVectorModelToPath(pathObj);
-  attachBezierEditor(pathObj);
+  attachBezierEditor(pathObj, { handlesActive: bezierEditor.handlesActive });
   const next = Math.max(0, Math.min(index - 1, m.points.length - 1));
   selectBezierAnchorIndices([next]);
   snapshot();
@@ -4270,7 +4309,7 @@ function setActiveTool(tool){
   if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
   if (isDirect) setStatus('Seleção direta ativa: selecione uma curva para editar alças.');
   if (tool === 'text') { setStatus('Texto: clique para artístico, arraste para caixa.'); focusTextPanel(true); }
-  if (tool === 'bezier') setStatus('Vetor ativo: clique para criar pontos, arraste para alças.');
+  if (tool === 'bezier' &amp;&amp; vectorToolState.mode !== 'creating') setStatus('Bézier ativo: clique em segmento para adicionar nó, clique em nó para remover, clique fora para novo path.');
   ensureBezierNodePanel();
   canvas.requestRenderAll();
 }
