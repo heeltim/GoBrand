@@ -1869,6 +1869,7 @@ canvas.on('mouse:down', opt =&gt; {
 
 canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
+  if (opt.e?.button !== 0) return;
   const pointer = canvas.getPointer(opt.e);
   vectorToolState.clickProbe = {
     target: opt.target || null,
@@ -1918,11 +1919,18 @@ canvas.on('mouse:down', opt =&gt; {
 
 canvas.on('mouse:up', opt =&gt; {
   if (activeTool !== 'select') return;
+  if (opt.e?.button !== 0) return;
   const clickProbe = vectorToolState.clickProbe;
   vectorToolState.clickProbe = null;
   if (!clickProbe || clickProbe.moved) return;
 
   const target = opt.target || clickProbe.target;
+
+  if (bezierEditor.enabled &amp;&amp; target?.isBezierEditorControl) {
+    setInteractionState(bezierEditor.handlesActive ? 'edit-handles' : 'edit');
+    return;
+  }
+
   const now = performance.now();
   const resetPending = () =&gt; {
     vectorToolState.pendingEditTarget = null;
@@ -2903,12 +2911,6 @@ function attachBezierEditor(pathObj, { handlesActive=false, modelKey=getActiveBe
         } else {
           selectBezierAnchorIndices([idx]);
         }
-        if (!bezierEditor.handlesActive) {
-          bezierEditor.handlesActive = true;
-          ctrl.__justActivatedHandles = true;
-          setInteractionState('edit-handles');
-          refreshBezierEditorControls();
-        }
       }
     });
     ctrl.on('moving', evt =&gt; {
@@ -2923,22 +2925,28 @@ function attachBezierEditor(pathObj, { handlesActive=false, modelKey=getActiveBe
       const cx = ctrl.left;
       const cy = ctrl.top;
 
+      if ((role === 'in' || role === 'out') &amp;&amp; !bezierEditor.handlesActive) {
+        ctrl.set({ left: role === 'in' ? pt.inX : pt.outX, top: role === 'in' ? pt.inY : pt.outY });
+        canvas.requestRenderAll();
+        return;
+      }
+
       if (role === 'anchor') {
-        setStatus('Modo edição com alças ativas (3 cliques).');
+        setStatus(bezierEditor.handlesActive ? 'Modo edição com alças ativo.' : 'Modo edição de pontos ativo.');
         const dx = cx - pt.x;
         const dy = cy - pt.y;
         pt.x = cx; pt.y = cy;
         pt.inX += dx; pt.inY += dy;
         pt.outX += dx; pt.outY += dy;
       } else if (role === 'in') {
-        setStatus('Modo edição com alças ativas (3 cliques).');
+        setStatus('Modo edição com alças ativo.');
         let dx = cx - pt.x, dy = cy - pt.y;
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
         pt.inX = pt.x + dx; pt.inY = pt.y + dy;
         if (!e.altKey) applyAnchorCoupling(pt, 'in', dx, dy);
       } else if (role === 'out') {
-        setStatus('Modo edição com alças ativas (3 cliques).');
+        setStatus('Modo edição com alças ativo.');
         let dx = cx - pt.x, dy = cy - pt.y;
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
@@ -2954,10 +2962,6 @@ function attachBezierEditor(pathObj, { handlesActive=false, modelKey=getActiveBe
       const m = getPathModel(bezierEditor.path);
       const [role, idxStr] = String(ctrl.bziRole).split('-');
       if (role !== 'anchor') return;
-      if (ctrl.__justActivatedHandles) {
-        ctrl.__justActivatedHandles = false;
-        return;
-      }
       const pt = m?.points?.[Number(idxStr)];
       if (!pt) return;
       normalizeBezierPointKind(pt);
