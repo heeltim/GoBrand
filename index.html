@@ -1719,7 +1719,18 @@ function updateTwoItemOverlay(){
   const objs = selectedObjects();
   if(objs.length &lt; 2){ hideTwoItemOverlay(); return; }
 
-  const union = getUnionBounds(objs);
+  const active = canvas.getActiveObject();
+  let union = getUnionBounds(objs);
+  if(active &amp;&amp; active.type === 'activeSelection') {
+    const b = active.getBoundingRect(true, true);
+    union = {
+      left:b.left, top:b.top,
+      right:b.left+b.width, bottom:b.top+b.height,
+      width:b.width, height:b.height,
+      centerX:b.left + b.width/2,
+      centerY:b.top + b.height/2
+    };
+  }
   if(!union){ hideTwoItemOverlay(); return; }
 
   const c = worldToScreen(union.centerX, union.centerY);
@@ -2091,6 +2102,20 @@ function pointInArtboard(ab, point){
   return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
 }
 
+
+function pointInAnyArtboard(point){
+  return artboards.some(ab =&gt; pointInArtboard(ab, point));
+}
+
+function setArtboardsEditable(enabled){
+  artboards.forEach(ab =&gt; {
+    if (!ab?.board) return;
+    ab.board.set({ selectable:!!enabled, evented:!!enabled });
+    ab.board.hoverCursor = enabled ? 'move' : 'default';
+    ab.board.setCoords();
+  });
+}
+
 function pickArtboardForPoint(point){
   const candidates = artboards.filter(ab =&gt; pointInArtboard(ab, point));
   if (!candidates.length) return null;
@@ -2379,6 +2404,11 @@ canvas.on('mouse:wheel', opt =&gt; {
 canvas.on('mouse:down', opt =&gt; {
   const e = opt.e;
   const target = opt.target;
+  const pointer = canvas.getPointer(e);
+  if (!artboardMode) {
+    if (!pointInAnyArtboard(pointer)) setArtboardsEditable(true);
+    else if (!isGuide(target)) setArtboardsEditable(false);
+  }
   if (e.button === 1 || isSpaceDown) {
     isPanning = true; canvas.setCursor('grab');
     lastX = e.clientX; lastY = e.clientY;
@@ -4372,6 +4402,8 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
   if (ev === 'selection:cleared') clearSmartOverlayState();
   else clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
+  const active = canvas.getActiveObject();
+  if (!artboardMode &amp;&amp; active &amp;&amp; !isGuide(active)) setArtboardsEditable(false);
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
   if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'direct-select') {
