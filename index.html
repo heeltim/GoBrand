@@ -778,6 +778,8 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .float-tool-btn.active{background:rgba(127,90,240,.20);color:#fff}
 .float-tool-btn.icon{width:42px;justify-content:center;padding:0}
 .float-tool-sep{width:1px;height:24px;background:var(--border)}
+.top-tools{display:none}
+.floating-toolbar-wrap.show-top .top-tools{display:flex}
 
 /* ─── DOC INPUTS ──────────────────────────────────────── */
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
@@ -1101,8 +1103,8 @@ textarea.modal-textarea{
       &lt;button class=&quot;ab-plus left&quot; id=&quot;btnAddArtLeft&quot; title=&quot;Adicionar à esquerda&quot;&gt;+&lt;/button&gt;
     &lt;/div&gt;
 
-    &lt;div class=&quot;floating-toolbar-wrap&quot;&gt;
-      &lt;div class=&quot;floating-toolbar-row&quot;&gt;
+    &lt;div class=&quot;floating-toolbar-wrap&quot; id=&quot;floatingToolbar&quot;&gt;
+      &lt;div class=&quot;floating-toolbar-row top-tools&quot; id=&quot;floatingTopTools&quot;&gt;
         &lt;button class=&quot;float-tool-btn active&quot; id=&quot;btnToolVector&quot;&gt;Vetor&lt;/button&gt;
         &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMove&quot; data-tool=&quot;move&quot;&gt;Mover&lt;/button&gt;
         &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolLasso&quot;&gt;Laço&lt;/button&gt;
@@ -2566,9 +2568,11 @@ function setActiveTool(tool){
   canvas.selection = !isText;
   canvas.forEachObject(o =&gt; { if(!isGuide(o)) o.selectable = !isText; });
   document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
+  const toolbar = $('floatingToolbar');
+  if (toolbar) toolbar.classList.toggle('show-top', tool === 'bezier');
   if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
   if (tool === 'text') setStatus('Texto: clique para artístico, arraste para caixa.');
-  if (tool === 'bezier') setStatus('Bezier: clique para inserir curva.');
+  if (tool === 'bezier') setStatus('Bezier ativa: menu superior exibido.');
   canvas.requestRenderAll();
 }
 
@@ -2580,11 +2584,11 @@ $('btnRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addR
 $('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); });
 $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { setActiveTool('select'); addLine(); });
-$('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); setActiveTool('select'); });
+$('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); });
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
-$('btnToolCurve')?.addEventListener('click', () =&gt; { addBezier(); });
+$('btnToolCurve')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); });
 $('btnToolCut')?.addEventListener('click', () =&gt; applyClipMask());
 $('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
 $('btnFit')?.addEventListener('click', fitToArtboard);
