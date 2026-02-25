@@ -2715,18 +2715,21 @@ function attachBezierEditor(pathObj, { handlesActive=false } = {}){
       const cy = ctrl.top;
 
       if (role === 'anchor') {
+        setStatus('Modo edição com alças ativas (3 cliques).');
         const dx = cx - pt.x;
         const dy = cy - pt.y;
         pt.x = cx; pt.y = cy;
         pt.inX += dx; pt.inY += dy;
         pt.outX += dx; pt.outY += dy;
       } else if (role === 'in') {
+        setStatus('Modo edição com alças ativas (3 cliques).');
         let dx = cx - pt.x, dy = cy - pt.y;
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
         pt.inX = pt.x + dx; pt.inY = pt.y + dy;
         if (!e.altKey) applyAnchorCoupling(pt, 'in', dx, dy);
       } else if (role === 'out') {
+        setStatus('Modo edição com alças ativas (3 cliques).');
         let dx = cx - pt.x, dy = cy - pt.y;
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
@@ -4254,6 +4257,7 @@ function setActiveTool(tool){
   canvas.forEachObject(o =&gt; {
     if (isGuide(o) || o.isBezierEditorControl) return;
     o.selectable = !isText;
+    if (pathIsBezierEditable(o)) o.hasBorders = tool !== 'select';
   });
   document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
   $('btnSelect')?.classList.toggle('active', tool === 'select' || isDirect);
