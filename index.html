@@ -3352,7 +3352,7 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
-  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; (activeTool === 'bezier' || activeTool === 'direct-select')) {
+  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; (activeTool === 'bezier' || activeTool === 'direct-select' || activeTool === 'select')) {
     const obj = activeObj();
     if (pathIsBezierEditable(obj)) attachBezierEditor(obj);
   }
