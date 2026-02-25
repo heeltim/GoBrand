@@ -1879,9 +1879,13 @@ canvas.on('mouse:down', opt =&gt; {
     const isSameSelected = activeObj() === target;
 
     if (!bezierEditor.enabled) {
-      if (activeTool === 'direct-select' || isSameSelected) {
+      const clickCount = Number(opt?.e?.detail || 1);
+      if (activeTool === 'direct-select') {
         canvas.setActiveObject(target);
-        attachBezierEditor(target);
+        attachBezierEditor(target, { handlesActive:true });
+      } else if (activeTool === 'select' && isSameSelected && clickCount >= 2) {
+        canvas.setActiveObject(target);
+        attachBezierEditor(target, { handlesActive:false });
       } else if (activeTool === 'select') {
         setStatus('Modo seleção/transformação ativo (1 clique).');
       }
@@ -1889,8 +1893,10 @@ canvas.on('mouse:down', opt =&gt; {
     }
 
     if (bezierEditor.path !== target) {
+      finalizeBezierEditor();
       canvas.setActiveObject(target);
-      attachBezierEditor(target);
+      if (activeTool === 'direct-select') attachBezierEditor(target, { handlesActive:true });
+      else setStatus('Modo seleção/transformação ativo (1 clique).');
       return;
     }
 
@@ -1935,7 +1941,7 @@ canvas.on('mouse:dblclick', opt =&gt; {
   }
   if (pathIsBezierEditable(target)) {
     if (!bezierEditor.enabled || bezierEditor.path !== target) {
-      if (activeTool === 'direct-select') attachBezierEditor(target);
+      if (activeTool === 'direct-select') attachBezierEditor(target, { handlesActive:true });
       return;
     }
     if (activeTool === 'bezier') {
@@ -2080,6 +2086,7 @@ const bezierEditor = {
   controls: [],
   links: [],
   enabled: false,
+  handlesActive: false,
   selectedAnchors: []
 };
 
@@ -2626,6 +2633,7 @@ function clearBezierEditor(){
   bezierEditor.controls = [];
   bezierEditor.links = [];
   bezierEditor.enabled = false;
+  bezierEditor.handlesActive = false;
   bezierEditor.selectedAnchors = [];
   vectorToolState.segmentDrag = null;
   ensureBezierNodePanel();
@@ -2648,17 +2656,20 @@ function refreshBezierEditorControls(){
   bezierEditor.links = [];
 
   const byRole = Object.fromEntries(bezierEditor.controls.map(c =&gt; [c.bziRole, c]));
+  const showHandles = !!bezierEditor.handlesActive;
   model.points.forEach((pt, i) =&gt; {
     const a = byRole[`anchor-${i}`];
     const hin = byRole[`in-${i}`];
     const hout = byRole[`out-${i}`];
-    if (a) a.set({ left:pt.x, top:pt.y, scaleX:sc, scaleY:sc });
-    if (hin) hin.set({ left:pt.inX, top:pt.inY, scaleX:sc, scaleY:sc });
-    if (hout) hout.set({ left:pt.outX, top:pt.outY, scaleX:sc, scaleY:sc });
+    if (a) a.set({ left:pt.x, top:pt.y, scaleX:sc, scaleY:sc, visible:true, evented:true });
+    if (hin) hin.set({ left:pt.inX, top:pt.inY, scaleX:sc, scaleY:sc, visible:showHandles, evented:showHandles });
+    if (hout) hout.set({ left:pt.outX, top:pt.outY, scaleX:sc, scaleY:sc, visible:showHandles, evented:showHandles });
 
-    const style = { stroke:'rgba(113,124,146,.55)', strokeWidth:1.15*sc, selectable:false, evented:false, excludeFromExport:true };
-    if (distance({x:pt.x,y:pt.y},{x:pt.inX,y:pt.inY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.inX,pt.inY], style));
-    if (distance({x:pt.x,y:pt.y},{x:pt.outX,y:pt.outY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.outX,pt.outY], style));
+    if (showHandles) {
+      const style = { stroke:'rgba(113,124,146,.55)', strokeWidth:1.15*sc, selectable:false, evented:false, excludeFromExport:true };
+      if (distance({x:pt.x,y:pt.y},{x:pt.inX,y:pt.inY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.inX,pt.inY], style));
+      if (distance({x:pt.x,y:pt.y},{x:pt.outX,y:pt.outY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.outX,pt.outY], style));
+    }
   });
 
   bezierEditor.links.forEach(l =&gt; canvas.add(l));
@@ -2668,7 +2679,7 @@ function refreshBezierEditorControls(){
   canvas.requestRenderAll();
 }
 
-function attachBezierEditor(pathObj){
+function attachBezierEditor(pathObj, { handlesActive=false } = {}){
   if (!pathIsBezierEditable(pathObj)) return setStatus('Selecione uma curva vetorial para editar nós.');
   syncPathVectorModelByDelta(pathObj);
   const model = ensurePathVectorModel(pathObj);
@@ -2678,6 +2689,7 @@ function attachBezierEditor(pathObj){
   pathObj.set({ selectable:false, evented:true, hasControls:false, hasBorders:false, lockMovementX:true, lockMovementY:true });
   bezierEditor.path = pathObj;
   bezierEditor.enabled = true;
+  bezierEditor.handlesActive = !!handlesActive;
   vectorToolState.mode = 'editing';
 
   const controls = [];
@@ -2733,6 +2745,12 @@ function attachBezierEditor(pathObj){
       const m = getPathModel(bezierEditor.path);
       const [role, idxStr] = String(ctrl.bziRole).split('-');
       if (role !== 'anchor') return;
+      if (!bezierEditor.handlesActive) {
+        bezierEditor.handlesActive = true;
+        setStatus('Modo edição com alças ativas (3 cliques).');
+        refreshBezierEditorControls();
+        return;
+      }
       const pt = m?.points?.[Number(idxStr)];
       if (!pt) return;
       normalizeBezierPointKind(pt);
@@ -2757,7 +2775,9 @@ function attachBezierEditor(pathObj){
   controls.forEach(c =&gt; canvas.add(c));
   selectBezierAnchorIndices([0]);
   refreshBezierEditorControls();
-  setStatus('Modo edição ativo (2 cliques): arraste nós e alças; clique no nó alterna corner/smooth.');
+  setStatus(bezierEditor.handlesActive
+    ? 'Modo edição com alças ativas (3 cliques).'
+    : 'Modo edição ativo (2 cliques): clique no nó para ativar alças.');
 }
 
 function finalizeBezierEditor(){
@@ -3382,7 +3402,7 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
   if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'direct-select') {
     const obj = activeObj();
-    if (pathIsBezierEditable(obj)) attachBezierEditor(obj);
+    if (pathIsBezierEditable(obj)) attachBezierEditor(obj, { handlesActive:true });
   }
   ensureBezierNodePanel();
 }));
