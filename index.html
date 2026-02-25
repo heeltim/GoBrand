@@ -844,6 +844,11 @@ input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 .layer-vis-btn:hover{border-color:rgba(127,90,240,.55);color:#fff;background:rgba(127,90,240,.14)}
 .layer-empty{text-align:center;padding:24px 0;font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace}
 .folder-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid var(--border2);border-radius:999px;font-size:10px;color:var(--ink2);margin:0 6px 6px 0}
+.artboard-list{display:grid;gap:6px;max-height:170px;overflow:auto;padding-right:2px}
+.artboard-item{display:flex;align-items:center;gap:8px;border:1px solid var(--border2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,.02);cursor:pointer}
+.artboard-item.active{border-color:rgba(127,90,240,.45);background:rgba(127,90,240,.12)}
+.artboard-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11px}
+.artboard-size{font-size:10px;color:var(--ink3);font-family:var(--mono)}
 .lib-item{
   display:flex;align-items:center;gap:8px;
   padding:7px 9px;border-radius:8px;
@@ -1024,24 +1029,15 @@ textarea.modal-textarea{
       &lt;button class="menu-item menu-item-btn" id="btnMenuAdvanced"&gt;Avançado&lt;/button&gt;
       &lt;div class="menu-dd-panel compact" id="menuAdvancedPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class="menu-dd" id="menuDocRoot"&gt;
-      &lt;button class="menu-item menu-item-btn" id="btnMenuDocumento"&gt;Documento&lt;/button&gt;
-      &lt;div class="menu-dd-panel" id="menuDocumentoPanel"&gt;
-        &lt;div class="panel-section-label"&gt;Documento&lt;/div&gt;
-        &lt;div class="field-row"&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;W px&lt;/div&gt;
-            &lt;input class="field-input" id="docW" type="number" value="1200" min="200" max="5000"&gt;
-          &lt;/div&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;H px&lt;/div&gt;
-            &lt;input class="field-input" id="docH" type="number" value="750" min="200" max="5000"&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class="field-row one"&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;Mesa&lt;/div&gt;
-            &lt;input class="field-input" id="docBg" type="color" value="#0f1626"&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuDocRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuDocumento&quot;&gt;Documento&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel&quot; id=&quot;menuDocumentoPanel&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Documento&lt;/div&gt;
+        &lt;div class=&quot;layer-empty&quot; style=&quot;padding:10px 0 12px&quot;&gt;Tamanho da prancheta foi movido para a seção &lt;strong&gt;Artboard&lt;/strong&gt; no painel direito.&lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Mesa&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;docBg&quot; type=&quot;color&quot; value=&quot;#0f1626&quot;&gt;
           &lt;/div&gt;
         &lt;/div&gt;
         &lt;div class="field-row one"&gt;
@@ -1130,8 +1126,8 @@ textarea.modal-textarea{
           Camadas
           &lt;span id="layerCount" style="color:var(--ink3)"&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;div class="layer-tools"&gt;
-          &lt;div class="layer-toolbar-note"&gt;Arraste para ordenar • duplo clique para renomear&lt;/div&gt;
+        &lt;div class=&quot;layer-tools&quot;&gt;
+          &lt;div class=&quot;layer-toolbar-note&quot;&gt;Arraste para ordenar • duplo clique para renomear&lt;/div&gt;
         &lt;/div&gt;
         &lt;div id="folderList" style="margin-bottom:8px"&gt;&lt;/div&gt;
         &lt;div id="layersList" style="flex:1;overflow-y:auto;overflow-x:hidden"&gt;&lt;/div&gt;
@@ -1181,14 +1177,14 @@ textarea.modal-textarea{
           &lt;button class="tool-submenu-btn active" id="btnSelectNormal" data-tool="select"&gt;&lt;span&gt;Seleção&lt;/span&gt;&lt;span&gt;V&lt;/span&gt;&lt;/button&gt;
           &lt;button class="tool-submenu-btn" id="btnSelectDirect" data-tool="direct-select"&gt;&lt;span&gt;Seleção direta&lt;/span&gt;&lt;span&gt;A&lt;/span&gt;&lt;/button&gt;
         &lt;/div&gt;
-        &lt;button class="float-tool-btn icon" id="btnRect" title="Retângulo"&gt;▭&lt;/button&gt;
-        &lt;button class="float-tool-btn icon" id="btnCircle" title="Círculo"&gt;◯&lt;/button&gt;
-        &lt;button class="float-tool-btn icon" id="btnLine" title="Linha"&gt;／&lt;/button&gt;
-        &lt;button class="float-tool-btn icon" id="btnBezier" title="Bezier"&gt;∿&lt;/button&gt;
-        &lt;button class="float-tool-btn icon" id="btnTextTool" data-tool="text" title="Texto: clique (artístico) / arraste (caixa)"&gt;T&lt;/button&gt;
-        &lt;div class="float-tool-sep"&gt;&lt;/div&gt;
-        &lt;button class="float-tool-btn icon" id="btnUpload" title="Inserir imagem"&gt;▣&lt;/button&gt;
-        &lt;button class="float-tool-btn icon" id="btnHelp" title="Atalhos"&gt;?&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnBezier&quot; title=&quot;Bezier&quot;&gt;∿&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnTextTool&quot; data-tool=&quot;text&quot; title=&quot;Texto: clique (artístico) / arraste (caixa)&quot;&gt;T&lt;/button&gt;
+        &lt;div class=&quot;float-tool-sep&quot;&gt;&lt;/div&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnArtboardTool&quot; title=&quot;Ferramenta Artboard (arrastar para criar)&quot;&gt;▭&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
       &lt;/div&gt;
     &lt;/div&gt;
 
@@ -1253,21 +1249,42 @@ textarea.modal-textarea{
         &lt;div id="docInfoLabel" style="font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);padding:4px 0"&gt;Web • 1920×1080px • 72dpi&lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;div class="sep"&gt;&lt;/div&gt;
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
-      &lt;div class="panel-section"&gt;
-        &lt;div class="panel-section-label"&gt;Artboard&lt;/div&gt;
-        &lt;div class="prop-grid2 prop-row"&gt;
-          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Clip content&lt;/div&gt;&lt;input id="abClipContent" type="checkbox"&gt;&lt;/label&gt;
-          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Exportável&lt;/div&gt;&lt;input id="abExportEnabled" type="checkbox" checked&gt;&lt;/label&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Artboard&lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;W px&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;abW&quot; type=&quot;number&quot; value=&quot;1200&quot; min=&quot;50&quot; max=&quot;10000&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;H px&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;abH&quot; type=&quot;number&quot; value=&quot;750&quot; min=&quot;50&quot; max=&quot;10000&quot;&gt;&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class="prop-grid2 prop-row"&gt;
-          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Background&lt;/div&gt;&lt;input id="abBgEnabled" type="checkbox" checked&gt;&lt;/label&gt;
-          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Lock BG&lt;/div&gt;&lt;input id="abBgLock" type="checkbox" checked&gt;&lt;/label&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyArtboardSize&quot; style=&quot;width:100%;justify-content:center;height:30px;margin-bottom:8px&quot;&gt;Aplicar tamanho do artboard&lt;/button&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Clip content&lt;/div&gt;&lt;input id=&quot;abClipContent&quot; type=&quot;checkbox&quot;&gt;&lt;/label&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Exportável&lt;/div&gt;&lt;input id=&quot;abExportEnabled&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
         &lt;/div&gt;
-        &lt;div class="prop-grid2 prop-row"&gt;
-          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Cor BG&lt;/div&gt;&lt;input class="field-input" id="abBgColor" type="color" value="#ffffff"&gt;&lt;/label&gt;
-          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;BG no export&lt;/div&gt;&lt;input id="abBgExport" type="checkbox" checked&gt;&lt;/label&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Background&lt;/div&gt;&lt;input id=&quot;abBgEnabled&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Lock BG&lt;/div&gt;&lt;input id=&quot;abBgLock&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor BG&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;abBgColor&quot; type=&quot;color&quot; value=&quot;#ffffff&quot;&gt;&lt;/label&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;BG no export&lt;/div&gt;&lt;input id=&quot;abBgExport&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-label&quot; style=&quot;margin-top:6px&quot;&gt;Lista de artboards&lt;/div&gt;
+        &lt;div id=&quot;artboardList&quot; class=&quot;artboard-list&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Alinhamento&lt;/div&gt;
+        &lt;div style=&quot;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟸&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; title=&quot;Centralizar horizontal&quot; style=&quot;height:30px;justify-content:center&quot;&gt;↔&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; title=&quot;Alinhar à direita&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟹&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; title=&quot;Alinhar no topo&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟰&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; title=&quot;Centralizar vertical&quot; style=&quot;height:30px;justify-content:center&quot;&gt;↕&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; title=&quot;Alinhar na base&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟱&lt;/button&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
@@ -1462,11 +1479,17 @@ textarea.modal-textarea{
             &lt;button class="tbtn" id="btnClipMask" style="justify-content:center;height:30px"&gt;Aplicar clip&lt;/button&gt;
             &lt;button class="tbtn" id="btnReleaseClip" style="justify-content:center;height:30px"&gt;Soltar clip&lt;/button&gt;
           &lt;/div&gt;
-          &lt;div class="rp-row"&gt;
-            &lt;button class="rp-icon-btn" title="Iniciar"&gt;Início&lt;/button&gt;
-            &lt;button class="rp-icon-btn" title="Fim"&gt;Fim&lt;/button&gt;
-            &lt;button class="rp-icon-btn" title="Inverter"&gt;↕&lt;/button&gt;
-            &lt;button class="rp-icon-btn" title="Limpar estilo"&gt;🗑&lt;/button&gt;
+          &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel-section-label&quot;&gt;Clip mask&lt;/div&gt;
+          &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnClipMask&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Aplicar clip&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnReleaseClip&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Soltar clip&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;rp-row&quot;&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Iniciar&quot;&gt;Início&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Fim&quot;&gt;Fim&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Inverter&quot;&gt;↕&lt;/button&gt;
+            &lt;button class=&quot;rp-icon-btn&quot; title=&quot;Limpar estilo&quot;&gt;🗑&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -2014,7 +2037,11 @@ function setDeskTheme(theme) {
 const artboardCreateState = { active:false, start:null, ghost:null };
 
 function isGuide(o) {
-  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+  return artboards.some(a => o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+}
+
+function getArtboardById(id){
+  return artboards.find(a => a.id === id) || null;
 }
 
 function getArtboardById(id){
@@ -2026,7 +2053,7 @@ function getActiveArtboard() {
 }
 
 function getArtboardByBoard(boardObj){
-  return artboards.find(a =&gt; a.board === boardObj) || null;
+  return artboards.find(a => a.board === boardObj) || null;
 }
 
 function syncActiveArtboardRefs() {
@@ -2038,28 +2065,28 @@ function syncActiveArtboardRefs() {
   safeRect = current.safe;
   docW = current.w;
   docH = current.h;
-  $('docW').value = docW;
-  $('docH').value = docH;
+  if ($('abW')) $('abW').value = String(Math.round(docW));
+  if ($('abH')) $('abH').value = String(Math.round(docH));
   refreshArtboardInspector();
 }
 
 function pointInArtboard(ab, point){
   if (!ab || !point) return false;
   const L = ab.board.left, T = ab.board.top, R = L + ab.w, B = T + ab.h;
-  return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
+  return point.x >= L && point.x <= R && point.y >= T && point.y <= B;
 }
 
 function pickArtboardForPoint(point){
-  const candidates = artboards.filter(ab =&gt; pointInArtboard(ab, point));
+  const candidates = artboards.filter(ab => pointInArtboard(ab, point));
   if (!candidates.length) return null;
-  candidates.sort((a,b) =&gt; (a.w*a.h) - (b.w*b.h));
+  candidates.sort((a,b) => (a.w*a.h) - (b.w*b.h));
   return candidates[0];
 }
 
 function removeObjectFromArtboard(obj){
-  artboards.forEach(ab =&gt; {
+  artboards.forEach(ab => {
     const idx = ab.children.indexOf(obj.id);
-    if (idx &gt;= 0) ab.children.splice(idx, 1);
+    if (idx >= 0) ab.children.splice(idx, 1);
   });
   obj.dataArtboardId = null;
 }
@@ -2083,8 +2110,8 @@ function applyArtboardClipToChild(ab, obj){
 
 function refreshArtboardChildrenClipping(ab){
   if (!ab) return;
-  (ab.children || []).forEach(id =&gt; {
-    const obj = canvas.getObjects().find(o =&gt; o.id === id);
+  (ab.children || []).forEach(id => {
+    const obj = canvas.getObjects().find(o => o.id === id);
     if (!obj) return;
     applyArtboardClipToChild(ab, obj);
   });
@@ -2093,7 +2120,7 @@ function refreshArtboardChildrenClipping(ab){
 function assignObjectToArtboard(obj, nextArtboard){
   if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
   const prev = getArtboardById(obj.dataArtboardId);
-  if (prev &amp;&amp; prev.id === nextArtboard?.id) {
+  if (prev && prev.id === nextArtboard?.id) {
     applyArtboardClipToChild(prev, obj);
     return;
   }
@@ -2125,10 +2152,10 @@ function syncArtboardAuxGeometry(ab){
   ab.w = Math.max(1, ab.board.getScaledWidth());
   ab.h = Math.max(1, ab.board.getScaledHeight());
   ab.board.set({ scaleX:1, scaleY:1, width:ab.w, height:ab.h });
-  ab.shadow.set({ left:left+8, top:top+12, width:ab.w, height:ab.h });
+  ab.shadow.set({ left:left+6, top:top+8, width:ab.w, height:ab.h });
   ab.bleed.set({ left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:ab.w+2*GUIDES.bleed, height:ab.h+2*GUIDES.bleed });
   ab.safe.set({ left:left+GUIDES.safe, top:top+GUIDES.safe, width:ab.w-2*GUIDES.safe, height:ab.h-2*GUIDES.safe });
-  [ab.board, ab.shadow, ab.bleed, ab.safe].forEach(o =&gt; o.setCoords());
+  [ab.board, ab.shadow, ab.bleed, ab.safe].forEach(o => o.setCoords());
 }
 
 function applyArtboardVisualState(ab){
@@ -2155,10 +2182,10 @@ function applyArtboardVisualState(ab){
 function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
   const id = 'ab_' + Math.random().toString(36).slice(2, 9);
   const shadow = new fabric.Rect({
-    left:left+8, top:top+12, width:w, height:h,
-    fill:'rgba(0,0,0,.28)', rx:2, ry:2,
+    left:left+6, top:top+8, width:w, height:h,
+    fill:'rgba(0,0,0,.16)', rx:2, ry:2,
     selectable:false, evented:false, excludeFromExport:true,
-    shadow: new fabric.Shadow({color:'rgba(0,0,0,.6)', blur:30, offsetX:0, offsetY:18})
+    opacity:.9
   });
   const board = new fabric.Rect({
     left, top, width:w, height:h,
@@ -2173,7 +2200,7 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
   const bleed = new fabric.Rect({
     left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:w+2*GUIDES.bleed, height:h+2*GUIDES.bleed,
     fill:'transparent', stroke:'rgba(241,58,161,.5)', strokeDashArray:[6,6], strokeWidth:1,
-    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed &gt; 0 ? 1 : 0
+    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed > 0 ? 1 : 0
   });
   const safe = new fabric.Rect({
     left:left+GUIDES.safe, top:top+GUIDES.safe, width:w-2*GUIDES.safe, height:h-2*GUIDES.safe,
@@ -2226,14 +2253,15 @@ function addAdjacentArtboard(dir) {
 }
 
 function orderArtboard() {
-  artboards.forEach(a =&gt; {
-    if (a.shadow) canvas.sendToBack(a.shadow);
-    if (a.board) canvas.sendToBack(a.board);
-    if (a.bleed) canvas.bringToFront(a.bleed);
-    if (a.safe) canvas.bringToFront(a.safe);
+  let z = 0;
+  artboards.forEach(a => {
+    if (a.shadow) canvas.moveTo(a.shadow, z++);
+    if (a.board) canvas.moveTo(a.board, z++);
+    if (a.bleed) canvas.moveTo(a.bleed, z++);
+    if (a.safe) canvas.moveTo(a.safe, z++);
   });
-  canvas.getObjects().forEach(o =&gt; {
-    if (!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay) canvas.bringToFront(o);
+  canvas.getObjects().forEach(o => {
+    if (!isGuide(o) && !o.isBezierEditorControl && !o.isBezierOverlay) canvas.bringToFront(o);
   });
 }
 
@@ -2268,8 +2296,8 @@ function fitToArtboard() {
 function setArtboardSize(w, h) {
   docW = clamp(w, 200, 5000);
   docH = clamp(h, 200, 5000);
-  $('docW').value = docW;
-  $('docH').value = docH;
+  if ($('abW')) $('abW').value = String(Math.round(docW));
+  if ($('abH')) $('abH').value = String(Math.round(docH));
   if (!artboard) ensureArtboard();
   positionArtboard();
   fitToArtboard();
@@ -2300,6 +2328,47 @@ function updateArtboardPlusUI() {
   ui.style.display = 'block';
 }
 
+let draggingArtboardId = null;
+
+function refreshArtboardList(){
+  const list = $('artboardList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!artboards.length) {
+    list.innerHTML = '<div class="layer-empty" style="padding:10px 0">Sem artboards</div>';
+    return;
+  }
+  artboards.forEach((ab, i) => {
+    const item = document.createElement('div');
+    item.className = 'artboard-item' + (ab.id === activeArtboardId ? ' active' : '');
+    item.draggable = true;
+    item.dataset.abid = ab.id;
+    item.innerHTML = `<span class="artboard-name">${ab.board?.dataName || `Artboard ${i+1}`}</span><span class="artboard-size">${Math.round(ab.w)}×${Math.round(ab.h)}</span>`;
+    item.addEventListener('click', () => {
+      activeArtboardId = ab.id;
+      syncActiveArtboardRefs();
+      canvas.setActiveObject(ab.board);
+      canvas.requestRenderAll();
+      refreshArtboardList();
+    });
+    item.addEventListener('dragstart', () => { draggingArtboardId = ab.id; });
+    item.addEventListener('dragover', e => e.preventDefault());
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!draggingArtboardId || draggingArtboardId === ab.id) return;
+      const from = artboards.findIndex(x => x.id === draggingArtboardId);
+      const to = artboards.findIndex(x => x.id === ab.id);
+      if (from < 0 || to < 0) return;
+      const [moved] = artboards.splice(from, 1);
+      artboards.splice(to, 0, moved);
+      orderArtboard();
+      refreshArtboardList();
+      canvas.requestRenderAll();
+    });
+    list.appendChild(item);
+  });
+}
+
 function refreshArtboardInspector(){
   const current = getActiveArtboard();
   const clip = $('abClipContent');
@@ -2308,6 +2377,9 @@ function refreshArtboardInspector(){
   const bgColor = $('abBgColor');
   const bgLock = $('abBgLock');
   const bgExp = $('abBgExport');
+  const abW = $('abW');
+  const abH = $('abH');
+  refreshArtboardList();
   if (!clip || !current) return;
   clip.checked = !!current.clipContent;
   exp.checked = !!current.exportEnabled;
@@ -2316,6 +2388,8 @@ function refreshArtboardInspector(){
   bgLock.checked = !!current.background?.locked;
   bgExp.checked = !!current.background?.includeInExport;
   bgColor.disabled = !!current.background?.locked;
+  if (abW) abW.value = String(Math.round(current.w));
+  if (abH) abH.value = String(Math.round(current.h));
 }
 function updateZoomLabel() {
   const pct = Math.round(zoom*100) + '%';
@@ -2344,7 +2418,7 @@ canvas.on('mouse:down', opt =&gt; {
     return;
   }
 
-  if (artboardMode &amp;&amp; e.button === 0 &amp;&amp; !target) {
+  if (artboardMode && e.button === 0 && !target) {
     const pointer = canvas.getPointer(e);
     artboardCreateState.active = true;
     artboardCreateState.start = { x:pointer.x, y:pointer.y };
@@ -2403,7 +2477,7 @@ canvas.on('mouse:move', opt =&gt; {
     return;
   }
 
-  if (artboardCreateState.active &amp;&amp; artboardCreateState.start &amp;&amp; artboardCreateState.ghost) {
+  if (artboardCreateState.active && artboardCreateState.start && artboardCreateState.ghost) {
     const pointer = canvas.getPointer(opt.e);
     const sx = artboardCreateState.start.x;
     const sy = artboardCreateState.start.y;
@@ -2476,7 +2550,7 @@ canvas.on('mouse:up', opt =&gt; {
     const top = Math.min(start?.y || pointer.y, pointer.y);
     const width = Math.abs(pointer.x - (start?.x || pointer.x));
     const height = Math.abs(pointer.y - (start?.y || pointer.y));
-    if (ghost &amp;&amp; canvas.getObjects().includes(ghost)) canvas.remove(ghost);
+    if (ghost && canvas.getObjects().includes(ghost)) canvas.remove(ghost);
     artboardCreateState.active = false;
     artboardCreateState.start = null;
     artboardCreateState.ghost = null;
@@ -4426,8 +4500,8 @@ function toggleLayerVisibility(obj){
   const nextVisible = !(obj.visible !== false);
   obj.visible = nextVisible;
   obj.evented = nextVisible;
-  obj.selectable = nextVisible &amp;&amp; activeTool !== 'text' &amp;&amp; activeTool !== 'bezier' &amp;&amp; activeTool !== 'bezier-v2';
-  if (!nextVisible &amp;&amp; canvas.getActiveObject() === obj) canvas.discardActiveObject();
+  obj.selectable = nextVisible && activeTool !== 'text' && activeTool !== 'bezier' && activeTool !== 'bezier-v2';
+  if (!nextVisible && canvas.getActiveObject() === obj) canvas.discardActiveObject();
   canvas.requestRenderAll();
   refreshProps();
   refreshLayers();
@@ -4437,18 +4511,18 @@ function refreshLayers() {
   const list = $('layersList');
   const cnt = $('layerCount');
   if (!list) return;
-  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay).slice().reverse();
+  const objs = canvas.getObjects().filter(o=>!isGuide(o) && !o.isBezierEditorControl && !o.isBezierOverlay).slice().reverse();
   ensureFoldersForObjects(objs);
   renderFolderChips();
   if (cnt) cnt.textContent = objs.length;
   const active = canvas.getActiveObject();
   list.innerHTML = '';
   if (!objs.length) {
-    list.innerHTML = '&lt;div class="layer-empty"&gt;Sem objetos ainda&lt;/div&gt;';
+    list.innerHTML = '<div class="layer-empty">Sem objetos ainda</div>';
     return;
   }
 
-  objs.forEach((obj, i) =&gt; {
+  objs.forEach((obj, i) => {
     const isAct = obj === active;
     const isVisible = obj.visible !== false;
     const name = String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
@@ -4461,25 +4535,25 @@ function refreshLayers() {
     div.draggable = true;
     div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
     div.innerHTML = `
-      &lt;span class="layer-marker"&gt;&lt;/span&gt;
-      &lt;div class="layer-main"&gt;
-        &lt;div class="layer-name" title="${name}"&gt;${name}&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;div class="layer-row-meta"&gt;
-        &lt;div class="layer-meta"&gt;${opacity}%&lt;/div&gt;
-        &lt;div class="layer-meta"&gt;${folder}&lt;/div&gt;
-        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}"&gt;
-          &lt;i data-lucide="${visIcon}" data-size="12"&gt;&lt;/i&gt;
-        &lt;/button&gt;
-      &lt;/div&gt;`;
+      <span class="layer-marker"></span>
+      <div class="layer-main">
+        <div class="layer-name" title="${name}">${name}</div>
+      </div>
+      <div class="layer-row-meta">
+        <div class="layer-meta">${opacity}%</div>
+        <div class="layer-meta">${folder}</div>
+        <button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}">
+          <i data-lucide="${visIcon}" data-size="12"></i>
+        </button>
+      </div>`;
 
     const visBtn = div.querySelector('.layer-vis-btn');
-    visBtn?.addEventListener('click', e =&gt; {
+    visBtn?.addEventListener('click', e => {
       e.stopPropagation();
       toggleLayerVisibility(obj);
     });
 
-    div.addEventListener('click', () =&gt; {
+    div.addEventListener('click', () => {
       if (obj.visible === false) return;
       canvas.setActiveObject(obj);
       canvas.requestRenderAll();
@@ -4487,20 +4561,20 @@ function refreshLayers() {
       refreshLayers();
     });
 
-    div.addEventListener('dblclick', e =&gt; {
+    div.addEventListener('dblclick', e => {
       e.preventDefault();
       e.stopPropagation();
       renameLayerObject(obj);
     });
 
-    div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
-    div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
-    div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
-    div.addEventListener('drop', e =&gt; {
+    div.addEventListener('dragstart', () => { draggingLayerId = div.dataset.layerId; });
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
       e.preventDefault();
       div.classList.remove('drag-over');
       if(!draggingLayerId || draggingLayerId===div.dataset.layerId) return;
-      const draggedObj = objs.find(o =&gt; o.__uid===draggingLayerId);
+      const draggedObj = objs.find(o => o.__uid===draggingLayerId);
       if(!draggedObj) return;
       moveLayerByDisplayIndex(draggedObj, i);
       refreshLayers();
@@ -5380,7 +5454,7 @@ $('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); ad
 $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { if (ENABLE_BEZIER_V2) addBezierV2(); else { setActiveTool('select'); addLine(); } });
 $('btnBezier')?.addEventListener('click', () =&gt; addBezier());
-$('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnArtboardTool')?.addEventListener('click', () =&gt; { if (!artboardMode) $('btnArtboardMode')?.click(); setStatus('Ferramenta Artboard: clique e arraste no canvas para criar.'); });
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
@@ -5415,8 +5489,8 @@ $('btnCloseEditor')?.addEventListener('click', () =&gt; window.parent.postMessag
 $('btnSaveJson')?.addEventListener('click', saveJSON);
 $('btnLoadJson')?.addEventListener('click', loadJSON);
 $('btnApplyDoc')?.addEventListener('click', () =&gt; {
-  const w = Number($('docW').value)||docW;
-  const h = Number($('docH').value)||docH;
+  const w = Number($('abW')?.value)||docW;
+  const h = Number($('abH')?.value)||docH;
   setArtboardSize(w, h);
   setDeskBg($('docBg').value || deskBg);
   setDeskTheme($('deskTheme')?.value || 'nebula');
@@ -5442,13 +5516,19 @@ const applyArtboardInspectorChanges = () =&gt; {
   ab.background.enabled = !!$('abBgEnabled')?.checked;
   ab.background.locked = !!$('abBgLock')?.checked;
   ab.background.includeInExport = !!$('abBgExport')?.checked;
-  if (!ab.background.locked &amp;&amp; $('abBgColor')?.value) ab.background.color = $('abBgColor').value;
+  if (!ab.background.locked && $('abBgColor')?.value) ab.background.color = $('abBgColor').value;
   applyArtboardVisualState(ab);
   canvas.requestRenderAll();
 };
 ['abClipContent','abExportEnabled','abBgEnabled','abBgLock','abBgExport','abBgColor'].forEach(id =&gt; {
   $(id)?.addEventListener('input', applyArtboardInspectorChanges);
   $(id)?.addEventListener('change', applyArtboardInspectorChanges);
+});
+$('btnApplyArtboardSize')?.addEventListener('click', () =&gt; {
+  const w = Number($('abW')?.value)||docW;
+  const h = Number($('abH')?.value)||docH;
+  setArtboardSize(w, h);
+  setStatus('Tamanho do artboard atualizado.');
 });
 $('btnCenterAll')?.addEventListener('click', () =&gt; {
   const obj = activeObj(); if(!obj||!artboard) return;
