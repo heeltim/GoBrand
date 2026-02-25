@@ -2031,6 +2031,23 @@ function bezierPointsToPathData(points, closed=false){
   return segs.join(' ');
 }
 
+function bezierPointsToPathCommands(points, closed=false){
+  if (!points || points.length &lt; 2) return [];
+  const commands = [['M', points[0].x, points[0].y]];
+  for (let i=1;i&lt;points.length;i++) {
+    const prev = points[i-1];
+    const curr = points[i];
+    commands.push(['C', prev.outX, prev.outY, curr.inX, curr.inY, curr.x, curr.y]);
+  }
+  if (closed &amp;&amp; points.length &gt; 2) {
+    const last = points[points.length-1];
+    const first = points[0];
+    commands.push(['C', last.outX, last.outY, first.inX, first.inY, first.x, first.y]);
+    commands.push(['Z']);
+  }
+  return commands;
+}
+
 const bezierCreateViz = { nodes: [], guides: [], cursor: null };
 
 function ensureBezierPreview(){
@@ -2041,6 +2058,7 @@ function ensureBezierPreview(){
     strokeWidth:2.5,
     strokeLineCap:'round',
     strokeLineJoin:'round',
+    objectCaching:false,
     selectable:false,
     evented:false,
     excludeFromExport:true
@@ -2083,20 +2101,29 @@ function updateBezierCreationPreview(pointer=null){
   if (vectorToolState.mode !== 'creating') return;
   const points = vectorToolState.points;
 
-  if (points.length) {
-    const previewPoints = cloneBezierPoints(points);
-    if (pointer) previewPoints.push(makeBezierPoint(pointer.x, pointer.y));
-    if (previewPoints.length &gt;= 2) {
-      const pathData = bezierPointsToPathData(previewPoints, false);
-      const pre = ensureBezierPreview();
-      pre.set({ path: parsePathDataSafe(pathData) });
-      pre.setCoords();
-    } else {
-      if (vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
-        canvas.remove(vectorToolState.previewPath);
-        vectorToolState.previewPath = null;
-      }
+  const previewPoints = cloneBezierPoints(points);
+  if (pointer) previewPoints.push(makeBezierPoint(pointer.x, pointer.y));
+  if (previewPoints.length &gt;= 2) {
+    const pre = ensureBezierPreview();
+    const commands = bezierPointsToPathCommands(previewPoints, false);
+    try {
+      pre.set({ path: commands, dirty: true });
+    } catch (err) {
+      const lastPoint = previewPoints[previewPoints.length - 1] || null;
+      console.warn('Bezier preview update failed; keeping last valid preview path.', {
+        pointsLength: previewPoints.length,
+        lastPoint,
+        error: err
+      });
     }
+    pre.setCoords();
+    canvas.requestRenderAll();
+  }
+
+  const shouldRemovePreview = points.length &lt; 2 &amp;&amp; !pointer;
+  if (shouldRemovePreview &amp;&amp; vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
+    canvas.remove(vectorToolState.previewPath);
+    vectorToolState.previewPath = null;
   }
 
   // rebuild construction overlays (nodes + structural lines)
