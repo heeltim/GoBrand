@@ -1858,8 +1858,11 @@ canvas.on('mouse:down', opt =&gt; {
 
   if (!target) {
     if (bezierEditor.enabled) {
+      const editedPath = bezierEditor.path;
       finalizeBezierEditor();
+      if (editedPath && canvas.getObjects().includes(editedPath)) canvas.setActiveObject(editedPath);
       if (activeTool !== 'select') setActiveTool('select');
+      canvas.requestRenderAll();
     }
     return;
   }
@@ -3352,7 +3355,7 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
-  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; (activeTool === 'bezier' || activeTool === 'direct-select' || activeTool === 'select')) {
+  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'direct-select') {
     const obj = activeObj();
     if (pathIsBezierEditable(obj)) attachBezierEditor(obj);
   }
@@ -4209,6 +4212,7 @@ function setActiveTool(tool){
   canvas.forEachObject(o =&gt; {
     if (isGuide(o) || o.isBezierEditorControl) return;
     o.selectable = !isText;
+    if (pathIsBezierEditable(o)) o.hasBorders = tool !== 'select';
   });
   document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
   $('btnSelect')?.classList.toggle('active', tool === 'select' || isDirect);
