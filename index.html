@@ -1811,6 +1811,12 @@ canvas.on('mouse:move', opt =&gt; {
     return;
   }
 
+  const clickProbe = vectorToolState.clickProbe;
+  if (clickProbe &amp;&amp; !clickProbe.moved) {
+    const pointer = canvas.getPointer(opt.e);
+    if (Math.hypot(pointer.x - clickProbe.x, pointer.y - clickProbe.y) &gt; vectorToolState.clickMovePx) clickProbe.moved = true;
+  }
+
   if (activeTool === 'text' &amp;&amp; textDragStart) {
     const p = canvas.getPointer(opt.e);
     textDragMoved = Math.hypot(p.x - textDragStart.x, p.y - textDragStart.y) &gt; 8;
@@ -1863,9 +1869,18 @@ canvas.on('mouse:down', opt =&gt; {
 
 canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
-  const target = opt.target;
   const pointer = canvas.getPointer(opt.e);
+  vectorToolState.clickProbe = {
+    target: opt.target || null,
+    x: pointer.x,
+    y: pointer.y,
+    moved: false,
+    at: performance.now()
+  };
 
+  if (activeTool !== 'direct-select') return;
+
+  const target = opt.target;
   if (!target) {
     if (bezierEditor.enabled) finalizeBezierEditor();
     vectorToolState.pendingEditTarget = null;
@@ -1873,6 +1888,7 @@ canvas.on('mouse:down', opt =&gt; {
     vectorToolState.pendingStateTarget = null;
     vectorToolState.pendingStateCount = 0;
     vectorToolState.pendingStateMode = '';
+    vectorToolState.clickPending = { target:null, at:0, count:0 };
     canvas.discardActiveObject();
     if (activeTool !== 'select') setActiveTool('select');
     setInteractionState('idle');
@@ -1880,69 +1896,103 @@ canvas.on('mouse:down', opt =&gt; {
     return;
   }
 
-  if (pathIsBezierEditable(target)) {
-    if (!bezierEditor.enabled) {
-      if (activeTool === 'direct-select') {
-        canvas.setActiveObject(target);
-        attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
-      } else if (activeTool === 'select') {
-        const alreadySelected = activeObj() === target;
-        canvas.setActiveObject(target);
-        vectorToolState.pendingEditTarget = target;
-        vectorToolState.pendingEditAt = performance.now();
-        vectorToolState.pendingStateTarget = target;
-        vectorToolState.pendingStateCount = 0;
-        vectorToolState.pendingStateMode = 'to-edit';
-        if (!alreadySelected) setInteractionState('selection');
-        else attachBezierEditor(target, { handlesActive:false, modelKey:resolveBezierModelKey(target) });
-      }
-      return;
-    }
+  if (!pathIsBezierEditable(target)) {
+    if (bezierEditor.enabled) finalizeBezierEditor();
+    vectorToolState.clickPending = { target:null, at:0, count:0 };
+    return;
+  }
 
-    if (bezierEditor.path !== target) {
-      finalizeBezierEditor();
-      canvas.setActiveObject(target);
-      if (activeTool === 'direct-select') attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
-      else {
-        vectorToolState.pendingEditTarget = target;
-        vectorToolState.pendingEditAt = performance.now();
-        vectorToolState.pendingStateTarget = target;
-        vectorToolState.pendingStateCount = 0;
-        vectorToolState.pendingStateMode = 'to-edit';
-        setInteractionState('selection');
-      }
-      return;
-    }
+  if (!bezierEditor.enabled || bezierEditor.path !== target) {
+    if (bezierEditor.enabled &amp;&amp; bezierEditor.path !== target) finalizeBezierEditor();
+    canvas.setActiveObject(target);
+    attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
+    return;
+  }
 
-    if (activeTool === 'select') {
-      vectorToolState.pendingEditAt = performance.now();
-      vectorToolState.pendingStateTarget = target;
-      vectorToolState.pendingStateCount = 0;
-      if (bezierEditor.handlesActive) {
-        vectorToolState.pendingStateMode = 'to-edit';
-        finalizeBezierEditor();
-      } else {
-        vectorToolState.pendingStateMode = 'to-select';
-        bezierEditor.handlesActive = true;
-        setInteractionState('edit-handles');
-        refreshBezierEditorControls();
-      }
-      return;
-    }
+  const seg = getNearestBezierSegment(target, pointer);
+  if (seg &gt;= 0 &amp;&amp; !opt.e.altKey) {
+    vectorToolState.segmentDrag = { seg, last:pointer };
+    vectorToolState.mode = 'transforming';
+  }
+});
 
-    if (activeTool === 'direct-select') {
-      const seg = getNearestBezierSegment(target, pointer);
-      if (seg &gt;= 0 &amp;&amp; !opt.e.altKey) {
-        vectorToolState.segmentDrag = { seg, last:pointer };
-        vectorToolState.mode = 'transforming';
-      }
+canvas.on('mouse:up', opt =&gt; {
+  if (activeTool !== 'select') return;
+  const clickProbe = vectorToolState.clickProbe;
+  vectorToolState.clickProbe = null;
+  if (!clickProbe || clickProbe.moved) return;
+
+  const target = opt.target || clickProbe.target;
+  const now = performance.now();
+  const resetPending = () =&gt; {
+    vectorToolState.pendingEditTarget = null;
+    vectorToolState.pendingEditAt = 0;
+    vectorToolState.pendingStateTarget = null;
+    vectorToolState.pendingStateCount = 0;
+    vectorToolState.pendingStateMode = '';
+    vectorToolState.clickPending = { target:null, at:0, count:0 };
+  };
+
+  if (!target) {
+    if (bezierEditor.enabled) finalizeBezierEditor();
+    resetPending();
+    canvas.discardActiveObject();
+    setInteractionState('idle');
+    canvas.requestRenderAll();
+    return;
+  }
+
+  if (!pathIsBezierEditable(target)) {
+    vectorToolState.clickPending = { target:null, at:0, count:0 };
+    if (bezierEditor.enabled) finalizeBezierEditor();
+    return;
+  }
+
+  const pending = vectorToolState.clickPending || { target:null, at:0, count:0 };
+  const isSameTarget = pending.target === target;
+  const within = (now - Number(pending.at || 0)) &lt;= vectorToolState.doubleClickMs;
+  const isDoubleClick = isSameTarget &amp;&amp; within &amp;&amp; pending.count &gt;= 1;
+
+  if (isDoubleClick) vectorToolState.clickPending = { target, at: now, count: 0 };
+  else vectorToolState.clickPending = { target, at: now, count: 1 };
+
+  if (!bezierEditor.enabled || bezierEditor.path !== target) {
+    if (bezierEditor.enabled &amp;&amp; bezierEditor.path !== target) finalizeBezierEditor();
+    canvas.setActiveObject(target);
+    vectorToolState.pendingEditTarget = target;
+    vectorToolState.pendingEditAt = now;
+    vectorToolState.pendingStateTarget = target;
+    vectorToolState.pendingStateCount = 0;
+    vectorToolState.pendingStateMode = 'to-edit';
+    if (isDoubleClick) {
+      attachBezierEditor(target, { handlesActive:false, modelKey:resolveBezierModelKey(target) });
+      vectorToolState.pendingStateMode = 'to-handles';
+    } else {
+      setInteractionState('selection');
     }
     return;
   }
 
-  if (target.isBezierEditorControl) return;
-});
+  vectorToolState.pendingEditAt = now;
+  vectorToolState.pendingStateTarget = target;
+  vectorToolState.pendingStateCount = 0;
 
+  if (!isDoubleClick) {
+    setInteractionState(bezierEditor.handlesActive ? 'edit-handles' : 'edit');
+    return;
+  }
+
+  if (!bezierEditor.handlesActive) {
+    vectorToolState.pendingStateMode = 'to-handles';
+    bezierEditor.handlesActive = true;
+    setInteractionState('edit-handles');
+    refreshBezierEditorControls();
+    return;
+  }
+
+  vectorToolState.pendingStateMode = 'to-select';
+  finalizeBezierEditor();
+});
 
 canvas.on('mouse:dblclick', opt =&gt; {
   const target = opt.target;
@@ -2132,7 +2182,11 @@ const vectorToolState = {
   pendingEditAt: 0,
   pendingStateTarget: null,
   pendingStateCount: 0,
-  pendingStateMode: ''
+  pendingStateMode: '',
+  clickPending: { target:null, at:0, count:0 },
+  clickProbe: null,
+  doubleClickMs: 350,
+  clickMovePx: 4
 };
 
 const bezierEditor = {
@@ -2151,9 +2205,9 @@ function setInteractionState(state){
   vectorToolState.interaction = state;
   const labels = {
     'idle': 'Sem seleção.',
-    'selection': 'Modo seleção/transformação ativo (1 clique).',
-    'edit': 'Modo edição ativo (2 cliques): clique no nó para ativar alças.',
-    'edit-handles': 'Modo edição com alças ativas (3 cliques).',
+    'selection': 'Modo seleção/transformação ativo (1 clique). Dê 2 cliques para editar.',
+    'edit': 'Modo edição de pontos ativo. Dê 2 cliques na forma para mostrar alças.',
+    'edit-handles': 'Modo edição com alças ativas. Dê 2 cliques para voltar ao transformar.',
     'creating': (vectorToolState.modelKey === 'vectorModelV2' ? 'Bézier V2: criação suave ativa (anti-duplo-clique reduzido). Enter finaliza, Esc desfaz.' : 'Vetor: clique para ponto reto, arraste para alças. Enter finaliza, Esc desfaz.')
   };
   if (labels[state]) setStatus(labels[state]);
@@ -2768,6 +2822,8 @@ function clearBezierEditor(){
   setInteractionState('idle');
   bezierEditor.selectedAnchors = [];
   vectorToolState.segmentDrag = null;
+  vectorToolState.clickProbe = null;
+  vectorToolState.clickPending = { target:null, at:0, count:0 };
   ensureBezierNodePanel();
   canvas.requestRenderAll();
 }
