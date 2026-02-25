@@ -667,6 +667,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
   border:1px solid var(--border2);box-shadow:0 24px 48px rgba(0,0,0,.45);
 }
 .menu-dd.open .menu-dd-panel{display:block}
+.menu-dd-panel.compact{width:260px;padding:8px}
+.menu-cmd{height:30px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 8px;border-radius:7px;color:var(--ink2);font-family:var(--mono);font-size:11px;cursor:pointer}
+.menu-cmd:hover{background:rgba(255,255,255,.08);color:#fff}
+.menu-cmd .k{opacity:.75;font-size:10px}
+.menu-cmd-sep{height:1px;background:var(--border);margin:6px 4px}
 
 .ctx-pill{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);display:inline-flex;align-items:center;color:var(--ink2)}
 .ctx-pill strong{color:var(--ink);font-weight:600}
@@ -975,10 +980,50 @@ textarea.modal-textarea{
 &lt;div class=&quot;app&quot;&gt;
 
   &lt;div class=&quot;menu-bar&quot;&gt;
-    &lt;span class=&quot;menu-item active&quot;&gt;Arquivo&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Editar&lt;/span&gt;
-    &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnImportFile&quot;&gt;Importar&lt;/button&gt;
-    &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnNewArtboard&quot;&gt;Nova prancheta&lt;/button&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuFileRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn active&quot; id=&quot;btnMenuFile&quot;&gt;Arquivo&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuFilePanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuEditRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuEdit&quot;&gt;Editar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuEditPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuSelectRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuSelect&quot;&gt;Seleção&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuSelectPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuCreateRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuCreate&quot;&gt;Criar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuCreatePanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuTransformRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuTransform&quot;&gt;Transformar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuTransformPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuAppearanceRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuAppearance&quot;&gt;Aparência&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuAppearancePanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuOrganizeRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuOrganize&quot;&gt;Organizar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuOrganizePanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuBooleanRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuBoolean&quot;&gt;Boolean&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuBooleanPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuTextRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuText&quot;&gt;Texto&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuTextPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuViewRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuView&quot;&gt;Exibir&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuViewPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuAdvancedRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuAdvanced&quot;&gt;Avançado&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuAdvancedPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
     &lt;div class=&quot;menu-dd&quot; id=&quot;menuDocRoot&quot;&gt;
       &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuDocumento&quot;&gt;Documento&lt;/button&gt;
       &lt;div class=&quot;menu-dd-panel&quot; id=&quot;menuDocumentoPanel&quot;&gt;
@@ -1026,15 +1071,8 @@ textarea.modal-textarea{
         &lt;/div&gt;
       &lt;/div&gt;
     &lt;/div&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Texto&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Vetor&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Pixel&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Camada&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Exibir&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Janela&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Ajuda&lt;/span&gt;
     &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Exportar PNG&lt;/span&gt;
+    &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnQuickExportPng&quot;&gt;Exportar PNG&lt;/button&gt;
   &lt;/div&gt;
 
   &lt;header class=&quot;topbar&quot;&gt;
@@ -2743,6 +2781,356 @@ canvas.on('object:moving', opt =&gt; {
   if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
 });
 
+// ─── Command menus (Arquivo / Editar / etc) ───────────────
+const menuCatalog = {
+  file: [
+    {id:'file.new', label:'Novo documento', key:'Ctrl+N'},
+    {id:'file.open', label:'Abrir', key:'Ctrl+O'},
+    {id:'file.close', label:'Fechar'},
+    {sep:true},
+    {id:'file.save', label:'Salvar', key:'Ctrl+S'},
+    {id:'file.saveAs', label:'Salvar como', key:'Ctrl+Shift+S'},
+    {sep:true},
+    {id:'file.exportPng', label:'Exportar PNG'},
+    {id:'file.exportJpg', label:'Exportar JPG'},
+    {id:'file.exportSvg', label:'Exportar SVG'},
+    {id:'file.exportPdf', label:'Exportar PDF'},
+    {sep:true},
+    {id:'file.import', label:'Importar', key:'Ctrl+I'},
+    {id:'file.document', label:'Configurar documento'},
+    {id:'file.preferences', label:'Preferências'}
+  ],
+  edit: [
+    {id:'edit.undo', label:'Desfazer', key:'Ctrl+Z'},
+    {id:'edit.redo', label:'Refazer', key:'Ctrl+Y'},
+    {sep:true},
+    {id:'edit.copy', label:'Copiar', key:'Ctrl+C'},
+    {id:'edit.paste', label:'Colar', key:'Ctrl+V'},
+    {id:'edit.pasteInPlace', label:'Colar no lugar'},
+    {id:'edit.cut', label:'Recortar', key:'Ctrl+X'},
+    {id:'edit.duplicate', label:'Duplicar', key:'Ctrl+D'},
+    {id:'edit.delete', label:'Apagar', key:'Del'},
+    {sep:true},
+    {id:'edit.group', label:'Agrupar', key:'Ctrl+G'},
+    {id:'edit.ungroup', label:'Desagrupar', key:'Ctrl+Shift+G'},
+    {id:'edit.lock', label:'Bloquear'},
+    {id:'edit.unlock', label:'Desbloquear'},
+    {id:'edit.hide', label:'Ocultar'},
+    {id:'edit.show', label:'Mostrar'}
+  ],
+  selection: [
+    {id:'selection.normal', label:'Seleção normal'},
+    {id:'selection.direct', label:'Seleção direta'},
+    {id:'selection.selectAll', label:'Selecionar tudo', key:'Ctrl+A'},
+    {id:'selection.deselectAll', label:'Desselecionar', key:'Esc'},
+    {id:'selection.byColor', label:'Selecionar por cor'},
+    {id:'selection.byLayer', label:'Selecionar por camada'},
+    {id:'selection.similar', label:'Selecionar semelhantes'},
+    {id:'selection.isolate', label:'Isolar grupo'},
+    {id:'selection.lasso', label:'Seleção por laço'}
+  ],
+  create: [
+    {id:'create.rect', label:'Retângulo'},
+    {id:'create.ellipse', label:'Elipse'},
+    {id:'create.polygon', label:'Polígono'},
+    {id:'create.star', label:'Estrela'},
+    {id:'create.line', label:'Linha'},
+    {id:'create.pen', label:'Caneta'},
+    {id:'create.pencil', label:'Lápis'},
+    {id:'create.brush', label:'Pincel vetorial'},
+    {id:'create.artText', label:'Texto artístico'},
+    {id:'create.textBox', label:'Texto em área'},
+    {id:'create.textOnPath', label:'Texto em caminho'},
+    {id:'create.eyedropper', label:'Conta-gotas'}
+  ],
+  transform: [
+    {id:'transform.move', label:'Mover'},
+    {id:'transform.rotate', label:'Rotacionar'},
+    {id:'transform.scale', label:'Escalar'},
+    {id:'transform.distort', label:'Distorcer'},
+    {id:'transform.skew', label:'Inclinar (Skew)'},
+    {id:'transform.flipH', label:'Espelhar horizontal'},
+    {id:'transform.flipV', label:'Espelhar vertical'},
+    {id:'transform.free', label:'Transformação livre'},
+    {id:'transform.align', label:'Alinhar'},
+    {id:'transform.distribute', label:'Distribuir'},
+    {id:'transform.snapGrid', label:'Ajustar à grade'},
+    {id:'transform.snapObjects', label:'Snap em objetos'}
+  ],
+  appearance: [
+    {id:'appearance.fill', label:'Cor de preenchimento'},
+    {id:'appearance.stroke', label:'Cor de contorno'},
+    {id:'appearance.strokeWidth', label:'Espessura do traço'},
+    {id:'appearance.strokeType', label:'Tipo de traço'},
+    {id:'appearance.opacity', label:'Opacidade'},
+    {id:'appearance.blend', label:'Modos de mesclagem'},
+    {id:'appearance.gradient', label:'Gradiente'},
+    {id:'appearance.mask', label:'Máscara'},
+    {id:'appearance.clipMask', label:'Máscara de recorte'},
+    {id:'appearance.effects', label:'Efeitos'}
+  ],
+  organize: [
+    {id:'organize.front', label:'Trazer para frente'},
+    {id:'organize.back', label:'Enviar para trás'},
+    {id:'organize.byLayer', label:'Organizar por camada'},
+    {id:'organize.newLayer', label:'Criar nova camada'},
+    {id:'organize.groupLayer', label:'Agrupar por camada'},
+    {id:'organize.rename', label:'Nomear objeto'}
+  ],
+  boolean: [
+    {id:'boolean.union', label:'Unir'},
+    {id:'boolean.subtract', label:'Subtrair'},
+    {id:'boolean.intersect', label:'Interseção'},
+    {id:'boolean.exclude', label:'Excluir'},
+    {id:'boolean.divide', label:'Dividir'},
+    {id:'boolean.trim', label:'Aparar'}
+  ],
+  text: [
+    {id:'text.font', label:'Alterar fonte'},
+    {id:'text.size', label:'Tamanho da fonte'},
+    {id:'text.lineHeight', label:'Entrelinha'},
+    {id:'text.kerning', label:'Kerning'},
+    {id:'text.tracking', label:'Tracking'},
+    {id:'text.toCurves', label:'Converter texto em curvas'},
+    {id:'text.align', label:'Alinhar texto'},
+    {id:'text.case', label:'Caixa alta/baixa'}
+  ],
+  view: [
+    {id:'view.zoomIn', label:'Zoom in', key:'Ctrl++'},
+    {id:'view.zoomOut', label:'Zoom out', key:'Ctrl+-'},
+    {id:'view.fit', label:'Ajustar à tela'},
+    {id:'view.fitSelection', label:'Ajustar à seleção'},
+    {id:'view.grid', label:'Mostrar/ocultar grade'},
+    {id:'view.guides', label:'Mostrar/ocultar guias'},
+    {id:'view.nodes', label:'Mostrar nós'},
+    {id:'view.outline', label:'Modo outline'},
+    {id:'view.preview', label:'Modo preview'}
+  ],
+  advanced: [
+    {id:'advanced.components', label:'Componentes / Símbolos'},
+    {id:'advanced.autoLayout', label:'Auto Layout'},
+    {id:'advanced.constraints', label:'Constraints'},
+    {id:'advanced.vectorize', label:'Vetorização de imagem'},
+    {id:'advanced.expandStroke', label:'Expandir traço'},
+    {id:'advanced.pathfinder', label:'Pathfinder'},
+    {id:'advanced.mesh', label:'Mesh tool'},
+    {id:'advanced.warp', label:'Warp'}
+  ]
+};
+
+const shortcutToCommand = new Map();
+Object.values(menuCatalog).flat().forEach(item =&gt; {
+  if (!item || item.sep || !item.key) return;
+  shortcutToCommand.set(item.key.toLowerCase(), item.id);
+});
+
+function registerMenu(rootId, panelId, items){
+  const root = $(rootId), panel = $(panelId);
+  if(!root || !panel) return;
+  panel.innerHTML = items.map(item =&gt; {
+    if (item.sep) return '&lt;div class="menu-cmd-sep"&gt;&lt;/div&gt;';
+    const key = item.key ? `&lt;span class="k"&gt;${item.key}&lt;/span&gt;` : '&lt;span class="k"&gt;&lt;/span&gt;';
+    return `&lt;div class="menu-cmd" data-cmd="${item.id}"&gt;&lt;span&gt;${item.label}&lt;/span&gt;${key}&lt;/div&gt;`;
+  }).join('');
+
+  const btn = root.querySelector('.menu-item-btn');
+  const closeAll = () =&gt; document.querySelectorAll('.menu-dd.open').forEach(n =&gt; n.classList.remove('open'));
+  btn?.addEventListener('click', e =&gt; {
+    e.stopPropagation();
+    const willOpen = !root.classList.contains('open');
+    closeAll();
+    if (willOpen) root.classList.add('open');
+  });
+  panel.addEventListener('click', e =&gt; {
+    const cmd = e.target.closest('[data-cmd]')?.dataset.cmd;
+    if (!cmd) return;
+    executeMenuCommand(cmd);
+    closeAll();
+  });
+}
+
+function notifyTodo(label){
+  setStatus(`${label}: em breve.`);
+}
+
+function selectAllObjects(){
+  const items = canvas.getObjects().filter(o =&gt; !isGuide(o));
+  if (!items.length) return;
+  canvas.setActiveObject(new fabric.ActiveSelection(items, { canvas }));
+  canvas.requestRenderAll();
+}
+
+function flipSelection(axis='x'){
+  const obj = activeObj();
+  if(!obj) return;
+  if (axis === 'x') obj.set({ flipX: !obj.flipX });
+  else obj.set({ flipY: !obj.flipY });
+  obj.setCoords();
+  canvas.requestRenderAll();
+}
+
+function executeMenuCommand(cmdId){
+  const map = {
+    'file.new': () =&gt; loadSVGFromParent(''),
+    'file.open': () =&gt; $('fileInput')?.click(),
+    'file.close': () =&gt; loadSVGFromParent(''),
+    'file.save': saveJSON,
+    'file.saveAs': saveJSON,
+    'file.exportPng': exportPNG,
+    'file.exportJpg': () =&gt; notifyTodo('Exportar JPG'),
+    'file.exportSvg': exportSVGToParent,
+    'file.exportPdf': () =&gt; notifyTodo('Exportar PDF'),
+    'file.import': () =&gt; $('fileInput')?.click(),
+    'file.document': () =&gt; $('btnMenuDocumento')?.click(),
+    'file.preferences': () =&gt; notifyTodo('Preferências'),
+
+    'edit.undo': undo,
+    'edit.redo': redo,
+    'edit.copy': () =&gt; document.execCommand?.('copy') || setStatus('Use Ctrl+C para copiar.'),
+    'edit.paste': pasteFromClipboard,
+    'edit.pasteInPlace': pasteFromClipboard,
+    'edit.cut': () =&gt; { document.execCommand?.('copy'); del(); },
+    'edit.duplicate': duplicate,
+    'edit.delete': del,
+    'edit.group': groupSelection,
+    'edit.ungroup': ungroupSelection,
+    'edit.lock': () =&gt; notifyTodo('Bloquear'),
+    'edit.unlock': () =&gt; notifyTodo('Desbloquear'),
+    'edit.hide': () =&gt; notifyTodo('Ocultar'),
+    'edit.show': () =&gt; notifyTodo('Mostrar'),
+
+    'selection.normal': () =&gt; setActiveTool('select'),
+    'selection.direct': () =&gt; notifyTodo('Seleção direta'),
+    'selection.selectAll': selectAllObjects,
+    'selection.deselectAll': () =&gt; { canvas.discardActiveObject(); canvas.requestRenderAll(); },
+    'selection.byColor': () =&gt; notifyTodo('Selecionar por cor'),
+    'selection.byLayer': () =&gt; notifyTodo('Selecionar por camada'),
+    'selection.similar': () =&gt; notifyTodo('Selecionar semelhantes'),
+    'selection.isolate': () =&gt; notifyTodo('Isolar grupo'),
+    'selection.lasso': () =&gt; notifyTodo('Seleção por laço'),
+
+    'create.rect': addRect,
+    'create.ellipse': addCircle,
+    'create.polygon': () =&gt; notifyTodo('Polígono'),
+    'create.star': () =&gt; notifyTodo('Estrela'),
+    'create.line': addLine,
+    'create.pen': addBezier,
+    'create.pencil': () =&gt; notifyTodo('Lápis'),
+    'create.brush': () =&gt; notifyTodo('Pincel vetorial'),
+    'create.artText': () =&gt; setActiveTool('text'),
+    'create.textBox': () =&gt; setActiveTool('text'),
+    'create.textOnPath': () =&gt; notifyTodo('Texto em caminho'),
+    'create.eyedropper': () =&gt; notifyTodo('Conta-gotas'),
+
+    'transform.move': () =&gt; setActiveTool('move'),
+    'transform.rotate': () =&gt; notifyTodo('Rotacionar'),
+    'transform.scale': () =&gt; notifyTodo('Escalar'),
+    'transform.distort': () =&gt; notifyTodo('Distorcer'),
+    'transform.skew': () =&gt; notifyTodo('Skew'),
+    'transform.flipH': () =&gt; flipSelection('x'),
+    'transform.flipV': () =&gt; flipSelection('y'),
+    'transform.free': () =&gt; notifyTodo('Transformação livre'),
+    'transform.align': () =&gt; notifyTodo('Alinhar'),
+    'transform.distribute': () =&gt; notifyTodo('Distribuir'),
+    'transform.snapGrid': () =&gt; notifyTodo('Ajustar à grade'),
+    'transform.snapObjects': () =&gt; notifyTodo('Snap em objetos'),
+
+    'appearance.fill': () =&gt; notifyTodo('Cor de preenchimento'),
+    'appearance.stroke': () =&gt; notifyTodo('Cor de contorno'),
+    'appearance.strokeWidth': () =&gt; notifyTodo('Espessura do traço'),
+    'appearance.strokeType': () =&gt; notifyTodo('Tipo de traço'),
+    'appearance.opacity': () =&gt; notifyTodo('Opacidade'),
+    'appearance.blend': () =&gt; notifyTodo('Modos de mesclagem'),
+    'appearance.gradient': () =&gt; notifyTodo('Gradiente'),
+    'appearance.mask': () =&gt; notifyTodo('Máscara'),
+    'appearance.clipMask': applyClipMask,
+    'appearance.effects': () =&gt; notifyTodo('Efeitos'),
+
+    'organize.front': bringForwardSelection,
+    'organize.back': sendBackwardSelection,
+    'organize.byLayer': () =&gt; notifyTodo('Organizar por camada'),
+    'organize.newLayer': addLayer,
+    'organize.groupLayer': createLayerFolder,
+    'organize.rename': () =&gt; notifyTodo('Nomear objeto'),
+
+    'boolean.union': () =&gt; notifyTodo('Boolean: Unir'),
+    'boolean.subtract': () =&gt; notifyTodo('Boolean: Subtrair'),
+    'boolean.intersect': () =&gt; notifyTodo('Boolean: Interseção'),
+    'boolean.exclude': () =&gt; notifyTodo('Boolean: Excluir'),
+    'boolean.divide': () =&gt; notifyTodo('Boolean: Dividir'),
+    'boolean.trim': () =&gt; notifyTodo('Boolean: Aparar'),
+
+    'text.font': () =&gt; notifyTodo('Alterar fonte'),
+    'text.size': () =&gt; notifyTodo('Tamanho da fonte'),
+    'text.lineHeight': () =&gt; notifyTodo('Entrelinha'),
+    'text.kerning': () =&gt; notifyTodo('Kerning'),
+    'text.tracking': () =&gt; notifyTodo('Tracking'),
+    'text.toCurves': () =&gt; notifyTodo('Converter texto em curvas'),
+    'text.align': () =&gt; notifyTodo('Alinhar texto'),
+    'text.case': () =&gt; notifyTodo('Caixa alta/baixa'),
+
+    'view.zoomIn': () =&gt; $('btnZoomIn')?.click(),
+    'view.zoomOut': () =&gt; $('btnZoomOut')?.click(),
+    'view.fit': fitToArtboard,
+    'view.fitSelection': () =&gt; notifyTodo('Ajustar à seleção'),
+    'view.grid': () =&gt; notifyTodo('Grade'),
+    'view.guides': () =&gt; notifyTodo('Guias'),
+    'view.nodes': () =&gt; notifyTodo('Mostrar nós'),
+    'view.outline': () =&gt; notifyTodo('Modo outline'),
+    'view.preview': () =&gt; notifyTodo('Modo preview'),
+
+    'advanced.components': () =&gt; notifyTodo('Componentes / Símbolos'),
+    'advanced.autoLayout': () =&gt; notifyTodo('Auto Layout'),
+    'advanced.constraints': () =&gt; notifyTodo('Constraints'),
+    'advanced.vectorize': () =&gt; notifyTodo('Vetorização de imagem'),
+    'advanced.expandStroke': () =&gt; notifyTodo('Expandir traço'),
+    'advanced.pathfinder': () =&gt; notifyTodo('Pathfinder'),
+    'advanced.mesh': () =&gt; notifyTodo('Mesh tool'),
+    'advanced.warp': () =&gt; notifyTodo('Warp')
+  };
+  const fn = map[cmdId];
+  if (typeof fn === 'function') fn();
+  else notifyTodo(cmdId);
+}
+
+function normalizeShortcutKey(e){
+  const parts = [];
+  if (e.ctrlKey || e.metaKey) parts.push('ctrl');
+  if (e.shiftKey) parts.push('shift');
+  if (e.altKey) parts.push('alt');
+  const k = (e.key || '').toLowerCase();
+  if (!k) return '';
+  const key = k === 'escape' ? 'esc' : k;
+  parts.push(key);
+  return parts.join('+');
+}
+
+(function initCommandMenus(){
+  registerMenu('menuFileRoot','menuFilePanel',menuCatalog.file);
+  registerMenu('menuEditRoot','menuEditPanel',menuCatalog.edit);
+  registerMenu('menuSelectRoot','menuSelectPanel',menuCatalog.selection);
+  registerMenu('menuCreateRoot','menuCreatePanel',menuCatalog.create);
+  registerMenu('menuTransformRoot','menuTransformPanel',menuCatalog.transform);
+  registerMenu('menuAppearanceRoot','menuAppearancePanel',menuCatalog.appearance);
+  registerMenu('menuOrganizeRoot','menuOrganizePanel',menuCatalog.organize);
+  registerMenu('menuBooleanRoot','menuBooleanPanel',menuCatalog.boolean);
+  registerMenu('menuTextRoot','menuTextPanel',menuCatalog.text);
+  registerMenu('menuViewRoot','menuViewPanel',menuCatalog.view);
+  registerMenu('menuAdvancedRoot','menuAdvancedPanel',menuCatalog.advanced);
+
+  document.addEventListener('click', () =&gt; {
+    document.querySelectorAll('.menu-dd.open').forEach(n =&gt; n.classList.remove('open'));
+  });
+
+  window.addEventListener('keydown', e =&gt; {
+    if (e.target?.matches?.('input,textarea,select,[contenteditable="true"]')) return;
+    const cmd = shortcutToCommand.get(normalizeShortcutKey(e));
+    if (!cmd) return;
+    e.preventDefault();
+    executeMenuCommand(cmd);
+  }, {passive:false});
+})();
+
 // ─── Menu Documento (dropdown) ──────────────────────────
 (function initMenuDocumento(){
   const root = $('menuDocRoot');
@@ -2856,6 +3244,7 @@ $('btnDuplicate')?.addEventListener('click', duplicate);
 $('btnUndo')?.addEventListener('click', undo);
 $('btnRedo')?.addEventListener('click', redo);
 $('btnExportPng')?.addEventListener('click', exportPNG);
+$('btnQuickExportPng')?.addEventListener('click', exportPNG);
 $('btnSaveJson')?.addEventListener('click', saveJSON);
 $('btnLoadJson')?.addEventListener('click', loadJSON);
 $('btnApplyDoc')?.addEventListener('click', () =&gt; {
