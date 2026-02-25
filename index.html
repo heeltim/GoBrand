@@ -2416,11 +2416,12 @@ canvas.on('mouse:down', opt =&gt; {
     return;
   }
 
-  if (activeTool === 'text' &amp;&amp; !opt.target) {
+  if (activeTool === 'text' &amp;&amp; (!opt.target || isGuide(opt.target))) {
     const p = canvas.getPointer(e);
     textDragStart = { x:p.x, y:p.y };
     textDragMoved = false;
     opt.e.preventDefault();
+    return;
   }
 });
 
