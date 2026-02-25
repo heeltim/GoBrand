@@ -755,7 +755,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 }
 
 /* ─── TOOLBAR (floating) ─────────────────────────────── */
-.floating-toolbar-wrap{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:12;display:inline-flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;width:max-content;max-width:calc(100% - 28px)}
+.floating-toolbar-wrap{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);z-index:12;display:inline-flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;width:max-content;max-width:calc(100% - 28px)}
 .floating-toolbar-row{display:flex;align-items:center;white-space:nowrap;width:max-content;max-width:calc(100vw - 48px);background:linear-gradient(180deg, rgba(34,34,42,.96), rgba(22,22,28,.96));border:1px solid rgba(255,255,255,.09);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;backdrop-filter:blur(10px)}
 .float-tool-btn{height:40px;padding:0 13px;border-right:1px solid rgba(255,255,255,.08);background:transparent;color:rgba(240,239,244,.78);font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .float-tool-btn:last-child{border-right:none}
@@ -807,17 +807,6 @@ input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 .sep{height:1px;background:var(--border);margin:12px -12px}
 
 /* ─── LAYERS ──────────────────────────────────────────── */
-.layer-tools{display:block;margin-bottom:8px}
-.layer-toolbar-note{
-  font-size:10px;
-  font-family:var(--mono);
-  color:var(--ink3);
-  letter-spacing:.02em;
-  padding:6px 8px;
-  border:1px solid var(--border2);
-  border-radius:8px;
-  background:rgba(255,255,255,.02);
-}
 #layersList{padding-right:2px;scrollbar-width:thin;scrollbar-color:rgba(127,90,240,.7) rgba(255,255,255,.06)}
 #layersList::-webkit-scrollbar{width:9px}
 #layersList::-webkit-scrollbar-track{background:rgba(255,255,255,.06);border-radius:999px}
@@ -843,7 +832,6 @@ input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 .layer-vis-btn{width:20px;height:20px;border-radius:6px;border:1px solid var(--border2);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;color:var(--ink2)}
 .layer-vis-btn:hover{border-color:rgba(127,90,240,.55);color:#fff;background:rgba(127,90,240,.14)}
 .layer-empty{text-align:center;padding:24px 0;font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace}
-.folder-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid var(--border2);border-radius:999px;font-size:10px;color:var(--ink2);margin:0 6px 6px 0}
 .artboard-list{display:grid;gap:6px;max-height:170px;overflow:auto;padding-right:2px}
 .artboard-item{display:flex;align-items:center;gap:8px;border:1px solid var(--border2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,.02);cursor:pointer}
 .artboard-item.active{border-color:rgba(127,90,240,.45);background:rgba(127,90,240,.12)}
@@ -1029,53 +1017,6 @@ textarea.modal-textarea{
       &lt;button class="menu-item menu-item-btn" id="btnMenuAdvanced"&gt;Avançado&lt;/button&gt;
       &lt;div class="menu-dd-panel compact" id="menuAdvancedPanel"&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class="menu-dd" id="menuDocRoot"&gt;
-      &lt;button class="menu-item menu-item-btn" id="btnMenuDocumento"&gt;Documento&lt;/button&gt;
-      &lt;div class="menu-dd-panel" id="menuDocumentoPanel"&gt;
-        &lt;div class="panel-section-label"&gt;Documento&lt;/div&gt;
-        &lt;div class="field-row"&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;W px&lt;/div&gt;
-            &lt;input class="field-input" id="docW" type="number" value="1200" min="200" max="5000"&gt;
-          &lt;/div&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;H px&lt;/div&gt;
-            &lt;input class="field-input" id="docH" type="number" value="750" min="200" max="5000"&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class="field-row one"&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;Mesa&lt;/div&gt;
-            &lt;input class="field-input" id="docBg" type="color" value="#0f1626"&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class="field-row one"&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;Tema da mesa&lt;/div&gt;
-            &lt;select class="field-input" id="deskTheme" style="height:32px"&gt;
-              &lt;option value="nebula" selected&gt;Nebula&lt;/option&gt;
-              &lt;option value="clean"&gt;Clean&lt;/option&gt;
-              &lt;option value="paper"&gt;Paper&lt;/option&gt;
-              &lt;option value="mint"&gt;Mint&lt;/option&gt;
-            &lt;/select&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class="field-row one" style="margin-top:6px"&gt;
-          &lt;div class="field-item"&gt;
-            &lt;div class="field-label"&gt;Referência de alinhamento&lt;/div&gt;
-            &lt;select class="field-input" id="alignTarget" style="height:32px"&gt;
-              &lt;option value="layout"&gt;Layout (prancheta)&lt;/option&gt;
-              &lt;option value="object"&gt;Objeto âncora&lt;/option&gt;
-            &lt;/select&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;button class="tbtn" id="btnArtboardMode" style="width:100%;justify-content:center;height:32px;margin-top:6px"&gt;Modo pranchetas&lt;/button&gt;
-        &lt;div style="display:flex;gap:6px;margin-top:6px"&gt;
-          &lt;button class="tbtn" id="btnApplyDoc" style="flex:1;justify-content:center;height:32px"&gt;Aplicar&lt;/button&gt;
-          &lt;button class="tbtn" id="btnCenterAll" style="flex:1;justify-content:center;height:32px"&gt;Centralizar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
     &lt;span class="menu-spacer"&gt;&lt;/span&gt;
   &lt;/div&gt;
 
@@ -1083,15 +1024,12 @@ textarea.modal-textarea{
     &lt;div class="topbar-brand"&gt;
       &lt;div class="brand-dot"&gt;&lt;/div&gt;
       &lt;input id="projectNameInline" class="field-input topbar-name-input" type="text" value="Aplicação" /&gt;
-      &lt;button class="tbtn active"&gt;Vetor&lt;/button&gt;
-      &lt;button class="tbtn"&gt;Pixel&lt;/button&gt;
-      &lt;button class="tbtn"&gt;Layout&lt;/button&gt;
     &lt;/div&gt;
     &lt;div class="topbar-status"&gt;
       &lt;button class="tbtn" id="btnUndo" title="Undo (Ctrl+Z)"&gt;
         &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="1 4 1 10 7 10"/&gt;&lt;path d="M3.51 15a9 9 0 1 0 .49-4.5"/&gt;&lt;/svg&gt;
       &lt;/button&gt;
-      &lt;button class="tbtn" id="btnRedo" title="Redo (Ctrl+Y)"&gt;
+      &lt;button class="tbtn" id="btnRedo" title="Redo (Ctrl+Shift+Z)"&gt;
         &lt;svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"&gt;&lt;polyline points="23 4 23 10 17 10"/&gt;&lt;path d="M20.49 15a9 9 0 1 1-.49-4.5"/&gt;&lt;/svg&gt;
       &lt;/button&gt;
       &lt;span id="statusText"&gt;Pronto&lt;/span&gt; &lt;span id="zoomTopLabel" style="color:var(--ink2)"&gt;ZOOM 100%&lt;/span&gt;
@@ -1112,7 +1050,14 @@ textarea.modal-textarea{
   &lt;aside class="panel"&gt;
     &lt;div class="panel-body"&gt;
 
-      &lt;div class="panel-section"&gt;&lt;div class="layer-empty"&gt;Configurações de documento no menu superior &lt;strong&gt;Documento&lt;/strong&gt;.&lt;/div&gt;&lt;/div&gt;
+
+      &lt;div class="panel-section" style="max-height:220px;display:flex;flex-direction:column"&gt;
+        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between"&gt;
+          Artboards
+          &lt;span id="artboardCount" style="color:var(--ink3)"&gt;0&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;artboardList&quot; class=&quot;artboard-list&quot; style=&quot;flex:1;max-height:none&quot;&gt;&lt;/div&gt;
+      &lt;/div&gt;
 
       &lt;div class="sep"&gt;&lt;/div&gt;
 
@@ -1131,14 +1076,10 @@ textarea.modal-textarea{
       &lt;/div&gt;
 
       &lt;div class="panel-section" style="max-height:360px;display:flex;flex-direction:column"&gt;
-        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between"&gt;
-          Camadas
-          &lt;span id="layerCount" style="color:var(--ink3)"&gt;0&lt;/span&gt;
+        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between" title="Arraste para ordenar • duplo clique para renomear"&gt;
+          &lt;span title="Arraste para ordenar • duplo clique para renomear"&gt;Camadas&lt;/span&gt;
+          &lt;span id="layerCount" style="color:var(--ink3)" title="Arraste para ordenar • duplo clique para renomear"&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;div class="layer-tools"&gt;
-          &lt;div class="layer-toolbar-note"&gt;Arraste para ordenar • duplo clique para renomear&lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div id="folderList" style="margin-bottom:8px"&gt;&lt;/div&gt;
         &lt;div id="layersList" style="flex:1;overflow-y:auto;overflow-x:hidden"&gt;&lt;/div&gt;
       &lt;/div&gt;
 
@@ -1274,8 +1215,6 @@ textarea.modal-textarea{
           &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Cor BG&lt;/div&gt;&lt;input class="field-input" id="abBgColor" type="color" value="#ffffff"&gt;&lt;/label&gt;
           &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;BG no export&lt;/div&gt;&lt;input id="abBgExport" type="checkbox" checked&gt;&lt;/label&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;field-label&quot; style=&quot;margin-top:6px&quot;&gt;Lista de artboards&lt;/div&gt;
-        &lt;div id=&quot;artboardList&quot; class=&quot;artboard-list&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
       &lt;div class="sep"&gt;&lt;/div&gt;
@@ -2378,7 +2317,9 @@ let draggingArtboardId = null;
 
 function refreshArtboardList(){
   const list = $('artboardList');
+  const artCount = $('artboardCount');
   if (!list) return;
+  if (artCount) artCount.textContent = artboards.length;
   list.innerHTML = '';
   if (!artboards.length) {
     list.innerHTML = '<div class="layer-empty" style="padding:10px 0">Sem artboards</div>';
@@ -5050,12 +4991,12 @@ const menuCatalog = {
     {id:'file.exportPdf', label:'Exportar PDF'},
     {sep:true},
     {id:'file.import', label:'Importar', key:'Ctrl+I'},
-    {id:'file.document', label:'Configurar documento'},
+    {id:'file.document', label:'Configuração do documento'},
     {id:'file.preferences', label:'Preferências'}
   ],
   edit: [
     {id:'edit.undo', label:'Desfazer', key:'Ctrl+Z'},
-    {id:'edit.redo', label:'Refazer', key:'Ctrl+Y'},
+    {id:'edit.redo', label:'Refazer', key:'Ctrl+Shift+Z'},
     {sep:true},
     {id:'edit.copy', label:'Copiar', key:'Ctrl+C'},
     {id:'edit.paste', label:'Colar', key:'Ctrl+V'},
@@ -5222,6 +5163,40 @@ function flipSelection(axis='x'){
   canvas.requestRenderAll();
 }
 
+function openDocumentSettingsModal(){
+  openModal('Configuração do documento', `
+    &lt;div class="panel-section" style="margin-bottom:0"&gt;
+      &lt;div class="field-row"&gt;
+        &lt;div class="field-item"&gt;
+          &lt;div class="field-label"&gt;W px&lt;/div&gt;
+          &lt;input class="field-input" id="docModalW" type="number" value="${Math.round(docW)}" min="200" max="5000"&gt;
+        &lt;/div&gt;
+        &lt;div class="field-item"&gt;
+          &lt;div class="field-label"&gt;H px&lt;/div&gt;
+          &lt;input class="field-input" id="docModalH" type="number" value="${Math.round(docH)}" min="200" max="5000"&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="field-row one"&gt;
+        &lt;div class="field-item"&gt;
+          &lt;div class="field-label"&gt;Mesa&lt;/div&gt;
+          &lt;input class="field-input" id="docModalBg" type="color" value="${$('docBg')?.value || '#0f1626'}"&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="field-row one"&gt;
+        &lt;button class="tbtn" id="docModalApply" style="width:100%;justify-content:center;height:32px"&gt;Aplicar&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  `);
+  $('docModalApply')?.addEventListener('click', () =&gt; {
+    const w = parseFloat($('docModalW')?.value || docW);
+    const h = parseFloat($('docModalH')?.value || docH);
+    const bg = $('docModalBg')?.value || '#0f1626';
+    setArtboardSize(w, h);
+    setDeskBg(bg);
+    closeModal();
+  });
+}
+
 function executeMenuCommand(cmdId){
   const map = {
     'file.new': () =&gt; loadSVGFromParent(''),
@@ -5234,7 +5209,7 @@ function executeMenuCommand(cmdId){
     'file.exportSvg': exportSVGToParent,
     'file.exportPdf': () =&gt; notifyTodo('Exportar PDF'),
     'file.import': () =&gt; $('fileInput')?.click(),
-    'file.document': () =&gt; $('btnMenuDocumento')?.click(),
+    'file.document': () =&gt; openDocumentSettingsModal(),
     'file.preferences': () =&gt; notifyTodo('Preferências'),
 
     'edit.undo': undo,
@@ -5384,19 +5359,6 @@ function normalizeShortcutKey(e){
   }, {passive:false});
 })();
 
-// ─── Menu Documento (dropdown) ──────────────────────────
-(function initMenuDocumento(){
-  const root = $('menuDocRoot');
-  const trigger = $('btnMenuDocumento');
-  if(!root || !trigger) return;
-  trigger.addEventListener('click', e =&gt; {
-    e.stopPropagation();
-    root.classList.toggle('open');
-  });
-  document.addEventListener('click', e =&gt; {
-    if(!root.contains(e.target)) root.classList.remove('open');
-  });
-})();
 
 function setBezierSubmenuMode(_enabled){
   const labels = { btnToolVector:'Vetor', btnToolMove:'Mover', btnToolLasso:'Laço', btnToolPaint:'Pintar', btnToolCurve:'Curvar', btnToolCut:'Cortar', btnToolMore:'Mais ▾' };
@@ -5550,7 +5512,7 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   const w = Number($('abW')?.value)||docW;
   const h = Number($('abH')?.value)||docH;
   setArtboardSize(w, h);
-  setDeskBg($('docBg').value || deskBg);
+  setDeskBg($('docBg')?.value || deskBg);
   setDeskTheme($('deskTheme')?.value || 'nebula');
 });
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
@@ -5683,7 +5645,9 @@ $('btnHelp')?.addEventListener('click', () =&gt; {
   openModal('Atalhos de teclado', `
     &lt;div class="shortcuts-grid" style="gap:8px 16px"&gt;
       &lt;span class="sc-key"&gt;Ctrl+Z&lt;/span&gt;&lt;span class="sc-desc"&gt;Desfazer&lt;/span&gt;
-      &lt;span class="sc-key"&gt;Ctrl+Y&lt;/span&gt;&lt;span class="sc-desc"&gt;Refazer&lt;/span&gt;
+      &lt;span class="sc-key"&gt;Ctrl+Shift+Z&lt;/span&gt;&lt;span class="sc-desc"&gt;Refazer&lt;/span&gt;
+      &lt;span class="sc-key"&gt;V&lt;/span&gt;&lt;span class="sc-desc"&gt;Ferramenta seleção&lt;/span&gt;
+      &lt;span class="sc-key"&gt;A&lt;/span&gt;&lt;span class="sc-desc"&gt;Seleção direta de nós&lt;/span&gt;
       &lt;span class="sc-key"&gt;Ctrl+D&lt;/span&gt;&lt;span class="sc-desc"&gt;Duplicar&lt;/span&gt;
       &lt;span class="sc-key"&gt;Ctrl+G&lt;/span&gt;&lt;span class="sc-desc"&gt;Agrupar seleção&lt;/span&gt;
       &lt;span class="sc-key"&gt;Ctrl+Shift+G&lt;/span&gt;&lt;span class="sc-desc"&gt;Desagrupar seleção&lt;/span&gt;
