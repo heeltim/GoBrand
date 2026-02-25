@@ -659,6 +659,14 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .menu-item:hover{background:rgba(255,255,255,.08);color:var(--ink)}
 .menu-item.active{background:rgba(127,90,240,.18);color:#fff}
 .menu-spacer{margin-left:auto}
+.menu-dd{position:relative}
+.menu-item-btn{border:none;cursor:pointer}
+.menu-dd-panel{
+  display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:50;
+  width:320px;padding:12px;border-radius:12px;background:var(--panel);
+  border:1px solid var(--border2);box-shadow:0 24px 48px rgba(0,0,0,.45);
+}
+.menu-dd.open .menu-dd-panel{display:block}
 
 .ctx-pill{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);display:inline-flex;align-items:center;color:var(--ink2)}
 .ctx-pill strong{color:var(--ink);font-weight:600}
@@ -807,32 +815,26 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 .sep{height:1px;background:var(--border);margin:12px -12px}
 
 /* ─── LAYERS ──────────────────────────────────────────── */
+.layer-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
 .layer-item{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 9px;border-radius:8px;
-  border:1px solid transparent;
-  cursor:pointer;transition:all .1s ease;
-  margin-bottom:3px;
+  display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;
+  padding:7px 9px;border-radius:8px;border:1px solid transparent;
+  cursor:pointer;transition:all .1s ease;margin-bottom:4px;
 }
+.layer-main{display:flex;align-items:center;gap:8px;min-width:0}
 .layer-item:hover{background:rgba(255,255,255,.04)}
-.layer-item.active{
-  background:rgba(127,90,240,.1);
-  border-color:rgba(127,90,240,.26);
-}
-.layer-icon{
-  width:22px;height:22px;border-radius:5px;
-  background:var(--surface);
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:var(--ink3);font-size:10px;
-}
+.layer-item.active{background:rgba(127,90,240,.1);border-color:rgba(127,90,240,.26)}
+.layer-item.drag-over{border-color:rgba(127,90,240,.7);background:rgba(127,90,240,.18)}
+.layer-icon{width:22px;height:22px;border-radius:5px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:10px}
 .layer-item.active .layer-icon{background:rgba(127,90,240,.18);color:var(--accent)}
-.layer-name{flex:1;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-name{font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .layer-item.active .layer-name{color:var(--ink)}
-.layer-empty{
-  text-align:center;padding:24px 0;
-  font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace;
-}
+.layer-meta{font-size:10px;color:var(--ink3);font-family:var(--mono)}
+.layer-controls{display:grid;grid-template-columns:84px 70px;gap:6px;margin-top:6px}
+.layer-ctl{height:24px;border-radius:7px;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:10px;padding:0 6px;font-family:var(--mono)}
+.layer-folder{margin-top:6px;width:100%}
+.layer-empty{text-align:center;padding:24px 0;font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace}
+.folder-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid var(--border2);border-radius:999px;font-size:10px;color:var(--ink2);margin:0 6px 6px 0}
 .lib-item{
   display:flex;align-items:center;gap:8px;
   padding:7px 9px;border-radius:8px;
@@ -886,12 +888,6 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
     radial-gradient(ellipse 50% 60% at 75% 80%, rgba(44,182,125,.08), transparent),
     var(--bg)
   );
-}
-.canvas-context{
-  position:absolute;left:14px;top:12px;z-index:11;
-  display:flex;align-items:center;gap:8px;
-  padding:8px;border-radius:10px;
-  border:1px solid var(--border);background:rgba(18,18,22,.9);
 }
 /* dot grid */
 .canvas-area::before{
@@ -996,7 +992,53 @@ textarea.modal-textarea{
   &lt;div class=&quot;menu-bar&quot;&gt;
     &lt;span class=&quot;menu-item active&quot;&gt;Arquivo&lt;/span&gt;
     &lt;span class=&quot;menu-item&quot;&gt;Editar&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Documento&lt;/span&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuDocRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuDocumento&quot;&gt;Documento&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel&quot; id=&quot;menuDocumentoPanel&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Documento&lt;/div&gt;
+        &lt;div class=&quot;field-row&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;W px&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;docW&quot; type=&quot;number&quot; value=&quot;1200&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;H px&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;docH&quot; type=&quot;number&quot; value=&quot;750&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Mesa&lt;/div&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;docBg&quot; type=&quot;color&quot; value=&quot;#0f1626&quot;&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Tema da mesa&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;deskTheme&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;nebula&quot; selected&gt;Nebula&lt;/option&gt;
+              &lt;option value=&quot;clean&quot;&gt;Clean&lt;/option&gt;
+              &lt;option value=&quot;paper&quot;&gt;Paper&lt;/option&gt;
+              &lt;option value=&quot;mint&quot;&gt;Mint&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field-row one&quot; style=&quot;margin-top:6px&quot;&gt;
+          &lt;div class=&quot;field-item&quot;&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Referência de alinhamento&lt;/div&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
+              &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
+              &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
+        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
     &lt;span class=&quot;menu-item&quot;&gt;Texto&lt;/span&gt;
     &lt;span class=&quot;menu-item&quot;&gt;Vetor&lt;/span&gt;
     &lt;span class=&quot;menu-item&quot;&gt;Pixel&lt;/span&gt;
@@ -1059,51 +1101,7 @@ textarea.modal-textarea{
     &lt;/div&gt;
     &lt;div class=&quot;panel-body&quot;&gt;
 
-      &lt;!-- Document --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Documento&lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;W px&lt;/div&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;docW&quot; type=&quot;number&quot; value=&quot;1200&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;H px&lt;/div&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;docH&quot; type=&quot;number&quot; value=&quot;750&quot; min=&quot;200&quot; max=&quot;5000&quot;&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Mesa&lt;/div&gt;
-            &lt;input class=&quot;field-input&quot; id=&quot;docBg&quot; type=&quot;color&quot; value=&quot;#0f1626&quot;&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Tema da mesa&lt;/div&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;deskTheme&quot; style=&quot;height:32px&quot;&gt;
-              &lt;option value=&quot;nebula&quot; selected&gt;Nebula&lt;/option&gt;
-              &lt;option value=&quot;clean&quot;&gt;Clean&lt;/option&gt;
-              &lt;option value=&quot;paper&quot;&gt;Paper&lt;/option&gt;
-              &lt;option value=&quot;mint&quot;&gt;Mint&lt;/option&gt;
-            &lt;/select&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot; style=&quot;margin-top:6px&quot;&gt;
-          &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Referência de alinhamento&lt;/div&gt;
-            &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
-              &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
-              &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
-            &lt;/select&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
-        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+      &lt;div class=&quot;panel-section&quot;&gt;&lt;div class=&quot;layer-empty&quot;&gt;Configurações de documento no menu superior &lt;strong&gt;Documento&lt;/strong&gt;.&lt;/div&gt;&lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
@@ -1125,11 +1123,6 @@ textarea.modal-textarea{
 
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
-    &lt;div class=&quot;canvas-context&quot;&gt;
-      &lt;span class=&quot;ctx-pill&quot; id=&quot;canvasSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
-      &lt;span class=&quot;ctx-pill&quot;&gt;Snap&lt;/span&gt;
-      &lt;span class=&quot;ctx-pill&quot;&gt;100%&lt;/span&gt;
-    &lt;/div&gt;
     &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
     &lt;div class=&quot;artboard-plus-ui&quot; id=&quot;artboardPlusUI&quot;&gt;
       &lt;button class=&quot;ab-plus top&quot; id=&quot;btnAddArtTop&quot; title=&quot;Adicionar acima&quot;&gt;+&lt;/button&gt;
@@ -1213,12 +1206,20 @@ textarea.modal-textarea{
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
-      &lt;div class=&quot;panel-section&quot; style=&quot;max-height:220px;display:flex;flex-direction:column&quot;&gt;
+      &lt;div class=&quot;panel-section&quot; style=&quot;max-height:360px;display:flex;flex-direction:column&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
           Camadas
           &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;width:100%;justify-content:center;height:32px;margin:0 0 8px 0&quot;&gt;+ Nova layer&lt;/button&gt;
+        &lt;div class=&quot;layer-tools&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;justify-content:center;height:30px&quot;&gt;+ Layer&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnNewFolder&quot; style=&quot;justify-content:center;height:30px&quot;&gt;+ Pasta&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Agrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Desagrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnClipMask&quot; style=&quot;justify-content:center;height:30px&quot;&gt;ClipMask&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnReleaseClip&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Soltar clip&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;folderList&quot; style=&quot;margin-bottom:8px&quot;&gt;&lt;/div&gt;
         &lt;div id=&quot;layersList&quot; style=&quot;flex:1;overflow:auto&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
@@ -2110,12 +2111,83 @@ const typeIcons = {
   textbox:'type', text:'type', 'i-text':'type',
   rect:'square', circle:'circle', ellipse:'circle-ellipsis', line:'slash', image:'image', group:'layers'
 };
+const blendModes = ['source-over','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','difference','exclusion'];
+let layerFolders = ['Geral'];
+let draggingLayerId = null;
+
+function ensureFoldersForObjects(objs){
+  objs.forEach(obj =&gt; {
+    if(!obj.dataFolder) obj.dataFolder = 'Geral';
+    if(!layerFolders.includes(obj.dataFolder)) layerFolders.push(obj.dataFolder);
+  });
+}
+
+function renderFolderChips(){
+  const root = $('folderList');
+  if(!root) return;
+  root.innerHTML = layerFolders.map(name =&gt; `&lt;span class=&quot;folder-chip&quot;&gt;📁 ${name}&lt;/span&gt;`).join('');
+}
+
+function moveLayerByDisplayIndex(obj, displayIndex){
+  const objects = canvas.getObjects().filter(o=&gt;!isGuide(o));
+  const targetIndex = Math.max(0, Math.min(objects.length - 1, objects.length - 1 - displayIndex));
+  canvas.moveTo(obj, targetIndex);
+  canvas.requestRenderAll();
+}
+
+function applyClipMask(){
+  const sel = canvas.getActiveObject();
+  if(!sel || sel.type !== 'activeSelection' || sel._objects.length &lt; 2){
+    setStatus('Selecione 2 objetos para criar clip mask.');
+    return;
+  }
+  const objs = sel._objects.slice();
+  const mask = objs[0];
+  const target = objs[1];
+  mask.clone(clone =&gt; {
+    clone.absolutePositioned = true;
+    clone.set({ left: mask.left, top: mask.top, angle: mask.angle, scaleX: mask.scaleX, scaleY: mask.scaleY, originX: mask.originX, originY: mask.originY });
+    target.clipPath = clone;
+    canvas.remove(mask);
+    canvas.discardActiveObject();
+    canvas.setActiveObject(target);
+    canvas.requestRenderAll();
+    refreshLayers();
+    setStatus('Clip mask aplicado');
+  });
+}
+
+function releaseClipMask(){
+  const obj = activeObj();
+  if(!obj || !obj.clipPath){
+    setStatus('Selecione um objeto com clip mask.');
+    return;
+  }
+  obj.clipPath = null;
+  canvas.requestRenderAll();
+  refreshLayers();
+  setStatus('Clip mask removido');
+}
+
+function createLayerFolder(){
+  const name = prompt('Nome da pasta de camadas:');
+  if(!name) return;
+  const clean = name.trim();
+  if(!clean) return;
+  if(layerFolders.includes(clean)) { setStatus('Essa pasta já existe.'); return; }
+  layerFolders.push(clean);
+  renderFolderChips();
+  refreshLayers();
+  setStatus('Pasta criada');
+}
 
 function refreshLayers() {
   const list = $('layersList');
   const cnt = $('layerCount');
   if (!list) return;
   const objs = canvas.getObjects().filter(o=&gt;!isGuide(o)).slice().reverse();
+  ensureFoldersForObjects(objs);
+  renderFolderChips();
   if (cnt) cnt.textContent = objs.length;
   const active = canvas.getActiveObject();
   list.innerHTML = '';
@@ -2129,8 +2201,47 @@ function refreshLayers() {
     const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '');
-    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}% • ${obj.globalCompositeOperation||'source-over'}&lt;/div&gt;`;
+    div.draggable = true;
+    div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
+    const folderOps = layerFolders.map(f=&gt;`&lt;option value=&quot;${f}&quot; ${obj.dataFolder===f?'selected':''}&gt;${f}&lt;/option&gt;`).join('');
+    const blendOps = blendModes.map(m=&gt;`&lt;option value=&quot;${m}&quot; ${ (obj.globalCompositeOperation||'source-over')===m?'selected':'' }&gt;${m}&lt;/option&gt;`).join('');
+    div.innerHTML = `
+      &lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;
+      &lt;div style=&quot;min-width:0&quot;&gt;
+        &lt;div class=&quot;layer-main&quot;&gt;
+          &lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;
+          &lt;div class=&quot;layer-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}%&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;layer-controls&quot;&gt;
+          &lt;select class=&quot;layer-ctl layer-blend&quot;&gt;${blendOps}&lt;/select&gt;
+          &lt;input class=&quot;layer-ctl layer-opacity&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;100&quot; value=&quot;${Math.round((obj.opacity??1)*100)}&quot;&gt;
+        &lt;/div&gt;
+        &lt;select class=&quot;layer-ctl layer-folder&quot; style=&quot;width:100%&quot;&gt;${folderOps}&lt;/select&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;layer-meta&quot;&gt;↕&lt;/div&gt;`;
+
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
+    div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
+    div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
+    div.addEventListener('drop', e =&gt; {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      if(!draggingLayerId || draggingLayerId===div.dataset.layerId) return;
+      const draggedObj = objs.find(o =&gt; o.__uid===draggingLayerId);
+      if(!draggedObj) return;
+      moveLayerByDisplayIndex(draggedObj, i);
+      refreshLayers();
+    });
+
+    const blendEl = div.querySelector('.layer-blend');
+    const opacityEl = div.querySelector('.layer-opacity');
+    const folderEl = div.querySelector('.layer-folder');
+    [blendEl,opacityEl,folderEl].forEach(el =&gt; el?.addEventListener('click', e =&gt; e.stopPropagation()));
+    blendEl?.addEventListener('change', () =&gt; { obj.set({ globalCompositeOperation: blendEl.value }); canvas.requestRenderAll(); refreshLayers(); });
+    opacityEl?.addEventListener('input', () =&gt; { const op=Math.max(0,Math.min(100,Number(opacityEl.value)||100)); obj.set({ opacity: op/100 }); canvas.requestRenderAll(); });
+    folderEl?.addEventListener('change', () =&gt; { obj.dataFolder = folderEl.value; refreshLayers(); });
+
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
@@ -2384,6 +2495,20 @@ canvas.on('object:moving', opt =&gt; {
   if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
 });
 
+// ─── Menu Documento (dropdown) ──────────────────────────
+(function initMenuDocumento(){
+  const root = $('menuDocRoot');
+  const trigger = $('btnMenuDocumento');
+  if(!root || !trigger) return;
+  trigger.addEventListener('click', e =&gt; {
+    e.stopPropagation();
+    root.classList.toggle('open');
+  });
+  document.addEventListener('click', e =&gt; {
+    if(!root.contains(e.target)) root.classList.remove('open');
+  });
+})();
+
 // ─── Bind toolbar buttons ─────────────────────────────────
 $('btnAddArtText')?.addEventListener('click', addArtText);
 $('btnAddTextBox')?.addEventListener('click', addTextBox);
@@ -2445,6 +2570,9 @@ $('btnDistributeX')?.addEventListener('click', () =&gt; distributeSelection('x')
 $('btnDistributeY')?.addEventListener('click', () =&gt; distributeSelection('y'));
 $('btnGroup')?.addEventListener('click', groupSelection);
 $('btnUngroup')?.addEventListener('click', ungroupSelection);
+$('btnClipMask')?.addEventListener('click', applyClipMask);
+$('btnReleaseClip')?.addEventListener('click', releaseClipMask);
+$('btnNewFolder')?.addEventListener('click', createLayerFolder);
 $('btnLoadFont')?.addEventListener('click', loadGoogleFontForSelection);
 
 
