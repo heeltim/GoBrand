@@ -641,13 +641,12 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 /* ─── LAYOUT ──────────────────────────────────────────── */
 .app{
   display:grid;
-  grid-template-rows: 30px var(--topbar-h) 38px 1fr;
+  grid-template-rows: 30px var(--topbar-h) 1fr;
   grid-template-columns: var(--panel-w) 1fr var(--panel-w);
   height:100%;
 }
 
-.menu-bar,
-.context-strip{
+.menu-bar{
   grid-column:1 / -1;
   display:flex;
   align-items:center;
@@ -660,8 +659,22 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .menu-item:hover{background:rgba(255,255,255,.08);color:var(--ink)}
 .menu-item.active{background:rgba(127,90,240,.18);color:#fff}
 .menu-spacer{margin-left:auto}
+.menu-dd{position:relative}
+.menu-item-btn{border:none;cursor:pointer;background:transparent;color:var(--ink2);font:inherit;line-height:1;display:inline-flex;align-items:center}
+.menu-item-btn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
+.menu-item-btn.active{background:rgba(127,90,240,.18);color:#fff}
+.menu-dd-panel{
+  display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:50;
+  width:320px;padding:12px;border-radius:12px;background:var(--panel);
+  border:1px solid var(--border2);box-shadow:0 24px 48px rgba(0,0,0,.45);
+}
+.menu-dd.open .menu-dd-panel{display:block}
+.menu-dd-panel.compact{width:260px;padding:8px}
+.menu-cmd{height:30px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 8px;border-radius:7px;color:var(--ink2);font-family:var(--mono);font-size:11px;cursor:pointer}
+.menu-cmd:hover{background:rgba(255,255,255,.08);color:#fff}
+.menu-cmd .k{opacity:.75;font-size:10px}
+.menu-cmd-sep{height:1px;background:var(--border);margin:6px 4px}
 
-.context-strip{background:#292931;font-size:11px;gap:8px}
 .ctx-pill{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);display:inline-flex;align-items:center;color:var(--ink2)}
 .ctx-pill strong{color:var(--ink);font-weight:600}
 
@@ -763,34 +776,41 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
   margin-bottom:8px;font-weight:600;
 }
 
-/* ─── TOOL BUTTONS (left panel) ──────────────────────── */
-.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.tool-btn{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:5px;padding:10px 6px;border-radius:var(--r);
-  background:var(--surface);border:1px solid var(--border);
-  color:var(--ink2);font-size:10px;font-family:'JetBrains Mono', ui-monospace, monospace;
-  font-weight:500;letter-spacing:.04em;
-  transition:all .12s ease;
-}
-.tool-btn:hover{background:rgba(127,90,240,.08);border-color:rgba(127,90,240,.24);color:var(--accent)}
-.tool-btn svg{opacity:.7;transition:opacity .12s}
-.tool-btn:hover svg{opacity:1}
+/* ─── TOOLBAR (floating) ─────────────────────────────── */
+.floating-toolbar-wrap{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:12;display:inline-flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;width:max-content;max-width:calc(100% - 28px)}
+.floating-toolbar-row{display:flex;align-items:center;white-space:nowrap;width:max-content;max-width:calc(100vw - 48px);background:linear-gradient(180deg, rgba(34,34,42,.96), rgba(22,22,28,.96));border:1px solid rgba(255,255,255,.09);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;backdrop-filter:blur(10px)}
+.float-tool-btn{height:40px;padding:0 13px;border-right:1px solid rgba(255,255,255,.08);background:transparent;color:rgba(240,239,244,.78);font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.float-tool-btn:last-child{border-right:none}
+.float-tool-btn:hover{background:rgba(255,255,255,.06);color:#fff}
+.float-tool-btn.active{background:rgba(127,90,240,.24);color:#fff;box-shadow:inset 0 0 0 1px rgba(127,90,240,.3)}
+.float-tool-btn.icon{width:40px;justify-content:center;padding:0;font-size:14px}
+.float-tool-sep{width:1px;height:20px;background:rgba(255,255,255,.12)}
+.top-tools{display:none}
+.floating-toolbar-wrap.show-bezier-submenu .top-tools{display:flex}
+.top-tools{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%)}
+.fixed-tools{position:relative}
+.tool-submenu{position:absolute;bottom:calc(100% + 8px);left:0;display:none;flex-direction:column;gap:4px;min-width:168px;padding:6px;background:rgba(24,24,29,.98);border:1px solid var(--border2);border-radius:10px;box-shadow:0 18px 36px rgba(0,0,0,.45)}
+.tool-submenu.open{display:flex}
+.tool-submenu-btn{height:30px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--ink2);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.tool-submenu-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.tool-submenu-btn.active{background:rgba(127,90,240,.18);border-color:rgba(127,90,240,.32);color:#fff}
+.ctx-pop{position:fixed;display:none;min-width:220px;background:rgba(24,24,29,.98);border:1px solid var(--border2);border-radius:12px;box-shadow:0 18px 36px rgba(0,0,0,.45);padding:6px;z-index:80}
+.ctx-pop.open{display:block}
+.ctx-pop-item{height:34px;border-radius:8px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;color:var(--ink2);font-size:12px;font-family:var(--mono)}
+.ctx-pop-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.ctx-pop-sep{height:1px;background:var(--border);margin:6px 2px}
 
-.tools-rail{
-  width:46px;
-  border-right:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-  padding:10px 6px;
-  background:#191920;
-}
-.rail-btn{width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink2);display:inline-flex;align-items:center;justify-content:center}
-.rail-btn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
-.rail-btn.active{background:rgba(127,90,240,.18);border-color:rgba(127,90,240,.35);color:#fff}
-.rail-sep{width:18px;height:1px;background:var(--border2);margin:2px 0}
+.text-float-panel{position:absolute;left:24px;bottom:24px;z-index:13;width:300px;background:rgba(24,24,29,.96);border:1px solid var(--border2);border-radius:14px;box-shadow:0 20px 44px rgba(0,0,0,.45);display:none;overflow:hidden}
+.text-float-panel.open{display:block}
+.text-float-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.text-float-tabs{display:flex;gap:4px}
+.text-float-tab{height:28px;padding:0 10px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink2);font-size:11px;font-family:var(--mono)}
+.text-float-tab.active{background:rgba(127,90,240,.18);color:#fff;border-color:rgba(127,90,240,.35)}
+.text-float-close{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--ink2)}
+.text-float-body{padding:10px 12px;display:grid;gap:8px}
+.text-float-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.text-float-panel [data-pane]{display:none}
+.text-float-panel [data-pane].active{display:grid;gap:8px}
 
 /* ─── DOC INPUTS ──────────────────────────────────────── */
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
@@ -809,32 +829,27 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 .sep{height:1px;background:var(--border);margin:12px -12px}
 
 /* ─── LAYERS ──────────────────────────────────────────── */
+.layer-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
 .layer-item{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 9px;border-radius:8px;
-  border:1px solid transparent;
-  cursor:pointer;transition:all .1s ease;
-  margin-bottom:3px;
+  display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;
+  padding:7px 9px;border-radius:8px;border:1px solid transparent;
+  cursor:pointer;transition:all .1s ease;margin-bottom:4px;
 }
+.layer-main{display:flex;align-items:center;gap:8px;min-width:0}
 .layer-item:hover{background:rgba(255,255,255,.04)}
-.layer-item.active{
-  background:rgba(127,90,240,.1);
-  border-color:rgba(127,90,240,.26);
-}
-.layer-icon{
-  width:22px;height:22px;border-radius:5px;
-  background:var(--surface);
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:var(--ink3);font-size:10px;
-}
+.layer-item.active{background:rgba(127,90,240,.1);border-color:rgba(127,90,240,.26)}
+.layer-item.drag-over{border-color:rgba(127,90,240,.7);background:rgba(127,90,240,.18)}
+.layer-icon{width:22px;height:22px;border-radius:5px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:10px}
 .layer-item.active .layer-icon{background:rgba(127,90,240,.18);color:var(--accent)}
-.layer-name{flex:1;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-thumb{width:34px;height:24px;border-radius:6px;border:1px solid var(--border2);background:linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02));margin-right:6px;overflow:hidden;background-size:cover;background-position:center}
+.layer-name{font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .layer-item.active .layer-name{color:var(--ink)}
-.layer-empty{
-  text-align:center;padding:24px 0;
-  font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace;
-}
+.layer-meta{font-size:10px;color:var(--ink3);font-family:var(--mono)}
+.layer-controls{display:grid;grid-template-columns:84px 70px;gap:6px;margin-top:6px}
+.layer-ctl{height:24px;border-radius:7px;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:10px;padding:0 6px;font-family:var(--mono)}
+.layer-folder{margin-top:6px;width:100%}
+.layer-empty{text-align:center;padding:24px 0;font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace}
+.folder-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid var(--border2);border-radius:999px;font-size:10px;color:var(--ink2);margin:0 6px 6px 0}
 .lib-item{
   display:flex;align-items:center;gap:8px;
   padding:7px 9px;border-radius:8px;
@@ -843,6 +858,9 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   margin-bottom:3px;
 }
 .lib-item:hover{background:rgba(255,255,255,.04)}
+.lib-item[draggable="true"]{cursor:grab}
+.lib-item:active{cursor:grabbing}
+.lib-preview{width:42px;height:30px;border-radius:7px;border:1px solid var(--border2);background:linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.02));background-size:cover;background-position:center;flex-shrink:0}
 .lib-icon{
   width:22px;height:22px;border-radius:5px;background:var(--surface);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
@@ -889,12 +907,6 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
     var(--bg)
   );
 }
-.canvas-context{
-  position:absolute;left:14px;top:12px;z-index:11;
-  display:flex;align-items:center;gap:8px;
-  padding:8px;border-radius:10px;
-  border:1px solid var(--border);background:rgba(18,18,22,.9);
-}
 /* dot grid */
 .canvas-area::before{
   content:'';position:absolute;inset:0;
@@ -912,27 +924,6 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   box-shadow:0 8px 22px rgba(0,0,0,.35);pointer-events:auto;
 }
 .ab-plus:hover{background:var(--accent);border-color:rgba(255,255,255,.35)}
-
-/* ─── ZOOM BAR ────────────────────────────────────────── */
-.zoom-bar{
-  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:2px;
-  background:rgba(10,10,12,.85);backdrop-filter:blur(12px);
-  border:1px solid var(--border2);border-radius:12px;padding:4px;
-  z-index:10;
-}
-.zbtn{
-  width:28px;height:28px;border-radius:8px;
-  background:transparent;color:var(--ink2);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;
-  transition:all .1s ease;
-}
-.zbtn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
-.zbtn.label{
-  width:54px;font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;
-  cursor:default;color:var(--ink);
-}
 
 /* ─── HINT ────────────────────────────────────────────── */
 .hint-bar{
@@ -996,72 +987,53 @@ textarea.modal-textarea{
 &lt;div class=&quot;app&quot;&gt;
 
   &lt;div class=&quot;menu-bar&quot;&gt;
-    &lt;span class=&quot;menu-item active&quot;&gt;Arquivo&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Editar&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Documento&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Texto&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Vetor&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Pixel&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Camada&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Exibir&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Janela&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Ajuda&lt;/span&gt;
-    &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Exportar PNG&lt;/span&gt;
-  &lt;/div&gt;
-
-  &lt;header class=&quot;topbar&quot;&gt;
-    &lt;div class=&quot;topbar-brand&quot;&gt;
-      &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
-      &lt;span class=&quot;brand-name&quot;&gt;Vetor&lt;/span&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuFileRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn active&quot; id=&quot;btnMenuFile&quot;&gt;Arquivo&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuFilePanel&quot;&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;topbar-status&quot;&gt;
-      &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnRedo&quot; title=&quot;Redo (Ctrl+Y)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;23 4 23 10 17 10&quot;/&gt;&lt;path d=&quot;M20.49 15a9 9 0 1 1-.49-4.5&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuEditRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuEdit&quot;&gt;Editar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuEditPanel&quot;&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;topbar-actions&quot;&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnDelete&quot; title=&quot;Apagar seleção (Del)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;3 6 5 6 21 6&quot;/&gt;&lt;path d=&quot;M19 6l-1 14H6L5 6&quot;/&gt;&lt;path d=&quot;M10 11v6M14 11v6&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;PNG&lt;/button&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuSelectRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuSelect&quot;&gt;Seleção&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuSelectPanel&quot;&gt;&lt;/div&gt;
     &lt;/div&gt;
-  &lt;/header&gt;
-
-  &lt;div class=&quot;context-strip&quot;&gt;
-    &lt;span class=&quot;ctx-pill&quot; id=&quot;ctxSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Seleção automática&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configuração do documento&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configurações do aplicativo&lt;/span&gt;
-  &lt;/div&gt;
-
-  &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
-  &lt;aside class=&quot;panel&quot;&gt;
-    &lt;div class=&quot;tools-rail&quot;&gt;
-      &lt;button class=&quot;rail-btn active&quot; id=&quot;btnAddArtText&quot; title=&quot;Texto artístico&quot;&gt;T&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnAddTextBox&quot; title=&quot;Caixa de texto&quot;&gt;T▭&lt;/button&gt;
-      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
-      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuCreateRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuCreate&quot;&gt;Criar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuCreatePanel&quot;&gt;&lt;/div&gt;
     &lt;/div&gt;
-    &lt;div class=&quot;panel-body&quot;&gt;
-
-      &lt;!-- Document --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuTransformRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuTransform&quot;&gt;Transformar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuTransformPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuAppearanceRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuAppearance&quot;&gt;Aparência&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuAppearancePanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuOrganizeRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuOrganize&quot;&gt;Organizar&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuOrganizePanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuBooleanRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuBoolean&quot;&gt;Boolean&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuBooleanPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuTextRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuText&quot;&gt;Texto&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuTextPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuViewRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuView&quot;&gt;Exibir&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuViewPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuAdvancedRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuAdvanced&quot;&gt;Avançado&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel compact&quot; id=&quot;menuAdvancedPanel&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuDocRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuDocumento&quot;&gt;Documento&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel&quot; id=&quot;menuDocumentoPanel&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Documento&lt;/div&gt;
         &lt;div class=&quot;field-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
@@ -1090,69 +1062,85 @@ textarea.modal-textarea{
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
-        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Layout rápido&lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot;&gt;
+        &lt;div class=&quot;field-row one&quot; style=&quot;margin-top:6px&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Referência&lt;/div&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Referência de alinhamento&lt;/div&gt;
             &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
               &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
               &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟸&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Centro ↔&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟹&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Base ⟱&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Topo ⟰&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Meio ↕&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeX&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir X&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeY&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir Y&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Agrupar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Desagrupar&lt;/button&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
+        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
         &lt;/div&gt;
       &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
+    &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnQuickExportPng&quot;&gt;Exportar PNG&lt;/button&gt;
+  &lt;/div&gt;
+
+  &lt;header class=&quot;topbar&quot;&gt;
+    &lt;div class=&quot;topbar-brand&quot;&gt;
+      &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
+      &lt;span class=&quot;brand-name&quot;&gt;Vetor&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-status&quot;&gt;
+      &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
+      &lt;div style=&quot;width:1px;height:18px;background:var(--border);margin:0 2px&quot;&gt;&lt;/div&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟸&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; title=&quot;Centralizar horizontal&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↔&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; title=&quot;Alinhar à direita&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟹&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; title=&quot;Alinhar no topo&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟰&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; title=&quot;Centralizar vertical&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↕&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; title=&quot;Alinhar na base&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟱&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnRedo&quot; title=&quot;Redo (Ctrl+Y)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;23 4 23 10 17 10&quot;/&gt;&lt;path d=&quot;M20.49 15a9 9 0 1 1-.49-4.5&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt; &lt;span id=&quot;zoomTopLabel&quot; style=&quot;color:var(--ink2)&quot;&gt;ZOOM 100%&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-actions&quot;&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnDelete&quot; title=&quot;Apagar seleção (Del)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;3 6 5 6 21 6&quot;/&gt;&lt;path d=&quot;M19 6l-1 14H6L5 6&quot;/&gt;&lt;path d=&quot;M10 11v6M14 11v6&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;PNG&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+
+  &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
+  &lt;aside class=&quot;panel&quot;&gt;
+    &lt;div class=&quot;panel-body&quot;&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;&lt;div class=&quot;layer-empty&quot;&gt;Configurações de documento no menu superior &lt;strong&gt;Documento&lt;/strong&gt;.&lt;/div&gt;&lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
-      &lt;!-- JSON --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Projeto&lt;/div&gt;
-        &lt;div style=&quot;display:flex;gap:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnSaveJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Salvar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnLoadJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Carregar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;!-- Layers --&gt;
-      &lt;div class=&quot;panel-section&quot; style=&quot;flex:1&quot;&gt;
+      &lt;div class=&quot;panel-section&quot; style=&quot;max-height:360px;display:flex;flex-direction:column&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
           Camadas
           &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;width:100%;justify-content:center;height:32px;margin:0 0 8px 0&quot;&gt;+ Nova layer&lt;/button&gt;
-        &lt;div id=&quot;layersList&quot;&gt;&lt;/div&gt;
+        &lt;div class=&quot;layer-tools&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;justify-content:center;height:30px&quot;&gt;+ Layer&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnNewFolder&quot; style=&quot;justify-content:center;height:30px&quot;&gt;+ Pasta&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Agrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Desagrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnClipMask&quot; style=&quot;justify-content:center;height:30px&quot;&gt;ClipMask&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnReleaseClip&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Soltar clip&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;folderList&quot; style=&quot;margin-bottom:8px&quot;&gt;&lt;/div&gt;
+        &lt;div id=&quot;layersList&quot; style=&quot;flex:1;overflow-y:auto;overflow-x:hidden&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
@@ -1170,16 +1158,11 @@ textarea.modal-textarea{
 
     &lt;/div&gt;
 
-    &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;image/*&quot; style=&quot;display:none&quot;&gt;
+    &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;.svg,.png,.jpg,.jpeg,.webp,.ai,.eps,application/postscript,image/*&quot; style=&quot;display:none&quot;&gt;
   &lt;/aside&gt;
 
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
-    &lt;div class=&quot;canvas-context&quot;&gt;
-      &lt;span class=&quot;ctx-pill&quot; id=&quot;canvasSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
-      &lt;span class=&quot;ctx-pill&quot;&gt;Snap&lt;/span&gt;
-      &lt;span class=&quot;ctx-pill&quot;&gt;100%&lt;/span&gt;
-    &lt;/div&gt;
     &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
     &lt;div class=&quot;artboard-plus-ui&quot; id=&quot;artboardPlusUI&quot;&gt;
       &lt;button class=&quot;ab-plus top&quot; id=&quot;btnAddArtTop&quot; title=&quot;Adicionar acima&quot;&gt;+&lt;/button&gt;
@@ -1188,14 +1171,75 @@ textarea.modal-textarea{
       &lt;button class=&quot;ab-plus left&quot; id=&quot;btnAddArtLeft&quot; title=&quot;Adicionar à esquerda&quot;&gt;+&lt;/button&gt;
     &lt;/div&gt;
 
-    &lt;div class=&quot;zoom-bar&quot;&gt;
-      &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomOut&quot;&gt;−&lt;/button&gt;
-      &lt;button class=&quot;zbtn label&quot; id=&quot;btnZoomReset&quot;&gt;&lt;span id=&quot;zoomLabel&quot;&gt;100%&lt;/span&gt;&lt;/button&gt;
-      &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomIn&quot;&gt;+&lt;/button&gt;
-      &lt;div style=&quot;width:1px;height:20px;background:var(--border);margin:0 2px&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;zbtn&quot; id=&quot;btnFit&quot; title=&quot;Encaixar&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M7 3H3v4M17 3h4v4M7 21H3v-4M21 17v4h-4&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
+    &lt;div class=&quot;floating-toolbar-wrap&quot; id=&quot;floatingToolbar&quot;&gt;
+      &lt;div class=&quot;floating-toolbar-row top-tools&quot; id=&quot;floatingTopTools&quot;&gt;
+        &lt;button class=&quot;float-tool-btn active&quot; id=&quot;btnToolVector&quot;&gt;Vetor&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMove&quot; data-tool=&quot;move&quot;&gt;Mover&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolLasso&quot;&gt;Laço&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolPaint&quot;&gt;Pintar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCurve&quot;&gt;Curvar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCut&quot;&gt;Cortar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMore&quot;&gt;Mais ▾&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;floating-toolbar-row fixed-tools&quot;&gt;
+        &lt;button class=&quot;float-tool-btn icon active&quot; id=&quot;btnSelect&quot; data-tool=&quot;select&quot; title=&quot;Selecionar / mover&quot;&gt;↖&lt;/button&gt;
+        &lt;div class=&quot;tool-submenu&quot; id=&quot;selectToolSubmenu&quot;&gt;
+          &lt;button class=&quot;tool-submenu-btn active&quot; id=&quot;btnSelectNormal&quot; data-tool=&quot;select&quot;&gt;&lt;span&gt;Seleção&lt;/span&gt;&lt;span&gt;V&lt;/span&gt;&lt;/button&gt;
+          &lt;button class=&quot;tool-submenu-btn&quot; id=&quot;btnSelectDirect&quot; data-tool=&quot;direct-select&quot;&gt;&lt;span&gt;Seleção direta&lt;/span&gt;&lt;span&gt;A&lt;/span&gt;&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnBezier&quot; title=&quot;Bezier&quot;&gt;∿&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnTextTool&quot; data-tool=&quot;text&quot; title=&quot;Texto: clique (artístico) / arraste (caixa)&quot;&gt;T&lt;/button&gt;
+        &lt;div class=&quot;float-tool-sep&quot;&gt;&lt;/div&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;text-float-panel&quot; id=&quot;textFloatPanel&quot;&gt;
+      &lt;div class=&quot;text-float-head&quot;&gt;
+        &lt;div class=&quot;text-float-tabs&quot;&gt;
+          &lt;button class=&quot;text-float-tab active&quot; data-tf-tab=&quot;basico&quot;&gt;Básico&lt;/button&gt;
+          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;detalhes&quot;&gt;Detalhes&lt;/button&gt;
+          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;variavel&quot;&gt;Variável&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;text-float-close&quot; id=&quot;btnCloseTextFloat&quot;&gt;✕&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;text-float-body&quot;&gt;
+        &lt;div data-pane=&quot;basico&quot; class=&quot;active&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfFontSize&quot; type=&quot;number&quot; min=&quot;6&quot; step=&quot;1&quot; placeholder=&quot;Tamanho&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfColor&quot; type=&quot;color&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;seg&quot; id=&quot;tfAlignSeg&quot;&gt;
+            &lt;button class=&quot;seg-opt on&quot; data-val=&quot;left&quot;&gt;≡&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div data-pane=&quot;detalhes&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfLineHeight&quot; type=&quot;number&quot; min=&quot;0.6&quot; max=&quot;4&quot; step=&quot;0.1&quot; placeholder=&quot;Entrelinha&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfLetterSpacing&quot; type=&quot;number&quot; min=&quot;-50&quot; max=&quot;200&quot; step=&quot;1&quot; placeholder=&quot;Espaçamento&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;tfWeight&quot;&gt;&lt;option value=&quot;300&quot;&gt;Light&lt;/option&gt;&lt;option value=&quot;400&quot;&gt;Regular&lt;/option&gt;&lt;option value=&quot;500&quot;&gt;Medium&lt;/option&gt;&lt;option value=&quot;600&quot;&gt;SemiBold&lt;/option&gt;&lt;option value=&quot;700&quot;&gt;Bold&lt;/option&gt;&lt;/select&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;tfStyle&quot;&gt;&lt;option value=&quot;normal&quot;&gt;Normal&lt;/option&gt;&lt;option value=&quot;italic&quot;&gt;Itálico&lt;/option&gt;&lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div data-pane=&quot;variavel&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfUnderline&quot; style=&quot;justify-content:center&quot;&gt;Sublinhado&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfStrike&quot; style=&quot;justify-content:center&quot;&gt;Riscado&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfUppercase&quot; style=&quot;justify-content:center&quot;&gt;MAIÚSCULAS&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfLowercase&quot; style=&quot;justify-content:center&quot;&gt;minúsculas&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
     &lt;/div&gt;
 
     &lt;div class=&quot;hint-bar&quot;&gt;
@@ -1211,8 +1255,7 @@ textarea.modal-textarea{
     &lt;div class=&quot;panel-body&quot;&gt;
       &lt;div class=&quot;panel-tabs&quot; id=&quot;propTabs&quot;&gt;
         &lt;button class=&quot;panel-tab active&quot; data-tab=&quot;cor&quot;&gt;Cor&lt;/button&gt;
-        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;amostras&quot;&gt;Amostras&lt;/button&gt;
-        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;tracado&quot;&gt;Traçado&lt;/button&gt;
+                &lt;button class=&quot;panel-tab&quot; data-tab=&quot;tracado&quot;&gt;Traçado&lt;/button&gt;
         &lt;button class=&quot;panel-tab&quot; data-tab=&quot;aparencia&quot;&gt;Aparência&lt;/button&gt;
       &lt;/div&gt;
       &lt;div data-tab-panel=&quot;cor&quot;&gt;
@@ -1263,6 +1306,8 @@ textarea.modal-textarea{
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
       &lt;!-- Style --&gt;
       &lt;div class=&quot;panel-section&quot; id=&quot;propStyle&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Estilo&lt;/div&gt;
@@ -1280,7 +1325,7 @@ textarea.modal-textarea{
 
       &lt;!-- Text --&gt;
       &lt;div class=&quot;panel-section&quot; id=&quot;propText&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Texto&lt;/div&gt;
+        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;align-items:center;justify-content:space-between&quot;&gt;Texto &lt;button class=&quot;tbtn&quot; id=&quot;btnTypographyGear&quot; title=&quot;Abrir painel de tipografia&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;⚙&lt;/button&gt;&lt;/div&gt;
         &lt;div class=&quot;prop-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
             &lt;div class=&quot;field-label&quot;&gt;Fonte&lt;/div&gt;
@@ -1318,21 +1363,6 @@ textarea.modal-textarea{
             &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
             &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
           &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;!-- Brand palette (injected by postMessage) --&gt;
-      &lt;div class=&quot;sep&quot; id=&quot;paletteSep&quot; style=&quot;display:none&quot;&gt;&lt;/div&gt;
-      &lt;div class=&quot;panel-section&quot; id=&quot;paletteSection&quot; style=&quot;display:none&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Paleta da Marca&lt;/div&gt;
-        &lt;div class=&quot;swatch-grid&quot; id=&quot;brandPalette&quot;&gt;&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div data-tab-panel=&quot;amostras&quot; style=&quot;display:none&quot;&gt;
-        &lt;div class=&quot;panel-section&quot;&gt;
-          &lt;div class=&quot;panel-section-label&quot;&gt;Amostras da marca&lt;/div&gt;
-          &lt;div class=&quot;swatch-grid&quot; id=&quot;paletteRow2&quot;&gt;&lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
@@ -1406,6 +1436,19 @@ textarea.modal-textarea{
 
 &lt;/div&gt;&lt;!-- .app --&gt;
 
+
+&lt;div class=&quot;ctx-pop&quot; id=&quot;canvasCtx&quot;&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;paste&quot;&gt;&lt;span&gt;Colar&lt;/span&gt;&lt;span&gt;Ctrl+V&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;group&quot;&gt;&lt;span&gt;Agrupar&lt;/span&gt;&lt;span&gt;Ctrl+G&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;ungroup&quot;&gt;&lt;span&gt;Desagrupar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+G&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-sep&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;front&quot;&gt;&lt;span&gt;Trazer para frente&lt;/span&gt;&lt;span&gt;]&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;back&quot;&gt;&lt;span&gt;Enviar para trás&lt;/span&gt;&lt;span&gt;[&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-sep&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;duplicate&quot;&gt;&lt;span&gt;Duplicar&lt;/span&gt;&lt;span&gt;Ctrl+D&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;delete&quot;&gt;&lt;span&gt;Excluir&lt;/span&gt;&lt;span&gt;Del&lt;/span&gt;&lt;/div&gt;
+&lt;/div&gt;
+
 &lt;!-- ═══ MODAL ════════════════════════════════════════════ --&gt;
 &lt;div class=&quot;modal-bg&quot; id=&quot;modalBg&quot;&gt;
   &lt;div class=&quot;modal-box&quot;&gt;
@@ -1461,6 +1504,9 @@ let zoom = 1;
 let isPanning = false, isSpaceDown = false;
 let lastX = 0, lastY = 0;
 let artboardMode = false;
+let activeTool = 'select';
+let textDragStart = null;
+let textDragMoved = false;
 
 // Artboard objects
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
@@ -1657,8 +1703,11 @@ function updateArtboardPlusUI() {
 }
 
 function updateZoomLabel() {
+  const pct = Math.round(zoom*100) + '%';
   const el = $('zoomLabel');
-  if (el) el.textContent = Math.round(zoom*100) + '%';
+  if (el) el.textContent = pct;
+  const top = $('zoomTopLabel');
+  if (top) top.textContent = 'ZOOM ' + pct;
 }
 
 // ─── Pan / Zoom ──────────────────────────────────────────
@@ -1676,21 +1725,97 @@ canvas.on('mouse:down', opt =&gt; {
     isPanning = true; canvas.setCursor('grab');
     lastX = e.clientX; lastY = e.clientY;
     opt.e.preventDefault();
+    return;
+  }
+
+  if (activeTool === 'bezier') {
+    const pointer = canvas.getPointer(e);
+    if (vectorToolState.mode !== 'creating') startBezierCreation();
+    addBezierPoint(pointer, e);
+    opt.e.preventDefault();
+    return;
+  }
+
+  if (activeTool === 'text' &amp;&amp; !opt.target) {
+    const p = canvas.getPointer(e);
+    textDragStart = { x:p.x, y:p.y };
+    textDragMoved = false;
+    opt.e.preventDefault();
   }
 });
 
 canvas.on('mouse:move', opt =&gt; {
-  if (!isPanning) return;
-  const e = opt.e;
-  const vpt = canvas.viewportTransform;
-  vpt[4] += e.clientX - lastX;
-  vpt[5] += e.clientY - lastY;
-  canvas.setViewportTransform(vpt);
-  lastX = e.clientX; lastY = e.clientY;
-  updateArtboardPlusUI();
+  if (isPanning) {
+    const e = opt.e;
+    const vpt = canvas.viewportTransform;
+    vpt[4] += e.clientX - lastX;
+    vpt[5] += e.clientY - lastY;
+    canvas.setViewportTransform(vpt);
+    lastX = e.clientX; lastY = e.clientY;
+    updateArtboardPlusUI();
+    return;
+  }
+
+  if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
+    const pointer = canvas.getPointer(opt.e);
+    if (vectorToolState.dragPointIndex &gt;= 0 &amp;&amp; (opt.e.buttons &amp; 1)) {
+      updateDraggedCreatePoint(pointer, opt.e);
+    } else {
+      updateBezierCreationPreview(pointer);
+    }
+    return;
+  }
+
+  if (vectorToolState.segmentDrag &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path) {
+    const pointer = canvas.getPointer(opt.e);
+    const drag = vectorToolState.segmentDrag;
+    const dx = pointer.x - drag.last.x;
+    const dy = pointer.y - drag.last.y;
+    drag.last = pointer;
+    const m = ensurePathVectorModel(bezierEditor.path);
+    if (!m) return;
+    const i0 = drag.seg;
+    const i1 = (i0 + 1) % m.points.length;
+    const p0 = m.points[i0], p1 = m.points[i1];
+    p0.outX += dx; p0.outY += dy;
+    p1.inX += dx; p1.inY += dy;
+    applyVectorModelToPath(bezierEditor.path);
+    refreshBezierEditorControls();
+    return;
+  }
+
+  if (activeTool === 'text' &amp;&amp; textDragStart) {
+    const p = canvas.getPointer(opt.e);
+    textDragMoved = Math.hypot(p.x - textDragStart.x, p.y - textDragStart.y) &gt; 8;
+  }
 });
 
-canvas.on('mouse:up', () =&gt; { if (isPanning) { isPanning = false; canvas.setCursor('default'); } });
+canvas.on('mouse:up', opt =&gt; {
+  if (isPanning) { isPanning = false; canvas.setCursor(activeTool==='text' ? 'text' : 'default'); }
+
+  if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
+    vectorToolState.dragPointIndex = -1;
+  }
+
+  if (vectorToolState.segmentDrag) {
+    vectorToolState.segmentDrag = null;
+    snapshot();
+  }
+
+  if (activeTool === 'text' &amp;&amp; textDragStart) {
+    const pointer = canvas.getPointer(opt.e);
+    const dx = pointer.x - textDragStart.x;
+    const dy = pointer.y - textDragStart.y;
+    if (!textDragMoved || Math.hypot(dx, dy) &lt; 8) {
+      addArtTextAt(pointer.x, pointer.y);
+    } else {
+      addTextBoxAt(Math.min(textDragStart.x, pointer.x), Math.min(textDragStart.y, pointer.y), Math.abs(dx), Math.abs(dy));
+    }
+    textDragStart = null;
+    textDragMoved = false;
+    setActiveTool('select');
+  }
+});
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   if (!target) return;
@@ -1702,7 +1827,66 @@ canvas.on('mouse:down', opt =&gt; {
   setStatus('Prancheta ativa selecionada');
 });
 
+
+canvas.on('mouse:down', opt =&gt; {
+  if (activeTool !== 'direct-select') return;
+  const target = opt.target;
+  const pointer = canvas.getPointer(opt.e);
+  if (!target) { if (bezierEditor.enabled) finalizeBezierEditor(); return; }
+  if (pathIsBezierEditable(target)) {
+    canvas.setActiveObject(target);
+    attachBezierEditor(target);
+    const seg = getNearestBezierSegment(target, pointer);
+    if (seg &gt;= 0 &amp;&amp; !opt.e.altKey) {
+      vectorToolState.segmentDrag = { seg, last:pointer };
+      vectorToolState.mode = 'transforming';
+    }
+    return;
+  }
+  if (target.isBezierEditorControl) return;
+});
+
+
+canvas.on('mouse:dblclick', opt =&gt; {
+  const target = opt.target;
+  const pointer = canvas.getPointer(opt.e);
+  if (!target) return;
+  if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
+    finishBezierCreation({toEditing:true});
+    setActiveTool('direct-select');
+    return;
+  }
+  if (pathIsBezierEditable(target)) {
+    if (activeTool !== 'direct-select') setActiveTool('direct-select');
+    if (bezierEditor.enabled &amp;&amp; bezierEditor.path === target) {
+      const seg = getNearestBezierSegment(target, pointer);
+      if (seg &gt;= 0) insertPointOnSegment(target, seg);
+    } else {
+      attachBezierEditor(target);
+    }
+  }
+});
+
 window.addEventListener('keydown', e =&gt; {
+  if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const path = finishBezierCreation({toEditing:true});
+      if (path) setActiveTool('direct-select');
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelBezierCreationStep();
+      return;
+    }
+  }
+  if (activeTool === 'direct-select' &amp;&amp; e.key === 'Escape' &amp;&amp; bezierEditor.enabled) {
+    e.preventDefault();
+    finalizeBezierEditor();
+    setActiveTool('select');
+    return;
+  }
   if (e.code === 'Space' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; !isSpaceDown) {
     isSpaceDown = true; canvas.setCursor('grab'); e.preventDefault();
   }
@@ -1711,6 +1895,8 @@ window.addEventListener('keydown', e =&gt; {
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; !e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); groupSelection(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); ungroupSelection(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key === ']') { e.preventDefault(); bringForwardSelection(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key === '[') { e.preventDefault(); sendBackwardSelection(); }
   if ((e.key === 'Delete' || e.key === 'Backspace') &amp;&amp; !e.target.matches('input,textarea')) { del(); }
 }, {passive:false});
 
@@ -1724,10 +1910,9 @@ function setStatus(txt) {
 }
 
 // ─── Add objects ─────────────────────────────────────────
-function addArtText() {
-  ensureArtboard();
+function addArtTextAt(left, top) {
   const t = new fabric.IText('Texto artístico', {
-    left: artboard.left + 60, top: artboard.top + 60,
+    left, top,
     fontFamily: 'Outfit', fontSize: 42,
     fill: '#111', editable: true
   });
@@ -1735,16 +1920,27 @@ function addArtText() {
   setStatus('Texto artístico adicionado');
 }
 
-function addTextBox() {
-  ensureArtboard();
+function addTextBoxAt(left, top, width=360, height=120) {
   const t = new fabric.Textbox('Caixa de texto', {
-    left: artboard.left + 60, top: artboard.top + 140,
-    width: 360, fontFamily: 'Outfit', fontSize: 32,
+    left, top,
+    width: Math.max(120, width),
+    height: Math.max(48, height),
+    fontFamily: 'Outfit', fontSize: 32,
     fill: '#111', editable: true,
     textAlign: 'left'
   });
   canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
   setStatus('Caixa de texto adicionada');
+}
+
+function addArtText() {
+  ensureArtboard();
+  addArtTextAt(artboard.left + 60, artboard.top + 60);
+}
+
+function addTextBox() {
+  ensureArtboard();
+  addTextBoxAt(artboard.left + 60, artboard.top + 140, 360, 120);
 }
 
 function addRect() {
@@ -1774,6 +1970,463 @@ function addLine() {
   canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
 }
 
+function addBezier() {
+  setActiveTool('bezier');
+  startBezierCreation();
+}
+
+// ─── Bezier tool (Figma-like states) ─────────────────────
+const vectorToolState = {
+  mode: 'idle', // idle | creating | editing | transforming
+  points: [],
+  closed: false,
+  previewPath: null,
+  dragPointIndex: -1,
+  segmentDrag: null
+};
+
+const bezierEditor = {
+  path: null,
+  controls: [],
+  links: [],
+  enabled: false
+};
+
+const BEZIER_CREATE_HIT = 12;
+
+function makeBezierPoint(x, y) {
+  return { x, y, inX:x, inY:y, outX:x, outY:y, kind:'corner' };
+}
+
+function cloneBezierPoints(points=[]) {
+  return points.map(p =&gt; ({...p}));
+}
+
+function normalizeVectorByShift(dx, dy, stepDeg=15){
+  const ang = Math.atan2(dy, dx);
+  const len = Math.hypot(dx, dy);
+  const step = (Math.PI/180) * stepDeg;
+  const a = Math.round(ang / step) * step;
+  return { dx: Math.cos(a) * len, dy: Math.sin(a) * len };
+}
+
+function bezierPointsToPathData(points, closed=false){
+  if (!points || points.length &lt; 2) return '';
+  const segs = [`M ${points[0].x} ${points[0].y}`];
+  for (let i=1;i&lt;points.length;i++) {
+    const prev = points[i-1];
+    const curr = points[i];
+    segs.push(`C ${prev.outX} ${prev.outY}, ${curr.inX} ${curr.inY}, ${curr.x} ${curr.y}`);
+  }
+  if (closed &amp;&amp; points.length &gt; 2) {
+    const last = points[points.length-1];
+    const first = points[0];
+    segs.push(`C ${last.outX} ${last.outY}, ${first.inX} ${first.inY}, ${first.x} ${first.y} Z`);
+  }
+  return segs.join(' ');
+}
+
+function ensureBezierPreview(){
+  if (vectorToolState.previewPath) return vectorToolState.previewPath;
+  const p = new fabric.Path('M 0 0', {
+    fill:'',
+    stroke:'rgba(127,90,240,.95)',
+    strokeWidth:2.5,
+    strokeLineCap:'round',
+    strokeLineJoin:'round',
+    selectable:false,
+    evented:false,
+    excludeFromExport:true
+  });
+  p.strokeDashArray = [8, 4];
+  vectorToolState.previewPath = p;
+  canvas.add(p);
+  canvas.bringToFront(p);
+  return p;
+}
+
+function clearBezierPreview(){
+  const p = vectorToolState.previewPath;
+  if (p &amp;&amp; canvas.getObjects().includes(p)) canvas.remove(p);
+  vectorToolState.previewPath = null;
+}
+
+function updateBezierCreationPreview(pointer=null){
+  if (vectorToolState.mode !== 'creating') return;
+  const pts = cloneBezierPoints(vectorToolState.points);
+  if (pointer &amp;&amp; pts.length) pts.push(makeBezierPoint(pointer.x, pointer.y));
+  if (pts.length &lt; 2) { clearBezierPreview(); canvas.requestRenderAll(); return; }
+  const pathData = bezierPointsToPathData(pts, false);
+  const pre = ensureBezierPreview();
+  pre.set({ path: fabric.Path.parsePath(pathData) });
+  pre.setCoords();
+  canvas.bringToFront(pre);
+  canvas.requestRenderAll();
+}
+
+function pathIsBezierEditable(pathObj){
+  return !!pathObj &amp;&amp; pathObj.type === 'path' &amp;&amp; (Array.isArray(pathObj.vectorModel?.points) || Array.isArray(pathObj.path));
+}
+
+function parseSimpleBezierModel(pathObj){
+  const cmds = pathObj?.path || [];
+  const m = cmds.find(c =&gt; c[0] === 'M');
+  const c = cmds.find(c =&gt; c[0] === 'C');
+  if (!m || !c) return null;
+  return {
+    closed: false,
+    points: [
+      { x:+m[1], y:+m[2], inX:+m[1], inY:+m[2], outX:+c[1], outY:+c[2], kind:'smooth' },
+      { x:+c[5], y:+c[6], inX:+c[3], inY:+c[4], outX:+c[5], outY:+c[6], kind:'smooth' }
+    ]
+  };
+}
+
+function ensurePathVectorModel(pathObj){
+  if (pathObj?.vectorModel?.points?.length) return pathObj.vectorModel;
+  const parsed = parseSimpleBezierModel(pathObj);
+  if (parsed) {
+    pathObj.vectorModel = parsed;
+    return parsed;
+  }
+  return null;
+}
+
+function applyVectorModelToPath(pathObj){
+  const model = ensurePathVectorModel(pathObj);
+  if (!model || model.points.length &lt; 2) return;
+  const d = bezierPointsToPathData(model.points, !!model.closed);
+  pathObj.set({ path: fabric.Path.parsePath(d) });
+  pathObj.setCoords();
+}
+
+function startBezierCreation(){
+  if (bezierEditor.enabled) finalizeBezierEditor();
+  vectorToolState.mode = 'creating';
+  vectorToolState.points = [];
+  vectorToolState.closed = false;
+  vectorToolState.dragPointIndex = -1;
+  vectorToolState.segmentDrag = null;
+  clearBezierPreview();
+  setStatus('Vetor: clique para ponto reto, arraste para alças. Enter finaliza, Esc desfaz.');
+}
+
+function finishBezierCreation({toEditing=true}={}){
+  const pts = vectorToolState.points;
+  if (pts.length &lt; 2) {
+    vectorToolState.mode = 'idle';
+    clearBezierPreview();
+    return null;
+  }
+  const d = bezierPointsToPathData(pts, vectorToolState.closed);
+  const path = new fabric.Path(d, {
+    fill:'',
+    stroke:'rgba(127,90,240,.95)',
+    strokeWidth:3,
+    strokeLineCap:'round',
+    strokeLineJoin:'round'
+  });
+  path.dataName = 'Bezier';
+  path.vectorModel = { points: cloneBezierPoints(pts), closed: !!vectorToolState.closed };
+  canvas.add(path);
+  canvas.setActiveObject(path);
+  clearBezierPreview();
+  vectorToolState.points = [];
+  vectorToolState.closed = false;
+  vectorToolState.mode = toEditing ? 'editing' : 'idle';
+  if (toEditing) attachBezierEditor(path);
+  canvas.requestRenderAll();
+  snapshot();
+  return path;
+}
+
+function cancelBezierCreationStep(){
+  if (vectorToolState.mode !== 'creating') return;
+  if (vectorToolState.points.length) {
+    vectorToolState.points.pop();
+    setStatus(vectorToolState.points.length ? 'Último ponto removido.' : 'Criação Bézier cancelada.');
+    updateBezierCreationPreview();
+    return;
+  }
+  clearBezierPreview();
+  vectorToolState.mode = 'idle';
+  setActiveTool('select');
+}
+
+function distance(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+function maybeCloseBezierPath(pointer){
+  if (vectorToolState.points.length &lt; 3) return false;
+  const first = vectorToolState.points[0];
+  if (distance(pointer, first) &gt; BEZIER_CREATE_HIT / Math.max(zoom, .1)) return false;
+  vectorToolState.closed = true;
+  finishBezierCreation({toEditing:true});
+  return true;
+}
+
+function addBezierPoint(pointer, e){
+  if (maybeCloseBezierPath(pointer)) return;
+  const p = makeBezierPoint(pointer.x, pointer.y);
+  const pts = vectorToolState.points;
+  const prev = pts[pts.length-1];
+  if (prev &amp;&amp; prev.kind !== 'corner' &amp;&amp; !e.altKey) {
+    const vx = prev.x - prev.outX;
+    const vy = prev.y - prev.outY;
+    p.inX = p.x + vx;
+    p.inY = p.y + vy;
+    p.kind = 'smooth';
+  }
+  pts.push(p);
+  vectorToolState.dragPointIndex = pts.length - 1;
+  updateBezierCreationPreview();
+}
+
+function updateDraggedCreatePoint(pointer, e){
+  const i = vectorToolState.dragPointIndex;
+  if (i &lt; 0) return;
+  const pt = vectorToolState.points[i];
+  let dx = pointer.x - pt.x;
+  let dy = pointer.y - pt.y;
+  if (e.shiftKey) ({dx, dy} = normalizeVectorByShift(dx, dy));
+  pt.outX = pt.x + dx;
+  pt.outY = pt.y + dy;
+  if (e.altKey) {
+    pt.inX = pt.x; pt.inY = pt.y; pt.kind = 'corner';
+  } else {
+    pt.inX = pt.x - dx;
+    pt.inY = pt.y - dy;
+    pt.kind = 'smooth';
+  }
+  updateBezierCreationPreview();
+}
+
+function getHandleVisualScale(){
+  return 1 / Math.max(zoom, 0.05);
+}
+
+function createBezierControl(x, y, role){
+  const isAnchor = role.includes('anchor');
+  const r = isAnchor ? 5.5 : 4.5;
+  const c = new fabric.Circle({
+    left:x-r, top:y-r, radius:r,
+    fill:isAnchor ? '#ffffff' : '#111',
+    stroke:'#2f9bff', strokeWidth:2,
+    selectable:false, evented:true, hasControls:false, hasBorders:false,
+    excludeFromExport:true, hoverCursor:'move'
+  });
+  const sc = getHandleVisualScale();
+  c.set({ scaleX:sc, scaleY:sc });
+  c.bziRole = role;
+  c.isBezierEditorControl = true;
+  return c;
+}
+
+function clearBezierEditor(){
+  [...bezierEditor.links, ...bezierEditor.controls].forEach(o =&gt; {
+    if (canvas.getObjects().includes(o)) canvas.remove(o);
+  });
+  bezierEditor.path = null;
+  bezierEditor.controls = [];
+  bezierEditor.links = [];
+  bezierEditor.enabled = false;
+  vectorToolState.segmentDrag = null;
+  canvas.requestRenderAll();
+}
+
+function getPathModel(pathObj){
+  return ensurePathVectorModel(pathObj);
+}
+
+function refreshBezierEditorControls(){
+  const pathObj = bezierEditor.path;
+  if (!pathObj) return;
+  const model = getPathModel(pathObj);
+  if (!model) return;
+  const sc = getHandleVisualScale();
+
+  // rebuild links fresh for simplicity
+  bezierEditor.links.forEach(l =&gt; canvas.remove(l));
+  bezierEditor.links = [];
+
+  const byRole = Object.fromEntries(bezierEditor.controls.map(c =&gt; [c.bziRole, c]));
+  model.points.forEach((pt, i) =&gt; {
+    const a = byRole[`anchor-${i}`];
+    const hin = byRole[`in-${i}`];
+    const hout = byRole[`out-${i}`];
+    if (a) a.set({ left:pt.x-a.radius, top:pt.y-a.radius, scaleX:sc, scaleY:sc });
+    if (hin) hin.set({ left:pt.inX-hin.radius, top:pt.inY-hin.radius, scaleX:sc, scaleY:sc });
+    if (hout) hout.set({ left:pt.outX-hout.radius, top:pt.outY-hout.radius, scaleX:sc, scaleY:sc });
+
+    const style = { stroke:'rgba(47,155,255,.45)', strokeWidth:1.2*sc, selectable:false, evented:false, excludeFromExport:true };
+    if (distance({x:pt.x,y:pt.y},{x:pt.inX,y:pt.inY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.inX,pt.inY], style));
+    if (distance({x:pt.x,y:pt.y},{x:pt.outX,y:pt.outY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.outX,pt.outY], style));
+  });
+
+  bezierEditor.links.forEach(l =&gt; canvas.add(l));
+  bezierEditor.controls.forEach(c =&gt; canvas.bringToFront(c));
+  canvas.requestRenderAll();
+}
+
+function attachBezierEditor(pathObj){
+  if (!pathIsBezierEditable(pathObj)) return setStatus('Selecione uma curva vetorial para editar nós.');
+  const model = ensurePathVectorModel(pathObj);
+  if (!model || model.points.length &lt; 2) return setStatus('Curva incompatível para edição.');
+  clearBezierEditor();
+
+  pathObj.set({ selectable:false, evented:true, hasControls:false, lockMovementX:true, lockMovementY:true });
+  bezierEditor.path = pathObj;
+  bezierEditor.enabled = true;
+  vectorToolState.mode = 'editing';
+
+  const controls = [];
+  model.points.forEach((pt, i) =&gt; {
+    controls.push(createBezierControl(pt.x, pt.y, `anchor-${i}`));
+    controls.push(createBezierControl(pt.inX, pt.inY, `in-${i}`));
+    controls.push(createBezierControl(pt.outX, pt.outY, `out-${i}`));
+  });
+
+  controls.forEach(ctrl =&gt; {
+    ctrl.on('moving', evt =&gt; {
+      const m = getPathModel(bezierEditor.path);
+      if (!m) return;
+      const [role, idxStr] = String(ctrl.bziRole).split('-');
+      const i = Number(idxStr);
+      const pt = m.points[i];
+      if (!pt) return;
+      const cx = ctrl.left + ctrl.radius;
+      const cy = ctrl.top + ctrl.radius;
+
+      if (role === 'anchor') {
+        const dx = cx - pt.x;
+        const dy = cy - pt.y;
+        pt.x = cx; pt.y = cy;
+        pt.inX += dx; pt.inY += dy;
+        pt.outX += dx; pt.outY += dy;
+      } else if (role === 'in') {
+        let dx = cx - pt.x, dy = cy - pt.y;
+        const e = evt?.e || {};
+        if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
+        pt.inX = pt.x + dx; pt.inY = pt.y + dy;
+        if (!e.altKey &amp;&amp; pt.kind !== 'corner') { pt.outX = pt.x - dx; pt.outY = pt.y - dy; }
+      } else if (role === 'out') {
+        let dx = cx - pt.x, dy = cy - pt.y;
+        const e = evt?.e || {};
+        if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
+        pt.outX = pt.x + dx; pt.outY = pt.y + dy;
+        if (!e.altKey &amp;&amp; pt.kind !== 'corner') { pt.inX = pt.x - dx; pt.inY = pt.y - dy; }
+      }
+
+      applyVectorModelToPath(bezierEditor.path);
+      refreshBezierEditorControls();
+    });
+    ctrl.on('mousedblclick', () =&gt; {
+      const m = getPathModel(bezierEditor.path);
+      const [role, idxStr] = String(ctrl.bziRole).split('-');
+      if (role !== 'anchor') return;
+      const pt = m.points[Number(idxStr)];
+      if (!pt) return;
+      const isCorner = pt.kind === 'corner';
+      pt.kind = isCorner ? 'smooth' : 'corner';
+      if (isCorner) {
+        pt.inX = pt.x - 36; pt.inY = pt.y;
+        pt.outX = pt.x + 36; pt.outY = pt.y;
+      } else {
+        pt.inX = pt.x; pt.inY = pt.y;
+        pt.outX = pt.x; pt.outY = pt.y;
+      }
+      applyVectorModelToPath(bezierEditor.path);
+      refreshBezierEditorControls();
+      snapshot();
+    });
+    ctrl.on('modified', () =&gt; snapshot());
+  });
+
+  bezierEditor.controls = controls;
+  controls.forEach(c =&gt; canvas.add(c));
+  refreshBezierEditorControls();
+  setStatus('Edição de nós ativa: arraste pontos/alças, duplo clique no nó alterna corner/smooth.');
+}
+
+function finalizeBezierEditor(){
+  if (!bezierEditor.path) return clearBezierEditor();
+  const p = bezierEditor.path;
+  p.set({ selectable:true, evented:true, lockMovementX:false, lockMovementY:false, hasControls:true });
+  clearBezierEditor();
+  vectorToolState.mode = 'idle';
+  canvas.setActiveObject(p);
+  canvas.requestRenderAll();
+}
+
+function convertBezierToLine(){
+  const p = bezierEditor.path || activeObj();
+  if (!p) return setStatus('Selecione uma curva BZI primeiro.');
+  const m = ensurePathVectorModel(p);
+  if (!m) return setStatus('Curva incompatível para converter em linha.');
+  m.points.forEach(pt =&gt; { pt.inX = pt.x; pt.inY = pt.y; pt.outX = pt.x; pt.outY = pt.y; pt.kind='corner'; });
+  applyVectorModelToPath(p);
+  refreshBezierEditorControls();
+  snapshot();
+  setStatus('BZI convertida para segmentos retos.');
+}
+
+function reverseBezierDirection(){
+  const p = bezierEditor.path || activeObj();
+  if (!p) return setStatus('Selecione uma curva BZI primeiro.');
+  const m = ensurePathVectorModel(p);
+  if (!m) return setStatus('Curva incompatível para inverter direção.');
+  m.points.reverse();
+  m.points = m.points.map(pt =&gt; ({ ...pt, inX:pt.outX, inY:pt.outY, outX:pt.inX, outY:pt.inY }));
+  applyVectorModelToPath(p);
+  refreshBezierEditorControls();
+  snapshot();
+  setStatus('Direção da BZI invertida.');
+}
+
+function getNearestBezierSegment(pathObj, pointer){
+  const m = ensurePathVectorModel(pathObj);
+  if (!m || m.points.length &lt; 2) return -1;
+  let best = { i:-1, d:Infinity };
+  const segCount = m.closed ? m.points.length : m.points.length - 1;
+  const distToLine = (p,a,b) =&gt; {
+    const A = p.x-a.x, B = p.y-a.y, C = b.x-a.x, D = b.y-a.y;
+    const dot = A*C + B*D;
+    const lenSq = C*C + D*D || 1;
+    const t = Math.max(0, Math.min(1, dot/lenSq));
+    const x = a.x + C*t, y = a.y + D*t;
+    return Math.hypot(p.x-x,p.y-y);
+  };
+  for (let i=0;i&lt;segCount;i++) {
+    const p0 = m.points[i], p1 = m.points[(i+1)%m.points.length];
+    const d = distToLine(pointer, {x:p0.x,y:p0.y}, {x:p1.x,y:p1.y});
+    if (d &lt; best.d) best = {i, d};
+  }
+  return best.i;
+}
+
+function insertPointOnSegment(pathObj, segIndex){
+  const m = ensurePathVectorModel(pathObj);
+  if (!m) return;
+  const n = m.points.length;
+  const i0 = segIndex;
+  const i1 = (segIndex + 1) % n;
+  const p0 = m.points[i0];
+  const p1 = m.points[i1];
+  const lerp = (a,b,t=.5) =&gt; ({x:a.x + (b.x-a.x)*t, y:a.y + (b.y-a.y)*t});
+  const P0 = {x:p0.x,y:p0.y}, P1={x:p0.outX,y:p0.outY}, P2={x:p1.inX,y:p1.inY}, P3={x:p1.x,y:p1.y};
+  const Q0 = lerp(P0,P1), Q1 = lerp(P1,P2), Q2 = lerp(P2,P3);
+  const R0 = lerp(Q0,Q1), R1 = lerp(Q1,Q2);
+  const S = lerp(R0,R1);
+
+  p0.outX = Q0.x; p0.outY = Q0.y;
+  p1.inX = Q2.x; p1.inY = Q2.y;
+  const mid = { x:S.x, y:S.y, inX:R0.x, inY:R0.y, outX:R1.x, outY:R1.y, kind:'smooth' };
+  m.points.splice(i1, 0, mid);
+  applyVectorModelToPath(pathObj);
+  attachBezierEditor(pathObj);
+  snapshot();
+}
+
+
 function addLayer() {
   ensureArtboard();
   const idx = canvas.getObjects().filter(o=>!isGuide(o)).length + 1;
@@ -1787,6 +2440,55 @@ function addLayer() {
   canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
   refreshLayers(); refreshProps();
   setStatus('Nova layer criada');
+}
+
+function bringForwardSelection(){
+  const obj = activeObj(); if(!obj) return;
+  canvas.bringForward(obj); canvas.requestRenderAll(); refreshLayers();
+}
+function sendBackwardSelection(){
+  const obj = activeObj(); if(!obj) return;
+  canvas.sendBackwards(obj); canvas.requestRenderAll(); refreshLayers();
+}
+
+function importExternalFile(file){
+  if(!file) return;
+  const name = String(file.name||'').toLowerCase();
+  const isSvg = file.type==='image/svg+xml' || name.endsWith('.svg');
+  const isRaster = file.type.startsWith('image/') || ['.png','.jpg','.jpeg','.webp','.gif'].some(ext=>name.endsWith(ext));
+  const isVectorUnsupported = ['.ai','.eps'].some(ext=>name.endsWith(ext));
+
+  if (isSvg) {
+    const fr = new FileReader();
+    fr.onload = ev => loadSVGFromParent(String(ev.target?.result||''));
+    fr.readAsText(file);
+    return;
+  }
+  if (isRaster) {
+    const fr = new FileReader();
+    fr.onload = ev => {
+      fabric.Image.fromURL(ev.target.result, img => {
+        ensureArtboard();
+        const maxW = Math.min(docW * 0.8, 600);
+        if (img.width > maxW) img.scaleToWidth(maxW);
+        img.set({ left: artboard.left + 40, top: artboard.top + 40, dataName:file.name || 'Imagem colada' });
+        canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+        refreshLayers();
+      });
+    };
+    fr.readAsDataURL(file);
+    return;
+  }
+  if (isVectorUnsupported) {
+    ensureArtboard();
+    const ph = new fabric.Rect({ left:artboard.left+80, top:artboard.top+80, width:260, height:120, fill:'rgba(127,90,240,.12)', stroke:'rgba(127,90,240,.6)', strokeDashArray:[6,4] });
+    const label = new fabric.Text(file.name + ' (importado)', { left:artboard.left+94, top:artboard.top+128, fontSize:14, fill:'#fff', fontFamily:'Outfit' });
+    const g = new fabric.Group([ph,label], { dataName:file.name || 'Arquivo vetorial' });
+    canvas.add(g); canvas.setActiveObject(g); canvas.requestRenderAll(); refreshLayers();
+    setStatus('Arquivo importado como referência visual.');
+    return;
+  }
+  setStatus('Formato não suportado para importação.');
 }
 
 
@@ -2034,6 +2736,36 @@ function normalizeHex(c) {
   return null;
 }
 
+function isTextObject(obj){
+  return !!obj &amp;&amp; (obj.type==='textbox' || obj.type==='text' || obj.type==='i-text');
+}
+
+function focusTextPanel(show){
+  const tabsRoot = $('propTabs');
+  if (show &amp;&amp; tabsRoot) {
+    const corTab = tabsRoot.querySelector('[data-tab="cor"]');
+    corTab?.click();
+    $('propText')?.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+}
+
+function syncFloatingTextPanel(){
+  const obj = activeObj();
+  const panel = $('textFloatPanel');
+  if(!panel) return;
+  const disabled = !isTextObject(obj);
+  ['tfFontSize','tfColor','tfLineHeight','tfLetterSpacing','tfWeight','tfStyle'].forEach(id=&gt;{ const el=$(id); if(el) el.disabled = disabled; });
+  if(disabled) return;
+  if($('tfFontSize')) $('tfFontSize').value = Math.round(obj.fontSize||16);
+  if($('tfColor')) $('tfColor').value = normalizeHex(obj.fill)||'#111111';
+  if($('tfLineHeight')) $('tfLineHeight').value = Number(obj.lineHeight||1.2).toFixed(1);
+  if($('tfLetterSpacing')) $('tfLetterSpacing').value = Math.round((obj.charSpacing||0)/50);
+  if($('tfWeight')) $('tfWeight').value = String(obj.fontWeight||400);
+  if($('tfStyle')) $('tfStyle').value = obj.fontStyle||'normal';
+  const align = obj.textAlign||'left';
+  document.querySelectorAll('#tfAlignSeg .seg-opt').forEach(btn=&gt;btn.classList.toggle('on', btn.dataset.val===align));
+}
+
 function refreshProps() {
   const obj = activeObj();
   const info = $('selInfo');
@@ -2045,6 +2777,7 @@ function refreshProps() {
     if (info) info.textContent = 'Nada selecionado';
     const c1=$('ctxSelectionState'); if(c1) c1.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
     const c2=$('canvasSelectionState'); if(c2) c2.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
+    syncFloatingTextPanel();
     return;
   }
 
@@ -2075,6 +2808,7 @@ function refreshProps() {
   if(UI.rx) UI.rx.value = Math.round(obj.rx??obj.ry??0);
 
   if (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text') {
+    focusTextPanel(true);
     if(UI.font &amp;&amp; obj.fontFamily) UI.font.value = obj.fontFamily;
     if(UI.fontSize) UI.fontSize.value = obj.fontSize??'';
     const align = obj.textAlign || 'left';
@@ -2082,6 +2816,7 @@ function refreshProps() {
       s.classList.toggle('on', s.dataset.val === align);
     });
   }
+  syncFloatingTextPanel();
 }
 
 function applyProps(key) {
@@ -2142,19 +2877,97 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
   });
 });
 
-['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; { refreshProps(); refreshLayers(); }));
+['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
+  refreshProps(); refreshLayers();
+  if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
+  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; (activeTool === 'bezier' || activeTool === 'direct-select')) {
+    const obj = activeObj();
+    if (pathIsBezierEditable(obj)) attachBezierEditor(obj);
+  }
+}));
 
 // ─── Layers ──────────────────────────────────────────────
 const typeIcons = {
   textbox:'type', text:'type', 'i-text':'type',
   rect:'square', circle:'circle', ellipse:'circle-ellipsis', line:'slash', image:'image', group:'layers'
 };
+const blendModes = ['source-over','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','difference','exclusion'];
+let layerFolders = ['Geral'];
+let draggingLayerId = null;
+
+function ensureFoldersForObjects(objs){
+  objs.forEach(obj =&gt; {
+    if(!obj.dataFolder) obj.dataFolder = 'Geral';
+    if(!layerFolders.includes(obj.dataFolder)) layerFolders.push(obj.dataFolder);
+  });
+}
+
+function renderFolderChips(){
+  const root = $('folderList');
+  if(!root) return;
+  root.innerHTML = layerFolders.map(name =&gt; `&lt;span class=&quot;folder-chip&quot;&gt;📁 ${name}&lt;/span&gt;`).join('');
+}
+
+function moveLayerByDisplayIndex(obj, displayIndex){
+  const objects = canvas.getObjects().filter(o=&gt;!isGuide(o));
+  const targetIndex = Math.max(0, Math.min(objects.length - 1, objects.length - 1 - displayIndex));
+  canvas.moveTo(obj, targetIndex);
+  canvas.requestRenderAll();
+}
+
+function applyClipMask(){
+  const sel = canvas.getActiveObject();
+  if(!sel || sel.type !== 'activeSelection' || sel._objects.length &lt; 2){
+    setStatus('Selecione 2 objetos para criar clip mask.');
+    return;
+  }
+  const objs = sel._objects.slice();
+  const mask = objs[0];
+  const target = objs[1];
+  mask.clone(clone =&gt; {
+    clone.absolutePositioned = true;
+    clone.set({ left: mask.left, top: mask.top, angle: mask.angle, scaleX: mask.scaleX, scaleY: mask.scaleY, originX: mask.originX, originY: mask.originY });
+    target.clipPath = clone;
+    canvas.remove(mask);
+    canvas.discardActiveObject();
+    canvas.setActiveObject(target);
+    canvas.requestRenderAll();
+    refreshLayers();
+    setStatus('Clip mask aplicado');
+  });
+}
+
+function releaseClipMask(){
+  const obj = activeObj();
+  if(!obj || !obj.clipPath){
+    setStatus('Selecione um objeto com clip mask.');
+    return;
+  }
+  obj.clipPath = null;
+  canvas.requestRenderAll();
+  refreshLayers();
+  setStatus('Clip mask removido');
+}
+
+function createLayerFolder(){
+  const name = prompt('Nome da pasta de camadas:');
+  if(!name) return;
+  const clean = name.trim();
+  if(!clean) return;
+  if(layerFolders.includes(clean)) { setStatus('Essa pasta já existe.'); return; }
+  layerFolders.push(clean);
+  renderFolderChips();
+  refreshLayers();
+  setStatus('Pasta criada');
+}
 
 function refreshLayers() {
   const list = $('layersList');
   const cnt = $('layerCount');
   if (!list) return;
   const objs = canvas.getObjects().filter(o=&gt;!isGuide(o)).slice().reverse();
+  ensureFoldersForObjects(objs);
+  renderFolderChips();
   if (cnt) cnt.textContent = objs.length;
   const active = canvas.getActiveObject();
   list.innerHTML = '';
@@ -2168,14 +2981,46 @@ function refreshLayers() {
     const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '');
-    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}% • ${obj.globalCompositeOperation||'source-over'}&lt;/div&gt;`;
+    div.draggable = true;
+    div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
+    const thumbStyle = (() =&gt; {
+      if (obj.type === 'image' &amp;&amp; obj._element?.src) return `background-image:url('${obj._element.src}')`;
+      const fill = typeof obj.fill==='string' ? obj.fill : 'rgba(255,255,255,.08)';
+      const stroke = typeof obj.stroke==='string' ? obj.stroke : 'rgba(255,255,255,.2)';
+      return `background:linear-gradient(135deg, ${fill}, ${stroke})`;
+    })();
+    div.innerHTML = `
+      &lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;
+      &lt;div style=&quot;min-width:0&quot;&gt;
+        &lt;div class=&quot;layer-main&quot;&gt;
+          &lt;div class=&quot;layer-thumb&quot; style=&quot;${thumbStyle}&quot;&gt;&lt;/div&gt;
+          &lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;
+          &lt;div class=&quot;layer-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}%&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;layer-meta&quot;&gt;${obj.dataFolder||'Geral'}&lt;/div&gt;`;
+
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
+    div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
+    div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
+    div.addEventListener('drop', e =&gt; {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      if(!draggingLayerId || draggingLayerId===div.dataset.layerId) return;
+      const draggedObj = objs.find(o =&gt; o.__uid===draggingLayerId);
+      if(!draggedObj) return;
+      moveLayerByDisplayIndex(draggedObj, i);
+      refreshLayers();
+    });
+
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
 }
 
 let brandLibrary=[];
+let draggedLibraryIndex = null;
 
 function refreshLibrary(){
   const list=$('libraryList');
@@ -2192,8 +3037,11 @@ function refreshLibrary(){
     div.className='lib-item';
     const icon = item.kind==='logo' ? 'image' : item.kind==='color' ? 'droplets' : 'type';
     const meta = item.kind==='logo' ? 'Logo' : item.kind==='color' ? (item.color||'Cor') : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
-    div.innerHTML=`&lt;div class=&quot;lib-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${meta}&lt;/div&gt;`;
+    div.draggable = true;
+    const preview = item.kind==='logo' &amp;&amp; item.src ? `background-image:url('${item.src}')` : item.kind==='color' ? `background:${item.color||'#999'}` : 'background:linear-gradient(135deg, rgba(127,90,240,.35), rgba(44,182,125,.35))';
+    div.innerHTML=`&lt;div class=&quot;lib-preview&quot; style=&quot;${preview}&quot;&gt;&lt;/div&gt;&lt;div class=&quot;lib-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${meta}&lt;/div&gt;`;
     div.addEventListener('click',()=>applyLibraryItem(idx));
+    div.addEventListener('dragstart',()=>{ draggedLibraryIndex = idx; });
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
@@ -2250,6 +3098,42 @@ function applyLibraryItem(idx){
     }, {crossOrigin:'anonymous'});
   }
 }
+
+stageEl?.addEventListener('dragover', e =&gt; { if (draggedLibraryIndex==null) return; e.preventDefault(); });
+stageEl?.addEventListener('drop', e =&gt; {
+  if (draggedLibraryIndex==null) return;
+  e.preventDefault();
+  applyLibraryItem(draggedLibraryIndex);
+  draggedLibraryIndex = null;
+});
+
+// ─── Context menu (canvas) ─────────────────────────────
+(function initCanvasContextMenu(){
+  const menu = $('canvasCtx');
+  if(!menu || !canvas.upperCanvasEl) return;
+  const close = () =&gt; menu.classList.remove('open');
+  canvas.upperCanvasEl.addEventListener('contextmenu', e =&gt; {
+    e.preventDefault();
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+    menu.classList.add('open');
+  });
+  document.addEventListener('click', e =&gt; {
+    if(!menu.contains(e.target)) close();
+  });
+  menu.addEventListener('click', e =&gt; {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if(!act) return;
+    if(act==='paste') pasteFromClipboard();
+    if(act==='group') groupSelection();
+    if(act==='ungroup') ungroupSelection();
+    if(act==='front') bringForwardSelection();
+    if(act==='back') sendBackwardSelection();
+    if(act==='duplicate') duplicate();
+    if(act==='delete') del();
+    close();
+  });
+})();
 
 // ─── Modal ───────────────────────────────────────────────
 const modalBg = $('modalBg');
@@ -2393,21 +3277,61 @@ function loadJSON() {
 
 // ─── Upload image ─────────────────────────────────────────
 $('fileInput')?.addEventListener('change', e =&gt; {
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev =&gt; {
-    fabric.Image.fromURL(ev.target.result, img =&gt; {
-      ensureArtboard();
-      const maxW = Math.min(docW * 0.8, 600);
-      if (img.width &gt; maxW) img.scaleToWidth(maxW);
-      img.set({ left: artboard.left + 40, top: artboard.top + 40 });
-      canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
-      setStatus('Imagem importada');
-    });
-  };
-  reader.readAsDataURL(file);
+  const files = Array.from(e.target.files||[]);
+  files.forEach(importExternalFile);
   e.target.value = '';
 });
+
+window.addEventListener('paste', e =&gt; {
+  const items = Array.from(e.clipboardData?.items || []);
+  let used = false;
+  items.forEach(it =&gt; {
+    if (it.kind === 'file') {
+      const f = it.getAsFile();
+      if (f) { importExternalFile(f); used = true; }
+    }
+    if (it.kind === 'string' &amp;&amp; it.type === 'text/plain') {
+      it.getAsString(txt =&gt; {
+        const s = String(txt||'').trim();
+        if (s.startsWith('&lt;svg') || s.includes('&lt;svg')) { loadSVGFromParent(s); }
+      });
+    }
+  });
+  if (used) e.preventDefault();
+});
+
+
+async function pasteFromClipboard() {
+  if (!navigator.clipboard?.read) {
+    setStatus('Menu de colar indisponível. Use Ctrl+V no workspace.');
+    return;
+  }
+  try {
+    const clipItems = await navigator.clipboard.read();
+    let imported = false;
+    for (const clipItem of clipItems) {
+      const pngType = clipItem.types.find(t =&gt; t.startsWith('image/'));
+      if (pngType) {
+        const blob = await clipItem.getType(pngType);
+        const file = new File([blob], `clipboard.${pngType.split('/')[1] || 'png'}`, { type: pngType });
+        importExternalFile(file);
+        imported = true;
+        continue;
+      }
+      if (clipItem.types.includes('text/plain')) {
+        const txtBlob = await clipItem.getType('text/plain');
+        const txt = (await txtBlob.text()).trim();
+        if (txt.startsWith('&lt;svg') || txt.includes('&lt;svg')) {
+          loadSVGFromParent(txt);
+          imported = true;
+        }
+      }
+    }
+    if (!imported) setStatus('Nada compatível para colar.');
+  } catch (err) {
+    setStatus('Permita acesso à área de transferência ou use Ctrl+V.');
+  }
+}
 
 // ─── Constrain to artboard ───────────────────────────────
 canvas.on('object:moving', opt =&gt; {
@@ -2423,14 +3347,498 @@ canvas.on('object:moving', opt =&gt; {
   if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
 });
 
+// ─── Command menus (Arquivo / Editar / etc) ───────────────
+const menuCatalog = {
+  file: [
+    {id:'file.new', label:'Novo documento', key:'Ctrl+N'},
+    {id:'file.open', label:'Abrir', key:'Ctrl+O'},
+    {id:'file.close', label:'Fechar'},
+    {sep:true},
+    {id:'file.save', label:'Salvar', key:'Ctrl+S'},
+    {id:'file.saveAs', label:'Salvar como', key:'Ctrl+Shift+S'},
+    {sep:true},
+    {id:'file.exportPng', label:'Exportar PNG'},
+    {id:'file.exportJpg', label:'Exportar JPG'},
+    {id:'file.exportSvg', label:'Exportar SVG'},
+    {id:'file.exportPdf', label:'Exportar PDF'},
+    {sep:true},
+    {id:'file.import', label:'Importar', key:'Ctrl+I'},
+    {id:'file.document', label:'Configurar documento'},
+    {id:'file.preferences', label:'Preferências'}
+  ],
+  edit: [
+    {id:'edit.undo', label:'Desfazer', key:'Ctrl+Z'},
+    {id:'edit.redo', label:'Refazer', key:'Ctrl+Y'},
+    {sep:true},
+    {id:'edit.copy', label:'Copiar', key:'Ctrl+C'},
+    {id:'edit.paste', label:'Colar', key:'Ctrl+V'},
+    {id:'edit.pasteInPlace', label:'Colar no lugar'},
+    {id:'edit.cut', label:'Recortar', key:'Ctrl+X'},
+    {id:'edit.duplicate', label:'Duplicar', key:'Ctrl+D'},
+    {id:'edit.delete', label:'Apagar', key:'Del'},
+    {sep:true},
+    {id:'edit.group', label:'Agrupar', key:'Ctrl+G'},
+    {id:'edit.ungroup', label:'Desagrupar', key:'Ctrl+Shift+G'},
+    {id:'edit.lock', label:'Bloquear'},
+    {id:'edit.unlock', label:'Desbloquear'},
+    {id:'edit.hide', label:'Ocultar'},
+    {id:'edit.show', label:'Mostrar'}
+  ],
+  selection: [
+    {id:'selection.normal', label:'Seleção normal'},
+    {id:'selection.direct', label:'Seleção direta'},
+    {id:'selection.selectAll', label:'Selecionar tudo', key:'Ctrl+A'},
+    {id:'selection.deselectAll', label:'Desselecionar', key:'Esc'},
+    {id:'selection.byColor', label:'Selecionar por cor'},
+    {id:'selection.byLayer', label:'Selecionar por camada'},
+    {id:'selection.similar', label:'Selecionar semelhantes'},
+    {id:'selection.isolate', label:'Isolar grupo'},
+    {id:'selection.lasso', label:'Seleção por laço'}
+  ],
+  create: [
+    {id:'create.rect', label:'Retângulo'},
+    {id:'create.ellipse', label:'Elipse'},
+    {id:'create.polygon', label:'Polígono'},
+    {id:'create.star', label:'Estrela'},
+    {id:'create.line', label:'Linha'},
+    {id:'create.pen', label:'Caneta'},
+    {id:'create.pencil', label:'Lápis'},
+    {id:'create.brush', label:'Pincel vetorial'},
+    {id:'create.artText', label:'Texto artístico'},
+    {id:'create.textBox', label:'Texto em área'},
+    {id:'create.textOnPath', label:'Texto em caminho'},
+    {id:'create.eyedropper', label:'Conta-gotas'}
+  ],
+  transform: [
+    {id:'transform.move', label:'Mover'},
+    {id:'transform.rotate', label:'Rotacionar'},
+    {id:'transform.scale', label:'Escalar'},
+    {id:'transform.distort', label:'Distorcer'},
+    {id:'transform.skew', label:'Inclinar (Skew)'},
+    {id:'transform.flipH', label:'Espelhar horizontal'},
+    {id:'transform.flipV', label:'Espelhar vertical'},
+    {id:'transform.free', label:'Transformação livre'},
+    {id:'transform.align', label:'Alinhar'},
+    {id:'transform.distribute', label:'Distribuir'},
+    {id:'transform.snapGrid', label:'Ajustar à grade'},
+    {id:'transform.snapObjects', label:'Snap em objetos'}
+  ],
+  appearance: [
+    {id:'appearance.fill', label:'Cor de preenchimento'},
+    {id:'appearance.stroke', label:'Cor de contorno'},
+    {id:'appearance.strokeWidth', label:'Espessura do traço'},
+    {id:'appearance.strokeType', label:'Tipo de traço'},
+    {id:'appearance.opacity', label:'Opacidade'},
+    {id:'appearance.blend', label:'Modos de mesclagem'},
+    {id:'appearance.gradient', label:'Gradiente'},
+    {id:'appearance.mask', label:'Máscara'},
+    {id:'appearance.clipMask', label:'Máscara de recorte'},
+    {id:'appearance.effects', label:'Efeitos'}
+  ],
+  organize: [
+    {id:'organize.front', label:'Trazer para frente'},
+    {id:'organize.back', label:'Enviar para trás'},
+    {id:'organize.byLayer', label:'Organizar por camada'},
+    {id:'organize.newLayer', label:'Criar nova camada'},
+    {id:'organize.groupLayer', label:'Agrupar por camada'},
+    {id:'organize.rename', label:'Nomear objeto'}
+  ],
+  boolean: [
+    {id:'boolean.union', label:'Unir'},
+    {id:'boolean.subtract', label:'Subtrair'},
+    {id:'boolean.intersect', label:'Interseção'},
+    {id:'boolean.exclude', label:'Excluir'},
+    {id:'boolean.divide', label:'Dividir'},
+    {id:'boolean.trim', label:'Aparar'}
+  ],
+  text: [
+    {id:'text.font', label:'Alterar fonte'},
+    {id:'text.size', label:'Tamanho da fonte'},
+    {id:'text.lineHeight', label:'Entrelinha'},
+    {id:'text.kerning', label:'Kerning'},
+    {id:'text.tracking', label:'Tracking'},
+    {id:'text.toCurves', label:'Converter texto em curvas'},
+    {id:'text.align', label:'Alinhar texto'},
+    {id:'text.case', label:'Caixa alta/baixa'}
+  ],
+  view: [
+    {id:'view.zoomIn', label:'Zoom in', key:'Ctrl++'},
+    {id:'view.zoomOut', label:'Zoom out', key:'Ctrl+-'},
+    {id:'view.fit', label:'Ajustar à tela'},
+    {id:'view.fitSelection', label:'Ajustar à seleção'},
+    {id:'view.grid', label:'Mostrar/ocultar grade'},
+    {id:'view.guides', label:'Mostrar/ocultar guias'},
+    {id:'view.nodes', label:'Mostrar nós'},
+    {id:'view.outline', label:'Modo outline'},
+    {id:'view.preview', label:'Modo preview'}
+  ],
+  advanced: [
+    {id:'advanced.components', label:'Componentes / Símbolos'},
+    {id:'advanced.autoLayout', label:'Auto Layout'},
+    {id:'advanced.constraints', label:'Constraints'},
+    {id:'advanced.vectorize', label:'Vetorização de imagem'},
+    {id:'advanced.expandStroke', label:'Expandir traço'},
+    {id:'advanced.pathfinder', label:'Pathfinder'},
+    {id:'advanced.mesh', label:'Mesh tool'},
+    {id:'advanced.warp', label:'Warp'}
+  ]
+};
+
+const shortcutToCommand = new Map();
+Object.values(menuCatalog).flat().forEach(item =&gt; {
+  if (!item || item.sep || !item.key) return;
+  shortcutToCommand.set(item.key.toLowerCase(), item.id);
+});
+
+function registerMenu(rootId, panelId, items){
+  const root = $(rootId), panel = $(panelId);
+  if(!root || !panel) return;
+  panel.innerHTML = items.map(item =&gt; {
+    if (item.sep) return '&lt;div class="menu-cmd-sep"&gt;&lt;/div&gt;';
+    const key = item.key ? `&lt;span class="k"&gt;${item.key}&lt;/span&gt;` : '&lt;span class="k"&gt;&lt;/span&gt;';
+    return `&lt;div class="menu-cmd" data-cmd="${item.id}"&gt;&lt;span&gt;${item.label}&lt;/span&gt;${key}&lt;/div&gt;`;
+  }).join('');
+
+  const btn = root.querySelector('.menu-item-btn');
+  const closeAll = () =&gt; document.querySelectorAll('.menu-dd.open').forEach(n =&gt; n.classList.remove('open'));
+  btn?.addEventListener('click', e =&gt; {
+    e.stopPropagation();
+    const willOpen = !root.classList.contains('open');
+    closeAll();
+    if (willOpen) root.classList.add('open');
+  });
+  panel.addEventListener('click', e =&gt; {
+    const cmd = e.target.closest('[data-cmd]')?.dataset.cmd;
+    if (!cmd) return;
+    executeMenuCommand(cmd);
+    closeAll();
+  });
+}
+
+function notifyTodo(label){
+  setStatus(`${label}: em breve.`);
+}
+
+function selectAllObjects(){
+  const items = canvas.getObjects().filter(o =&gt; !isGuide(o));
+  if (!items.length) return;
+  canvas.setActiveObject(new fabric.ActiveSelection(items, { canvas }));
+  canvas.requestRenderAll();
+}
+
+function flipSelection(axis='x'){
+  const obj = activeObj();
+  if(!obj) return;
+  if (axis === 'x') obj.set({ flipX: !obj.flipX });
+  else obj.set({ flipY: !obj.flipY });
+  obj.setCoords();
+  canvas.requestRenderAll();
+}
+
+function executeMenuCommand(cmdId){
+  const map = {
+    'file.new': () =&gt; loadSVGFromParent(''),
+    'file.open': () =&gt; $('fileInput')?.click(),
+    'file.close': () =&gt; loadSVGFromParent(''),
+    'file.save': saveJSON,
+    'file.saveAs': saveJSON,
+    'file.exportPng': exportPNG,
+    'file.exportJpg': () =&gt; notifyTodo('Exportar JPG'),
+    'file.exportSvg': exportSVGToParent,
+    'file.exportPdf': () =&gt; notifyTodo('Exportar PDF'),
+    'file.import': () =&gt; $('fileInput')?.click(),
+    'file.document': () =&gt; $('btnMenuDocumento')?.click(),
+    'file.preferences': () =&gt; notifyTodo('Preferências'),
+
+    'edit.undo': undo,
+    'edit.redo': redo,
+    'edit.copy': () =&gt; document.execCommand?.('copy') || setStatus('Use Ctrl+C para copiar.'),
+    'edit.paste': pasteFromClipboard,
+    'edit.pasteInPlace': pasteFromClipboard,
+    'edit.cut': () =&gt; { document.execCommand?.('copy'); del(); },
+    'edit.duplicate': duplicate,
+    'edit.delete': del,
+    'edit.group': groupSelection,
+    'edit.ungroup': ungroupSelection,
+    'edit.lock': () =&gt; notifyTodo('Bloquear'),
+    'edit.unlock': () =&gt; notifyTodo('Desbloquear'),
+    'edit.hide': () =&gt; notifyTodo('Ocultar'),
+    'edit.show': () =&gt; notifyTodo('Mostrar'),
+
+    'selection.normal': () =&gt; setActiveTool('select'),
+    'selection.direct': () =&gt; setActiveTool('direct-select'),
+    'selection.selectAll': selectAllObjects,
+    'selection.deselectAll': () =&gt; { canvas.discardActiveObject(); canvas.requestRenderAll(); },
+    'selection.byColor': () =&gt; notifyTodo('Selecionar por cor'),
+    'selection.byLayer': () =&gt; notifyTodo('Selecionar por camada'),
+    'selection.similar': () =&gt; notifyTodo('Selecionar semelhantes'),
+    'selection.isolate': () =&gt; notifyTodo('Isolar grupo'),
+    'selection.lasso': () =&gt; notifyTodo('Seleção por laço'),
+
+    'create.rect': addRect,
+    'create.ellipse': addCircle,
+    'create.polygon': () =&gt; notifyTodo('Polígono'),
+    'create.star': () =&gt; notifyTodo('Estrela'),
+    'create.line': addLine,
+    'create.pen': addBezier,
+    'create.pencil': () =&gt; notifyTodo('Lápis'),
+    'create.brush': () =&gt; notifyTodo('Pincel vetorial'),
+    'create.artText': () =&gt; setActiveTool('text'),
+    'create.textBox': () =&gt; setActiveTool('text'),
+    'create.textOnPath': () =&gt; notifyTodo('Texto em caminho'),
+    'create.eyedropper': () =&gt; notifyTodo('Conta-gotas'),
+
+    'transform.move': () =&gt; setActiveTool('move'),
+    'transform.rotate': () =&gt; notifyTodo('Rotacionar'),
+    'transform.scale': () =&gt; notifyTodo('Escalar'),
+    'transform.distort': () =&gt; notifyTodo('Distorcer'),
+    'transform.skew': () =&gt; notifyTodo('Skew'),
+    'transform.flipH': () =&gt; flipSelection('x'),
+    'transform.flipV': () =&gt; flipSelection('y'),
+    'transform.free': () =&gt; notifyTodo('Transformação livre'),
+    'transform.align': () =&gt; notifyTodo('Alinhar'),
+    'transform.distribute': () =&gt; notifyTodo('Distribuir'),
+    'transform.snapGrid': () =&gt; notifyTodo('Ajustar à grade'),
+    'transform.snapObjects': () =&gt; notifyTodo('Snap em objetos'),
+
+    'appearance.fill': () =&gt; notifyTodo('Cor de preenchimento'),
+    'appearance.stroke': () =&gt; notifyTodo('Cor de contorno'),
+    'appearance.strokeWidth': () =&gt; notifyTodo('Espessura do traço'),
+    'appearance.strokeType': () =&gt; notifyTodo('Tipo de traço'),
+    'appearance.opacity': () =&gt; notifyTodo('Opacidade'),
+    'appearance.blend': () =&gt; notifyTodo('Modos de mesclagem'),
+    'appearance.gradient': () =&gt; notifyTodo('Gradiente'),
+    'appearance.mask': () =&gt; notifyTodo('Máscara'),
+    'appearance.clipMask': applyClipMask,
+    'appearance.effects': () =&gt; notifyTodo('Efeitos'),
+
+    'organize.front': bringForwardSelection,
+    'organize.back': sendBackwardSelection,
+    'organize.byLayer': () =&gt; notifyTodo('Organizar por camada'),
+    'organize.newLayer': addLayer,
+    'organize.groupLayer': createLayerFolder,
+    'organize.rename': () =&gt; notifyTodo('Nomear objeto'),
+
+    'boolean.union': () =&gt; notifyTodo('Boolean: Unir'),
+    'boolean.subtract': () =&gt; notifyTodo('Boolean: Subtrair'),
+    'boolean.intersect': () =&gt; notifyTodo('Boolean: Interseção'),
+    'boolean.exclude': () =&gt; notifyTodo('Boolean: Excluir'),
+    'boolean.divide': () =&gt; notifyTodo('Boolean: Dividir'),
+    'boolean.trim': () =&gt; notifyTodo('Boolean: Aparar'),
+
+    'text.font': () =&gt; notifyTodo('Alterar fonte'),
+    'text.size': () =&gt; notifyTodo('Tamanho da fonte'),
+    'text.lineHeight': () =&gt; notifyTodo('Entrelinha'),
+    'text.kerning': () =&gt; notifyTodo('Kerning'),
+    'text.tracking': () =&gt; notifyTodo('Tracking'),
+    'text.toCurves': () =&gt; notifyTodo('Converter texto em curvas'),
+    'text.align': () =&gt; notifyTodo('Alinhar texto'),
+    'text.case': () =&gt; notifyTodo('Caixa alta/baixa'),
+
+    'view.zoomIn': () =&gt; $('btnZoomIn')?.click(),
+    'view.zoomOut': () =&gt; $('btnZoomOut')?.click(),
+    'view.fit': fitToArtboard,
+    'view.fitSelection': () =&gt; notifyTodo('Ajustar à seleção'),
+    'view.grid': () =&gt; notifyTodo('Grade'),
+    'view.guides': () =&gt; notifyTodo('Guias'),
+    'view.nodes': () =&gt; notifyTodo('Mostrar nós'),
+    'view.outline': () =&gt; notifyTodo('Modo outline'),
+    'view.preview': () =&gt; notifyTodo('Modo preview'),
+
+    'advanced.components': () =&gt; notifyTodo('Componentes / Símbolos'),
+    'advanced.autoLayout': () =&gt; notifyTodo('Auto Layout'),
+    'advanced.constraints': () =&gt; notifyTodo('Constraints'),
+    'advanced.vectorize': () =&gt; notifyTodo('Vetorização de imagem'),
+    'advanced.expandStroke': () =&gt; notifyTodo('Expandir traço'),
+    'advanced.pathfinder': () =&gt; notifyTodo('Pathfinder'),
+    'advanced.mesh': () =&gt; notifyTodo('Mesh tool'),
+    'advanced.warp': () =&gt; notifyTodo('Warp')
+  };
+  const fn = map[cmdId];
+  if (typeof fn === 'function') fn();
+  else notifyTodo(cmdId);
+}
+
+function normalizeShortcutKey(e){
+  const parts = [];
+  if (e.ctrlKey || e.metaKey) parts.push('ctrl');
+  if (e.shiftKey) parts.push('shift');
+  if (e.altKey) parts.push('alt');
+  const k = (e.key || '').toLowerCase();
+  if (!k) return '';
+  const key = k === 'escape' ? 'esc' : k;
+  parts.push(key);
+  return parts.join('+');
+}
+
+(function initCommandMenus(){
+  registerMenu('menuFileRoot','menuFilePanel',menuCatalog.file);
+  registerMenu('menuEditRoot','menuEditPanel',menuCatalog.edit);
+  registerMenu('menuSelectRoot','menuSelectPanel',menuCatalog.selection);
+  registerMenu('menuCreateRoot','menuCreatePanel',menuCatalog.create);
+  registerMenu('menuTransformRoot','menuTransformPanel',menuCatalog.transform);
+  registerMenu('menuAppearanceRoot','menuAppearancePanel',menuCatalog.appearance);
+  registerMenu('menuOrganizeRoot','menuOrganizePanel',menuCatalog.organize);
+  registerMenu('menuBooleanRoot','menuBooleanPanel',menuCatalog.boolean);
+  registerMenu('menuTextRoot','menuTextPanel',menuCatalog.text);
+  registerMenu('menuViewRoot','menuViewPanel',menuCatalog.view);
+  registerMenu('menuAdvancedRoot','menuAdvancedPanel',menuCatalog.advanced);
+
+  document.addEventListener('click', () =&gt; {
+    document.querySelectorAll('.menu-dd.open').forEach(n =&gt; n.classList.remove('open'));
+  });
+
+  window.addEventListener('keydown', e =&gt; {
+    if (e.target?.matches?.('input,textarea,select,[contenteditable="true"]')) return;
+    const cmd = shortcutToCommand.get(normalizeShortcutKey(e));
+    if (!cmd) return;
+    e.preventDefault();
+    executeMenuCommand(cmd);
+  }, {passive:false});
+})();
+
+// ─── Menu Documento (dropdown) ──────────────────────────
+(function initMenuDocumento(){
+  const root = $('menuDocRoot');
+  const trigger = $('btnMenuDocumento');
+  if(!root || !trigger) return;
+  trigger.addEventListener('click', e =&gt; {
+    e.stopPropagation();
+    root.classList.toggle('open');
+  });
+  document.addEventListener('click', e =&gt; {
+    if(!root.contains(e.target)) root.classList.remove('open');
+  });
+})();
+
+function setBezierSubmenuMode(enabled){
+  const labels = enabled
+    ? { btnToolVector:'Vetor', btnToolMove:'Finalizar', btnToolLasso:'Inverter', btnToolPaint:'Reta', btnToolCurve:'Editar nós', btnToolCut:'Cortar', btnToolMore:'Mais ▾' }
+    : { btnToolVector:'Vetor', btnToolMove:'Mover', btnToolLasso:'Laço', btnToolPaint:'Pintar', btnToolCurve:'Curvar', btnToolCut:'Cortar', btnToolMore:'Mais ▾' };
+  Object.entries(labels).forEach(([id, txt]) => {
+    const el = $(id);
+    if (el) el.textContent = txt;
+  });
+}
+
+function setActiveTool(tool){
+  if (bezierEditor.enabled &amp;&amp; tool !== 'direct-select' &amp;&amp; tool !== 'bezier') finalizeBezierEditor();
+  activeTool = tool;
+  const isText = tool === 'text';
+  const isDirect = tool === 'direct-select';
+  canvas.defaultCursor = isText ? 'text' : 'default';
+  canvas.selection = !isText;
+  canvas.forEachObject(o =&gt; {
+    if (isGuide(o) || o.isBezierEditorControl) return;
+    o.selectable = !isText;
+  });
+  document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
+  $('btnSelect')?.classList.toggle('active', tool === 'select' || isDirect);
+  $('btnSelectNormal')?.classList.toggle('active', tool === 'select');
+  $('btnSelectDirect')?.classList.toggle('active', isDirect);
+  $('selectToolSubmenu')?.classList.remove('open');
+  const tb = $('floatingToolbar');
+  if (tb) tb.classList.toggle('show-bezier-submenu', tool === 'bezier');
+  setBezierSubmenuMode(tool === 'bezier');
+  if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
+  if (isDirect) setStatus('Seleção direta ativa: selecione uma curva para editar alças.');
+  if (tool === 'text') { setStatus('Texto: clique para artístico, arraste para caixa.'); focusTextPanel(true); }
+  if (tool === 'bezier') setStatus('Vetor ativo: clique para criar pontos, arraste para alças.');
+  canvas.requestRenderAll();
+}
+
+// ─── Floating typography panel ──────────────────────────
+(function initTextFloatPanel(){
+  const panel = $('textFloatPanel');
+  if(!panel) return;
+  $('btnTypographyGear')?.addEventListener('click', (e)=&gt;{
+    e.stopPropagation();
+    panel.classList.toggle('open');
+    focusTextPanel(true);
+    syncFloatingTextPanel();
+  });
+  $('btnCloseTextFloat')?.addEventListener('click', ()=&gt; panel.classList.remove('open'));
+  document.addEventListener('click', e =&gt; {
+    if(!panel.classList.contains('open')) return;
+    if(panel.contains(e.target) || e.target.id==='btnTypographyGear') return;
+    panel.classList.remove('open');
+  });
+  document.querySelectorAll('[data-tf-tab]').forEach(btn =&gt; {
+    btn.addEventListener('click', () =&gt; {
+      document.querySelectorAll('[data-tf-tab]').forEach(b=&gt;b.classList.remove('active'));
+      btn.classList.add('active');
+      const key=btn.dataset.tfTab;
+      panel.querySelectorAll('[data-pane]').forEach(p=&gt;p.classList.toggle('active', p.dataset.pane===key));
+    });
+  });
+
+  const applyText = (fn)=&gt;{
+    const obj = activeObj();
+    if(!isTextObject(obj)) { setStatus('Selecione um texto para editar.'); return; }
+    fn(obj);
+    syncTextStyleRender(obj);
+    canvas.requestRenderAll();
+    refreshProps();
+  };
+  $('tfFontSize')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({fontSize: clamp(Number($('tfFontSize').value)||16,6,512)})));
+  $('tfColor')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({fill:$('tfColor').value||obj.fill})));
+  $('tfLineHeight')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({lineHeight: clamp(Number($('tfLineHeight').value)||1.2,0.6,4)})));
+  $('tfLetterSpacing')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({charSpacing: (Number($('tfLetterSpacing').value)||0)*50})));
+  $('tfWeight')?.addEventListener('change', ()=&gt; applyText(obj=&gt;obj.set({fontWeight: Number($('tfWeight').value)||400})));
+  $('tfStyle')?.addEventListener('change', ()=&gt; applyText(obj=&gt;obj.set({fontStyle: $('tfStyle').value||'normal'})));
+  document.querySelectorAll('#tfAlignSeg .seg-opt').forEach(btn =&gt; {
+    btn.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({textAlign: btn.dataset.val||'left'})));
+  });
+  $('tfUnderline')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({underline: !obj.underline})));
+  $('tfStrike')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({linethrough: !obj.linethrough})));
+  $('tfUppercase')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.text &amp;&amp; obj.set({text: String(obj.text).toUpperCase()})));
+  $('tfLowercase')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.text &amp;&amp; obj.set({text: String(obj.text).toLowerCase()})));
+})();
+
 // ─── Bind toolbar buttons ─────────────────────────────────
-$('btnAddArtText')?.addEventListener('click', addArtText);
-$('btnAddTextBox')?.addEventListener('click', addTextBox);
-$('btnRect')?.addEventListener('click', addRect);
-$('btnCircle')?.addEventListener('click', addCircle);
+$('btnSelect')?.addEventListener('click', (e) =&gt; {
+  e.stopPropagation();
+  if (activeTool === 'select' || activeTool === 'direct-select') {
+    $('selectToolSubmenu')?.classList.toggle('open');
+    return;
+  }
+  setActiveTool('select');
+});
+$('btnSelectNormal')?.addEventListener('click', () =&gt; setActiveTool('select'));
+$('btnSelectDirect')?.addEventListener('click', () =&gt; setActiveTool('direct-select'));
+document.addEventListener('click', e =&gt; {
+  const sub = $('selectToolSubmenu');
+  if (!sub) return;
+  if (sub.contains(e.target) || $('btnSelect')?.contains(e.target)) return;
+  sub.classList.remove('open');
+});
+$('btnToolVector')?.addEventListener('click', () =&gt; {
+  if (activeTool === 'bezier' || vectorToolState.mode === 'creating') return startBezierCreation();
+  setActiveTool('select');
+});
+$('btnToolMove')?.addEventListener('click', () =&gt; {
+  if (activeTool==='bezier' &amp;&amp; vectorToolState.mode === 'creating') {
+    const path = finishBezierCreation({toEditing:true});
+    if (path) setActiveTool('direct-select');
+    return;
+  }
+  if (activeTool==='direct-select' &amp;&amp; bezierEditor.enabled) return finalizeBezierEditor();
+  setActiveTool('move');
+});
+$('btnTextTool')?.addEventListener('click', () =&gt; setActiveTool('text'));
+$('btnRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addRect(); });
+$('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); });
 $('btnCreateLayer')?.addEventListener('click', addLayer);
-$('btnLine')?.addEventListener('click', addLine);
+$('btnLine')?.addEventListener('click', () =&gt; { setActiveTool('select'); addLine(); });
+$('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); startBezierCreation(); });
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
+$('btnToolLasso')?.addEventListener('click', () =&gt; { if (activeTool==='bezier' || activeTool==='direct-select') return reverseBezierDirection(); setStatus('Laço: em breve.'); });
+$('btnToolPaint')?.addEventListener('click', () =&gt; { if (activeTool==='bezier' || activeTool==='direct-select') return convertBezierToLine(); setStatus('Pintar: em breve.'); });
+$('btnToolCurve')?.addEventListener('click', () =&gt; { const obj=activeObj(); if (pathIsBezierEditable(obj)) { setActiveTool('direct-select'); attachBezierEditor(obj); return; } setStatus('Selecione uma curva para editar nós.'); });
+$('btnToolCut')?.addEventListener('click', () =&gt; { if (activeTool==='bezier' || activeTool==='direct-select') { const obj=activeObj(); if (pathIsBezierEditable(obj)) return attachBezierEditor(obj); } applyClipMask(); });
+$('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
 $('btnFit')?.addEventListener('click', fitToArtboard);
 $('btnZoomReset')?.addEventListener('click', fitToArtboard);
 $('btnZoomIn')?.addEventListener('click', () =&gt; {
@@ -2450,6 +3858,7 @@ $('btnDuplicate')?.addEventListener('click', duplicate);
 $('btnUndo')?.addEventListener('click', undo);
 $('btnRedo')?.addEventListener('click', redo);
 $('btnExportPng')?.addEventListener('click', exportPNG);
+$('btnQuickExportPng')?.addEventListener('click', exportPNG);
 $('btnSaveJson')?.addEventListener('click', saveJSON);
 $('btnLoadJson')?.addEventListener('click', loadJSON);
 $('btnApplyDoc')?.addEventListener('click', () =&gt; {
@@ -2484,16 +3893,12 @@ $('btnDistributeX')?.addEventListener('click', () =&gt; distributeSelection('x')
 $('btnDistributeY')?.addEventListener('click', () =&gt; distributeSelection('y'));
 $('btnGroup')?.addEventListener('click', groupSelection);
 $('btnUngroup')?.addEventListener('click', ungroupSelection);
+$('btnClipMask')?.addEventListener('click', applyClipMask);
+$('btnReleaseClip')?.addEventListener('click', releaseClipMask);
+$('btnNewFolder')?.addEventListener('click', createLayerFolder);
 $('btnLoadFont')?.addEventListener('click', loadGoogleFontForSelection);
 
 
-// modo visual da barra lateral de ferramentas
-document.querySelectorAll('.tools-rail .rail-btn').forEach(btn =&gt; {
-  btn.addEventListener('click', () =&gt; {
-    document.querySelectorAll('.tools-rail .rail-btn').forEach(b =&gt; b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
 
 // abas do painel direito
 $('propTabs')?.addEventListener('click', e =&gt; {
@@ -2605,43 +4010,6 @@ window.addEventListener('message', ev =&gt; {
         opt.value = ff; opt.textContent = ff;
         UI.font.appendChild(opt); existing.add(ff);
       });
-    }
-    if (Array.isArray(msg.colors) &amp;&amp; msg.colors.length) {
-      const sec = $('paletteSection');
-      const sep = $('paletteSep');
-      const grid = $('brandPalette');
-      if (sec) sec.style.display = '';
-      if (sep) sep.style.display = '';
-      if (grid) {
-        grid.innerHTML = '';
-        const grid2=$('paletteRow2');
-        if(grid2) grid2.innerHTML = '';
-        msg.colors.filter(c=&gt;c&amp;&amp;c.hex).slice(0,32).forEach(c =&gt; {
-          const b = document.createElement('button');
-          b.className = 'swatch';
-          b.style.background = c.hex;
-          b.title = (c.name||'') + ' ' + c.hex;
-          b.addEventListener('click', () =&gt; {
-            const obj = activeObj();
-            if(!obj) return;
-            if(obj.type==='textbox'||obj.type==='text'||obj.type==='i-text'){
-              obj.set({fill:c.hex});
-              if(UI.textColor) UI.textColor.value = c.hex;
-            } else {
-              obj.set({fill:c.hex});
-              if(UI.fill) UI.fill.value = c.hex;
-            }
-            canvas.requestRenderAll();
-          });
-          grid.appendChild(b);
-          const grid2=$('paletteRow2');
-          if(grid2){
-            const c2=b.cloneNode(true);
-            c2.addEventListener('click',()=>b.click());
-            grid2.appendChild(c2);
-          }
-        });
-      }
     }
   }
 });
