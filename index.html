@@ -4237,6 +4237,7 @@ function setActiveTool(tool){
   canvas.forEachObject(o =&gt; {
     if (isGuide(o) || o.isBezierEditorControl) return;
     o.selectable = !isText;
+    if (pathIsBezierEditable(o)) o.hasBorders = tool !== 'select';
   });
   document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
   $('btnSelect')?.classList.toggle('active', tool === 'select' || isDirect);
