@@ -1932,6 +1932,15 @@ canvas.on('mouse:down', opt =&gt; {
       return;
     }
 
+    if (activeTool === 'select') {
+      if (!bezierEditor.handlesActive) {
+        bezierEditor.handlesActive = true;
+        setInteractionState('edit-handles');
+        refreshBezierEditorControls();
+      }
+      return;
+    }
+
     if (activeTool === 'direct-select') {
       const seg = getNearestBezierSegment(target, pointer);
       if (seg &gt;= 0 &amp;&amp; !opt.e.altKey) {
