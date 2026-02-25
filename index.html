@@ -1241,6 +1241,24 @@ textarea.modal-textarea{
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
       &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Artboard&lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Clip content&lt;/div&gt;&lt;input id=&quot;abClipContent&quot; type=&quot;checkbox&quot;&gt;&lt;/label&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Exportável&lt;/div&gt;&lt;input id=&quot;abExportEnabled&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Background&lt;/div&gt;&lt;input id=&quot;abBgEnabled&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Lock BG&lt;/div&gt;&lt;input id=&quot;abBgLock&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;prop-grid2 prop-row&quot;&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;Cor BG&lt;/div&gt;&lt;input class=&quot;field-input&quot; id=&quot;abBgColor&quot; type=&quot;color&quot; value=&quot;#ffffff&quot;&gt;&lt;/label&gt;
+          &lt;label class=&quot;field-item&quot;&gt;&lt;div class=&quot;field-label&quot;&gt;BG no export&lt;/div&gt;&lt;input id=&quot;abBgExport&quot; type=&quot;checkbox&quot; checked&gt;&lt;/label&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Alinhamento&lt;/div&gt;
         &lt;div style=&quot;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px&quot;&gt;
           &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟸&lt;/button&gt;
@@ -1576,12 +1594,22 @@ function setDeskTheme(theme) {
 }
 
 // ─── Artboard ────────────────────────────────────────────
+const artboardCreateState = { active:false, start:null, ghost:null };
+
 function isGuide(o) {
-  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+  return artboards.some(a => o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+}
+
+function getArtboardById(id){
+  return artboards.find(a => a.id === id) || null;
 }
 
 function getActiveArtboard() {
-  return artboards.find(a =&gt; a.id === activeArtboardId) || null;
+  return getArtboardById(activeArtboardId);
+}
+
+function getArtboardByBoard(boardObj){
+  return artboards.find(a => a.board === boardObj) || null;
 }
 
 function syncActiveArtboardRefs() {
@@ -1595,6 +1623,116 @@ function syncActiveArtboardRefs() {
   docH = current.h;
   $('docW').value = docW;
   $('docH').value = docH;
+  refreshArtboardInspector();
+}
+
+function pointInArtboard(ab, point){
+  if (!ab || !point) return false;
+  const L = ab.board.left, T = ab.board.top, R = L + ab.w, B = T + ab.h;
+  return point.x >= L && point.x <= R && point.y >= T && point.y <= B;
+}
+
+function pickArtboardForPoint(point){
+  const candidates = artboards.filter(ab => pointInArtboard(ab, point));
+  if (!candidates.length) return null;
+  candidates.sort((a,b) => (a.w*a.h) - (b.w*b.h));
+  return candidates[0];
+}
+
+function removeObjectFromArtboard(obj){
+  artboards.forEach(ab => {
+    const idx = ab.children.indexOf(obj.id);
+    if (idx >= 0) ab.children.splice(idx, 1);
+  });
+  obj.dataArtboardId = null;
+}
+
+function applyArtboardClipToChild(ab, obj){
+  if (!ab || !obj) return;
+  if (ab.clipContent) {
+    obj.clipPath = new fabric.Rect({
+      left:ab.board.left,
+      top:ab.board.top,
+      width:ab.w,
+      height:ab.h,
+      absolutePositioned:true
+    });
+    obj.__artboardClipManaged = true;
+  } else if (obj.__artboardClipManaged) {
+    obj.clipPath = null;
+    obj.__artboardClipManaged = false;
+  }
+}
+
+function refreshArtboardChildrenClipping(ab){
+  if (!ab) return;
+  (ab.children || []).forEach(id => {
+    const obj = canvas.getObjects().find(o => o.id === id);
+    if (!obj) return;
+    applyArtboardClipToChild(ab, obj);
+  });
+}
+
+function assignObjectToArtboard(obj, nextArtboard){
+  if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
+  const prev = getArtboardById(obj.dataArtboardId);
+  if (prev && prev.id === nextArtboard?.id) {
+    applyArtboardClipToChild(prev, obj);
+    return;
+  }
+  removeObjectFromArtboard(obj);
+  if (!nextArtboard) {
+    if (obj.__artboardClipManaged) {
+      obj.clipPath = null;
+      obj.__artboardClipManaged = false;
+    }
+    return;
+  }
+  if (!nextArtboard.children.includes(obj.id)) nextArtboard.children.push(obj.id);
+  obj.dataArtboardId = nextArtboard.id;
+  applyArtboardClipToChild(nextArtboard, obj);
+}
+
+function syncObjectArtboardMembership(obj){
+  if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
+  const b = obj.getBoundingRect(true, true);
+  const center = { x:b.left + b.width/2, y:b.top + b.height/2 };
+  const target = pickArtboardForPoint(center);
+  assignObjectToArtboard(obj, target);
+}
+
+function syncArtboardAuxGeometry(ab){
+  if (!ab) return;
+  const left = ab.board.left;
+  const top = ab.board.top;
+  ab.w = Math.max(1, ab.board.getScaledWidth());
+  ab.h = Math.max(1, ab.board.getScaledHeight());
+  ab.board.set({ scaleX:1, scaleY:1, width:ab.w, height:ab.h });
+  ab.shadow.set({ left:left+8, top:top+12, width:ab.w, height:ab.h });
+  ab.bleed.set({ left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:ab.w+2*GUIDES.bleed, height:ab.h+2*GUIDES.bleed });
+  ab.safe.set({ left:left+GUIDES.safe, top:top+GUIDES.safe, width:ab.w-2*GUIDES.safe, height:ab.h-2*GUIDES.safe });
+  [ab.board, ab.shadow, ab.bleed, ab.safe].forEach(o => o.setCoords());
+}
+
+function applyArtboardVisualState(ab){
+  if (!ab) return;
+  const bg = ab.background || {};
+  const fill = bg.enabled ? (bg.color || '#ffffff') : 'rgba(0,0,0,0)';
+  ab.board.set({
+    fill,
+    stroke:'rgba(0,0,0,.18)',
+    strokeWidth:1,
+    selectable:true,
+    evented:true,
+    lockRotation:true,
+    hasControls:true,
+    hasBorders:true,
+    excludeFromExport: !ab.exportEnabled,
+    opacity:1
+  });
+  ab.bleed.set({ visible: !!artboardMode });
+  ab.safe.set({ visible: !!artboardMode });
+  refreshArtboardChildrenClipping(ab);
 }
 
 function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
@@ -1608,23 +1746,42 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
   const board = new fabric.Rect({
     left, top, width:w, height:h,
     fill:'#ffffff', stroke:'rgba(0,0,0,.15)', strokeWidth:1,
-    rx:2, ry:2, selectable:false, evented:false, excludeFromExport:false
+    rx:2, ry:2, selectable:true, evented:true, excludeFromExport:false,
+    lockRotation:true
   });
+  board.isArtboardBoard = true;
+  board.artboardId = id;
+  board.dataName = `Artboard ${artboards.length + 1}`;
+
   const bleed = new fabric.Rect({
     left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:w+2*GUIDES.bleed, height:h+2*GUIDES.bleed,
     fill:'transparent', stroke:'rgba(241,58,161,.5)', strokeDashArray:[6,6], strokeWidth:1,
-    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed &gt; 0 ? 1 : 0
+    selectable:false, evented:false, excludeFromExport:true, opacity: GUIDES.bleed > 0 ? 1 : 0
   });
   const safe = new fabric.Rect({
     left:left+GUIDES.safe, top:top+GUIDES.safe, width:w-2*GUIDES.safe, height:h-2*GUIDES.safe,
     fill:'transparent', stroke:'rgba(59,109,243,.5)', strokeDashArray:[6,6], strokeWidth:1,
     selectable:false, evented:false, excludeFromExport:true
   });
-  const bundle = { id, w, h, board, shadow, bleed, safe };
+  const bundle = {
+    id,
+    w,
+    h,
+    board,
+    shadow,
+    bleed,
+    safe,
+    clipContent:false,
+    exportEnabled:true,
+    background:{ enabled:true, color:'#FFFFFF', locked:true, includeInExport:true },
+    children:[]
+  };
   artboards.push(bundle);
   canvas.add(shadow, board, bleed, safe);
   activeArtboardId = id;
   syncActiveArtboardRefs();
+  syncArtboardAuxGeometry(bundle);
+  applyArtboardVisualState(bundle);
   orderArtboard();
   return bundle;
 }
@@ -1652,22 +1809,24 @@ function addAdjacentArtboard(dir) {
 }
 
 function orderArtboard() {
-  artboards.forEach(a =&gt; {
-    [a.shadow, a.board, a.bleed, a.safe].forEach(o =&gt; {
-      if(o) { canvas.sendToBack(o); canvas.bringToFront(o); }
-    });
+  artboards.forEach(a => {
+    if (a.shadow) canvas.sendToBack(a.shadow);
+    if (a.board) canvas.sendToBack(a.board);
+    if (a.bleed) canvas.bringToFront(a.bleed);
+    if (a.safe) canvas.bringToFront(a.safe);
+  });
+  canvas.getObjects().forEach(o => {
+    if (!isGuide(o) && !o.isBezierEditorControl && !o.isBezierOverlay) canvas.bringToFront(o);
   });
 }
 
 function positionArtboard() {
   const current = getActiveArtboard();
   if (!current) return;
-  current.board.set({ width:docW, height:docH });
-  current.shadow.set({ left:current.board.left+8, top:current.board.top+12, width:docW, height:docH });
-  current.bleed.set({ left:current.board.left-GUIDES.bleed, top:current.board.top-GUIDES.bleed, width:docW+2*GUIDES.bleed, height:docH+2*GUIDES.bleed });
-  current.safe.set({ left:current.board.left+GUIDES.safe, top:current.board.top+GUIDES.safe, width:docW-2*GUIDES.safe, height:docH-2*GUIDES.safe });
   current.w = docW;
   current.h = docH;
+  current.board.set({ width:docW, height:docH });
+  syncArtboardAuxGeometry(current);
   syncActiveArtboardRefs();
   canvas.requestRenderAll();
   updateArtboardPlusUI();
@@ -1675,11 +1834,14 @@ function positionArtboard() {
 
 function fitToArtboard() {
   if (!artboard) return;
+  const current = getActiveArtboard();
+  const w = current?.w || docW;
+  const h = current?.h || docH;
   const pad = 100;
   const cw = canvas.getWidth(), ch = canvas.getHeight();
-  const newZoom = clamp(Math.min((cw-pad)/docW, (ch-pad)/docH), 0.05, 6);
-  const artCx = artboard.left + docW/2;
-  const artCy = artboard.top + docH/2;
+  const newZoom = clamp(Math.min((cw-pad)/w, (ch-pad)/h), 0.05, 6);
+  const artCx = artboard.left + w/2;
+  const artCy = artboard.top + h/2;
   canvas.setViewportTransform([newZoom, 0, 0, newZoom, cw/2 - artCx*newZoom, ch/2 - artCy*newZoom]);
   zoom = newZoom;
   updateZoomLabel();
@@ -1699,15 +1861,16 @@ function setArtboardSize(w, h) {
 function updateArtboardPlusUI() {
   const ui = $('artboardPlusUI');
   if (!ui) return;
-  if (!artboardMode || !artboard) {
+  const current = getActiveArtboard();
+  if (!artboardMode || !current || !current.board) {
     ui.style.display = 'none';
     return;
   }
   const vpt = canvas.viewportTransform || [1,0,0,1,0,0];
-  const x1 = artboard.left * vpt[0] + vpt[4];
-  const y1 = artboard.top * vpt[3] + vpt[5];
-  const x2 = (artboard.left + docW) * vpt[0] + vpt[4];
-  const y2 = (artboard.top + docH) * vpt[3] + vpt[5];
+  const x1 = current.board.left * vpt[0] + vpt[4];
+  const y1 = current.board.top * vpt[3] + vpt[5];
+  const x2 = (current.board.left + current.w) * vpt[0] + vpt[4];
+  const y2 = (current.board.top + current.h) * vpt[3] + vpt[5];
   const m = 16;
   $('btnAddArtTop').style.left = ((x1+x2)/2 - 14) + 'px';
   $('btnAddArtTop').style.top = (y1 - m - 14) + 'px';
@@ -1720,6 +1883,23 @@ function updateArtboardPlusUI() {
   ui.style.display = 'block';
 }
 
+function refreshArtboardInspector(){
+  const current = getActiveArtboard();
+  const clip = $('abClipContent');
+  const exp = $('abExportEnabled');
+  const bgEn = $('abBgEnabled');
+  const bgColor = $('abBgColor');
+  const bgLock = $('abBgLock');
+  const bgExp = $('abBgExport');
+  if (!clip || !current) return;
+  clip.checked = !!current.clipContent;
+  exp.checked = !!current.exportEnabled;
+  bgEn.checked = !!current.background?.enabled;
+  bgColor.value = current.background?.color || '#FFFFFF';
+  bgLock.checked = !!current.background?.locked;
+  bgExp.checked = !!current.background?.includeInExport;
+  bgColor.disabled = !!current.background?.locked;
+}
 function updateZoomLabel() {
   const pct = Math.round(zoom*100) + '%';
   const el = $('zoomLabel');
@@ -1744,6 +1924,20 @@ canvas.on('mouse:down', opt =&gt; {
     isPanning = true; canvas.setCursor('grab');
     lastX = e.clientX; lastY = e.clientY;
     opt.e.preventDefault();
+    return;
+  }
+
+  if (artboardMode && e.button === 0 && !target) {
+    const pointer = canvas.getPointer(e);
+    artboardCreateState.active = true;
+    artboardCreateState.start = { x:pointer.x, y:pointer.y };
+    artboardCreateState.ghost = new fabric.Rect({
+      left:pointer.x, top:pointer.y, width:1, height:1,
+      fill:'rgba(127,90,240,.08)', stroke:'rgba(127,90,240,.9)', strokeDashArray:[6,4],
+      selectable:false, evented:false, excludeFromExport:true
+    });
+    canvas.add(artboardCreateState.ghost);
+    canvas.requestRenderAll();
     return;
   }
 
@@ -1789,6 +1983,20 @@ canvas.on('mouse:move', opt =&gt; {
     canvas.setViewportTransform(vpt);
     lastX = e.clientX; lastY = e.clientY;
     updateArtboardPlusUI();
+    return;
+  }
+
+  if (artboardCreateState.active && artboardCreateState.start && artboardCreateState.ghost) {
+    const pointer = canvas.getPointer(opt.e);
+    const sx = artboardCreateState.start.x;
+    const sy = artboardCreateState.start.y;
+    const left = Math.min(sx, pointer.x);
+    const top = Math.min(sy, pointer.y);
+    const width = Math.max(1, Math.abs(pointer.x - sx));
+    const height = Math.max(1, Math.abs(pointer.y - sy));
+    artboardCreateState.ghost.set({ left, top, width, height });
+    artboardCreateState.ghost.setCoords();
+    canvas.requestRenderAll();
     return;
   }
 
@@ -1842,6 +2050,26 @@ canvas.on('mouse:move', opt =&gt; {
 
 canvas.on('mouse:up', opt =&gt; {
   if (isPanning) { isPanning = false; canvas.setCursor(activeTool==='text' ? 'text' : 'default'); }
+
+  if (artboardCreateState.active) {
+    const ghost = artboardCreateState.ghost;
+    const start = artboardCreateState.start;
+    const pointer = canvas.getPointer(opt.e);
+    const left = Math.min(start?.x || pointer.x, pointer.x);
+    const top = Math.min(start?.y || pointer.y, pointer.y);
+    const width = Math.abs(pointer.x - (start?.x || pointer.x));
+    const height = Math.abs(pointer.y - (start?.y || pointer.y));
+    if (ghost && canvas.getObjects().includes(ghost)) canvas.remove(ghost);
+    artboardCreateState.active = false;
+    artboardCreateState.start = null;
+    artboardCreateState.ghost = null;
+    if (width &gt;= 24 &amp;&amp; height &gt;= 24) {
+      createArtboard(left, top, width, height);
+      setStatus('Artboard criado por arrasto.');
+    }
+    canvas.requestRenderAll();
+    return;
+  }
 
   if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; vectorToolState.mode === 'creating') {
     const i = vectorToolState.dragPointIndex;
@@ -3251,7 +3479,14 @@ function redo() { if (history.idx &lt; history.stack.length-1) restore(history.i
 
 canvas.on('object:added', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
 canvas.on('object:modified', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
-canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); });
+canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); removeObjectFromArtboard(e.target || null); });
+canvas.on('object:added', e =&gt; {
+  const obj = e.target;
+  if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
+  if (!obj.id) obj.id = 'o_' + Math.random().toString(36).slice(2,10);
+  syncObjectArtboardMembership(obj);
+  orderArtboard();
+});
 canvas.on('object:modified', e =&gt; {
   const obj = e.target;
   if (!obj || !pathIsBezierEditable(obj)) return;
@@ -3949,40 +4184,59 @@ modalBg?.addEventListener('click', e =&gt; { if(e.target===modalBg) closeModal()
 
 // ─── Export PNG ──────────────────────────────────────────
 function exportPNG() {
-  if (!artboard) { setStatus('Nada para exportar'); return; }
+  const current = getActiveArtboard();
+  if (!current?.board) { setStatus('Nada para exportar'); return; }
+  if (!current.exportEnabled) { setStatus('Este artboard está com exportação desativada.'); return; }
+
   const vt = canvas.viewportTransform;
   canvas.setViewportTransform([1,0,0,1,0,0]);
   const origZoom = zoom;
-  const al = artboard.left, at = artboard.top;
+  const boardFill = current.board.fill;
+  if (!current.background?.includeInExport) current.board.set({ fill:'rgba(0,0,0,0)' });
+
   const dataURL = canvas.toDataURL({
     format:'png', quality:1, multiplier:2,
-    left: al, top: at, width: docW, height: docH
+    left: current.board.left,
+    top: current.board.top,
+    width: current.w,
+    height: current.h
   });
+
+  if (!current.background?.includeInExport) current.board.set({ fill:boardFill });
   canvas.setViewportTransform(vt);
   zoom = origZoom;
   const a = document.createElement('a');
   a.href = dataURL;
-  a.download = 'export.png';
+  a.download = `${current.board?.dataName || 'artboard'}.png`;
   a.click();
   setStatus('PNG exportado!');
 }
 
 function exportSVGToParent() {
-  if (!canvas || !artboard) {
+  const current = getActiveArtboard();
+  if (!canvas || !current?.board) {
     window.parent.postMessage({ type: 'geExportSVG', error: 'Sem conteúdo para exportar.' }, '*');
     return;
   }
+  if (!current.exportEnabled) {
+    window.parent.postMessage({ type: 'geExportSVG', error: 'Artboard com exportação desativada.' }, '*');
+    return;
+  }
+
+  const boardFill = current.board.fill;
+  if (!current.background?.includeInExport) current.board.set({ fill:'rgba(0,0,0,0)' });
   const svg = canvas.toSVG({
     suppressPreamble: false,
-    width: docW,
-    height: docH,
+    width: current.w,
+    height: current.h,
     viewBox: {
-      x: artboard.left,
-      y: artboard.top,
-      width: docW,
-      height: docH
+      x: current.board.left,
+      y: current.board.top,
+      width: current.w,
+      height: current.h
     }
   });
+  if (!current.background?.includeInExport) current.board.set({ fill:boardFill });
   window.parent.postMessage({ type: 'geExportSVG', svg, name: $('projectNameInline')?.value || '' }, '*');
 }
 
@@ -4134,24 +4388,62 @@ async function pasteFromClipboard() {
   }
 }
 
-// ─── Constrain to artboard ───────────────────────────────
+// ─── Artboard container behavior ───────────────────────────
 canvas.on('object:moving', opt =&gt; {
   const obj = opt.target;
-  if (!obj || isGuide(obj)) return;
-  if (artboard) {
-    const b = obj.getBoundingRect(true, true);
-    const L = artboard.left, T = artboard.top, R = L+docW, B = T+docH;
-    let dx=0, dy=0;
-    if(b.left&lt;L) dx=L-b.left;
-    if(b.top&lt;T) dy=T-b.top;
-    if(b.left+b.width&gt;R) dx=R-(b.left+b.width);
-    if(b.top+b.height&gt;B) dy=B-(b.top+b.height);
-    if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
+  if (!obj) return;
+
+  if (obj.isArtboardBoard) {
+    const ab = getArtboardByBoard(obj);
+    if (!ab) return;
+    const last = ab.__lastPos || { left:obj.left, top:obj.top };
+    const dx = (obj.left || 0) - (last.left || 0);
+    const dy = (obj.top || 0) - (last.top || 0);
+    ab.__lastPos = { left:obj.left, top:obj.top };
+    if (dx || dy) {
+      (ab.children || []).forEach(id =&gt; {
+        const child = canvas.getObjects().find(o =&gt; o.id === id);
+        if (!child) return;
+        child.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
+        child.setCoords();
+      });
+    }
+    syncArtboardAuxGeometry(ab);
+    refreshArtboardChildrenClipping(ab);
+    updateArtboardPlusUI();
+    canvas.requestRenderAll();
+    return;
   }
+
+  if (isGuide(obj)) return;
   if (pathIsBezierEditable(obj)) {
     syncPathVectorModelByDelta(obj);
     if (bezierEditor.enabled &amp;&amp; bezierEditor.path === obj) refreshBezierEditorControls();
   }
+});
+
+canvas.on('mouse:up', () =&gt; {
+  canvas.getObjects().forEach(o =&gt; {
+    if (o?.isArtboardBoard || isGuide(o) || o?.isBezierEditorControl || o?.isBezierOverlay) return;
+    syncObjectArtboardMembership(o);
+  });
+  canvas.requestRenderAll();
+});
+
+canvas.on('object:modified', e =&gt; {
+  const obj = e.target;
+  if (!obj) return;
+  if (obj.isArtboardBoard) {
+    const ab = getArtboardByBoard(obj);
+    if (!ab) return;
+    syncArtboardAuxGeometry(ab);
+    refreshArtboardChildrenClipping(ab);
+    ab.__lastPos = { left:obj.left, top:obj.top };
+    syncActiveArtboardRefs();
+    updateArtboardPlusUI();
+    return;
+  }
+  if (!isGuide(obj)) syncObjectArtboardMembership(obj);
 });
 
 // ─── Command menus (Arquivo / Editar / etc) ───────────────
@@ -4676,13 +4968,32 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
   artboardMode = !artboardMode;
   $('btnArtboardMode').classList.toggle('accent', artboardMode);
-  setStatus(artboardMode ? 'Modo pranchetas ativo: use os botões + ao redor da prancheta.' : 'Modo pranchetas desativado');
+  artboards.forEach(ab =&gt; applyArtboardVisualState(ab));
+  setStatus(artboardMode ? 'Modo artboard ativo: clique e arraste para criar novos frames.' : 'Modo artboard desativado');
   updateArtboardPlusUI();
+  canvas.requestRenderAll();
 });
 $('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
 $('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
 $('btnAddArtBottom')?.addEventListener('click', () =&gt; addAdjacentArtboard('bottom'));
 $('btnAddArtLeft')?.addEventListener('click', () =&gt; addAdjacentArtboard('left'));
+
+const applyArtboardInspectorChanges = () =&gt; {
+  const ab = getActiveArtboard();
+  if (!ab) return;
+  ab.clipContent = !!$('abClipContent')?.checked;
+  ab.exportEnabled = !!$('abExportEnabled')?.checked;
+  ab.background.enabled = !!$('abBgEnabled')?.checked;
+  ab.background.locked = !!$('abBgLock')?.checked;
+  ab.background.includeInExport = !!$('abBgExport')?.checked;
+  if (!ab.background.locked && $('abBgColor')?.value) ab.background.color = $('abBgColor').value;
+  applyArtboardVisualState(ab);
+  canvas.requestRenderAll();
+};
+['abClipContent','abExportEnabled','abBgEnabled','abBgLock','abBgExport','abBgColor'].forEach(id =&gt; {
+  $(id)?.addEventListener('input', applyArtboardInspectorChanges);
+  $(id)?.addEventListener('change', applyArtboardInspectorChanges);
+});
 $('btnCenterAll')?.addEventListener('click', () =&gt; {
   const obj = activeObj(); if(!obj||!artboard) return;
   obj.set({ left:artboard.left+docW/2-obj.getScaledWidth()/2, top:artboard.top+docH/2-obj.getScaledHeight()/2 });
