@@ -641,13 +641,12 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 /* ─── LAYOUT ──────────────────────────────────────────── */
 .app{
   display:grid;
-  grid-template-rows: 30px var(--topbar-h) 38px 1fr;
+  grid-template-rows: 30px var(--topbar-h) 1fr;
   grid-template-columns: var(--panel-w) 1fr var(--panel-w);
   height:100%;
 }
 
-.menu-bar,
-.context-strip{
+.menu-bar{
   grid-column:1 / -1;
   display:flex;
   align-items:center;
@@ -660,8 +659,15 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .menu-item:hover{background:rgba(255,255,255,.08);color:var(--ink)}
 .menu-item.active{background:rgba(127,90,240,.18);color:#fff}
 .menu-spacer{margin-left:auto}
+.menu-dd{position:relative}
+.menu-item-btn{border:none;cursor:pointer}
+.menu-dd-panel{
+  display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:50;
+  width:320px;padding:12px;border-radius:12px;background:var(--panel);
+  border:1px solid var(--border2);box-shadow:0 24px 48px rgba(0,0,0,.45);
+}
+.menu-dd.open .menu-dd-panel{display:block}
 
-.context-strip{background:#292931;font-size:11px;gap:8px}
 .ctx-pill{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border2);display:inline-flex;align-items:center;color:var(--ink2)}
 .ctx-pill strong{color:var(--ink);font-weight:600}
 
@@ -763,34 +769,28 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
   margin-bottom:8px;font-weight:600;
 }
 
-/* ─── TOOL BUTTONS (left panel) ──────────────────────── */
-.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.tool-btn{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:5px;padding:10px 6px;border-radius:var(--r);
-  background:var(--surface);border:1px solid var(--border);
-  color:var(--ink2);font-size:10px;font-family:'JetBrains Mono', ui-monospace, monospace;
-  font-weight:500;letter-spacing:.04em;
-  transition:all .12s ease;
-}
-.tool-btn:hover{background:rgba(127,90,240,.08);border-color:rgba(127,90,240,.24);color:var(--accent)}
-.tool-btn svg{opacity:.7;transition:opacity .12s}
-.tool-btn:hover svg{opacity:1}
+/* ─── TOOLBAR (floating) ─────────────────────────────── */
+.floating-toolbar-wrap{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:12;display:inline-flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;width:max-content;max-width:calc(100% - 28px)}
+.floating-toolbar-row{display:flex;align-items:center;white-space:nowrap;width:max-content;max-width:calc(100vw - 48px);background:linear-gradient(180deg, rgba(34,34,42,.96), rgba(22,22,28,.96));border:1px solid rgba(255,255,255,.09);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;backdrop-filter:blur(10px)}
+.float-tool-btn{height:40px;padding:0 13px;border-right:1px solid rgba(255,255,255,.08);background:transparent;color:rgba(240,239,244,.78);font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.float-tool-btn:last-child{border-right:none}
+.float-tool-btn:hover{background:rgba(255,255,255,.06);color:#fff}
+.float-tool-btn.active{background:rgba(127,90,240,.24);color:#fff;box-shadow:inset 0 0 0 1px rgba(127,90,240,.3)}
+.float-tool-btn.icon{width:40px;justify-content:center;padding:0;font-size:14px}
+.float-tool-sep{width:1px;height:20px;background:rgba(255,255,255,.12)}
+.top-tools{display:flex}
 
-.tools-rail{
-  width:46px;
-  border-right:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-  padding:10px 6px;
-  background:#191920;
-}
-.rail-btn{width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink2);display:inline-flex;align-items:center;justify-content:center}
-.rail-btn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
-.rail-btn.active{background:rgba(127,90,240,.18);border-color:rgba(127,90,240,.35);color:#fff}
-.rail-sep{width:18px;height:1px;background:var(--border2);margin:2px 0}
+.text-float-panel{position:absolute;left:24px;bottom:24px;z-index:13;width:300px;background:rgba(24,24,29,.96);border:1px solid var(--border2);border-radius:14px;box-shadow:0 20px 44px rgba(0,0,0,.45);display:none;overflow:hidden}
+.text-float-panel.open{display:block}
+.text-float-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.text-float-tabs{display:flex;gap:4px}
+.text-float-tab{height:28px;padding:0 10px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink2);font-size:11px;font-family:var(--mono)}
+.text-float-tab.active{background:rgba(127,90,240,.18);color:#fff;border-color:rgba(127,90,240,.35)}
+.text-float-close{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--ink2)}
+.text-float-body{padding:10px 12px;display:grid;gap:8px}
+.text-float-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.text-float-panel [data-pane]{display:none}
+.text-float-panel [data-pane].active{display:grid;gap:8px}
 
 /* ─── DOC INPUTS ──────────────────────────────────────── */
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
@@ -809,32 +809,27 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
 .sep{height:1px;background:var(--border);margin:12px -12px}
 
 /* ─── LAYERS ──────────────────────────────────────────── */
+.layer-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
 .layer-item{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 9px;border-radius:8px;
-  border:1px solid transparent;
-  cursor:pointer;transition:all .1s ease;
-  margin-bottom:3px;
+  display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:start;
+  padding:7px 9px;border-radius:8px;border:1px solid transparent;
+  cursor:pointer;transition:all .1s ease;margin-bottom:4px;
 }
+.layer-main{display:flex;align-items:center;gap:8px;min-width:0}
 .layer-item:hover{background:rgba(255,255,255,.04)}
-.layer-item.active{
-  background:rgba(127,90,240,.1);
-  border-color:rgba(127,90,240,.26);
-}
-.layer-icon{
-  width:22px;height:22px;border-radius:5px;
-  background:var(--surface);
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:var(--ink3);font-size:10px;
-}
+.layer-item.active{background:rgba(127,90,240,.1);border-color:rgba(127,90,240,.26)}
+.layer-item.drag-over{border-color:rgba(127,90,240,.7);background:rgba(127,90,240,.18)}
+.layer-icon{width:22px;height:22px;border-radius:5px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:10px}
 .layer-item.active .layer-icon{background:rgba(127,90,240,.18);color:var(--accent)}
-.layer-name{flex:1;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-thumb{width:34px;height:24px;border-radius:6px;border:1px solid var(--border2);background:linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02));margin-right:6px;overflow:hidden;background-size:cover;background-position:center}
+.layer-name{font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .layer-item.active .layer-name{color:var(--ink)}
-.layer-empty{
-  text-align:center;padding:24px 0;
-  font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace;
-}
+.layer-meta{font-size:10px;color:var(--ink3);font-family:var(--mono)}
+.layer-controls{display:grid;grid-template-columns:84px 70px;gap:6px;margin-top:6px}
+.layer-ctl{height:24px;border-radius:7px;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);font-size:10px;padding:0 6px;font-family:var(--mono)}
+.layer-folder{margin-top:6px;width:100%}
+.layer-empty{text-align:center;padding:24px 0;font-size:11px;color:var(--ink3);font-family:'JetBrains Mono', ui-monospace, monospace}
+.folder-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid var(--border2);border-radius:999px;font-size:10px;color:var(--ink2);margin:0 6px 6px 0}
 .lib-item{
   display:flex;align-items:center;gap:8px;
   padding:7px 9px;border-radius:8px;
@@ -843,6 +838,9 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   margin-bottom:3px;
 }
 .lib-item:hover{background:rgba(255,255,255,.04)}
+.lib-item[draggable="true"]{cursor:grab}
+.lib-item:active{cursor:grabbing}
+.lib-preview{width:42px;height:30px;border-radius:7px;border:1px solid var(--border2);background:linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.02));background-size:cover;background-position:center;flex-shrink:0}
 .lib-icon{
   width:22px;height:22px;border-radius:5px;background:var(--surface);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
@@ -889,12 +887,6 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
     var(--bg)
   );
 }
-.canvas-context{
-  position:absolute;left:14px;top:12px;z-index:11;
-  display:flex;align-items:center;gap:8px;
-  padding:8px;border-radius:10px;
-  border:1px solid var(--border);background:rgba(18,18,22,.9);
-}
 /* dot grid */
 .canvas-area::before{
   content:'';position:absolute;inset:0;
@@ -912,27 +904,6 @@ input[type=&quot;color&quot;].field-input{padding:2px 4px;cursor:pointer}
   box-shadow:0 8px 22px rgba(0,0,0,.35);pointer-events:auto;
 }
 .ab-plus:hover{background:var(--accent);border-color:rgba(255,255,255,.35)}
-
-/* ─── ZOOM BAR ────────────────────────────────────────── */
-.zoom-bar{
-  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:2px;
-  background:rgba(10,10,12,.85);backdrop-filter:blur(12px);
-  border:1px solid var(--border2);border-radius:12px;padding:4px;
-  z-index:10;
-}
-.zbtn{
-  width:28px;height:28px;border-radius:8px;
-  background:transparent;color:var(--ink2);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;
-  transition:all .1s ease;
-}
-.zbtn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
-.zbtn.label{
-  width:54px;font-family:'JetBrains Mono', ui-monospace, monospace;font-size:11px;
-  cursor:default;color:var(--ink);
-}
 
 /* ─── HINT ────────────────────────────────────────────── */
 .hint-bar{
@@ -998,70 +969,9 @@ textarea.modal-textarea{
   &lt;div class=&quot;menu-bar&quot;&gt;
     &lt;span class=&quot;menu-item active&quot;&gt;Arquivo&lt;/span&gt;
     &lt;span class=&quot;menu-item&quot;&gt;Editar&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Documento&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Texto&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Vetor&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Pixel&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Camada&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Exibir&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Janela&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Ajuda&lt;/span&gt;
-    &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
-    &lt;span class=&quot;menu-item&quot;&gt;Exportar PNG&lt;/span&gt;
-  &lt;/div&gt;
-
-  &lt;header class=&quot;topbar&quot;&gt;
-    &lt;div class=&quot;topbar-brand&quot;&gt;
-      &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
-      &lt;span class=&quot;brand-name&quot;&gt;Vetor&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;div class=&quot;topbar-status&quot;&gt;
-      &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnRedo&quot; title=&quot;Redo (Ctrl+Y)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;23 4 23 10 17 10&quot;/&gt;&lt;path d=&quot;M20.49 15a9 9 0 1 1-.49-4.5&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;div class=&quot;topbar-actions&quot;&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnDelete&quot; title=&quot;Apagar seleção (Del)&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;3 6 5 6 21 6&quot;/&gt;&lt;path d=&quot;M19 6l-1 14H6L5 6&quot;/&gt;&lt;path d=&quot;M10 11v6M14 11v6&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
-      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;PNG&lt;/button&gt;
-    &lt;/div&gt;
-  &lt;/header&gt;
-
-  &lt;div class=&quot;context-strip&quot;&gt;
-    &lt;span class=&quot;ctx-pill&quot; id=&quot;ctxSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Seleção automática&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configuração do documento&lt;/span&gt;
-    &lt;span class=&quot;ctx-pill&quot;&gt;Configurações do aplicativo&lt;/span&gt;
-  &lt;/div&gt;
-
-  &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
-  &lt;aside class=&quot;panel&quot;&gt;
-    &lt;div class=&quot;tools-rail&quot;&gt;
-      &lt;button class=&quot;rail-btn active&quot; id=&quot;btnAddArtText&quot; title=&quot;Texto artístico&quot;&gt;T&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnAddTextBox&quot; title=&quot;Caixa de texto&quot;&gt;T▭&lt;/button&gt;
-      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
-      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
-    &lt;/div&gt;
-    &lt;div class=&quot;panel-body&quot;&gt;
-
-      &lt;!-- Document --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
+    &lt;div class=&quot;menu-dd&quot; id=&quot;menuDocRoot&quot;&gt;
+      &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuDocumento&quot;&gt;Documento&lt;/button&gt;
+      &lt;div class=&quot;menu-dd-panel&quot; id=&quot;menuDocumentoPanel&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Documento&lt;/div&gt;
         &lt;div class=&quot;field-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
@@ -1090,69 +1000,92 @@ textarea.modal-textarea{
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
-        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Layout rápido&lt;/div&gt;
-        &lt;div class=&quot;field-row one&quot;&gt;
+        &lt;div class=&quot;field-row one&quot; style=&quot;margin-top:6px&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
-            &lt;div class=&quot;field-label&quot;&gt;Referência&lt;/div&gt;
+            &lt;div class=&quot;field-label&quot;&gt;Referência de alinhamento&lt;/div&gt;
             &lt;select class=&quot;field-input&quot; id=&quot;alignTarget&quot; style=&quot;height:32px&quot;&gt;
               &lt;option value=&quot;layout&quot;&gt;Layout (prancheta)&lt;/option&gt;
               &lt;option value=&quot;object&quot;&gt;Objeto âncora&lt;/option&gt;
             &lt;/select&gt;
           &lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟸&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Centro ↔&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Alinhar ⟹&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Base ⟱&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Topo ⟰&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Meio ↕&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeX&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir X&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnDistributeY&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Distribuir Y&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;div class=&quot;field-row&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Agrupar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:32px&quot;&gt;Desagrupar&lt;/button&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnArtboardMode&quot; style=&quot;width:100%;justify-content:center;height:32px;margin-top:6px&quot;&gt;Modo pranchetas&lt;/button&gt;
+        &lt;div style=&quot;display:flex;gap:6px;margin-top:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnApplyDoc&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Aplicar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCenterAll&quot; style=&quot;flex:1;justify-content:center;height:32px&quot;&gt;Centralizar&lt;/button&gt;
         &lt;/div&gt;
       &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Texto&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Vetor&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Pixel&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Camada&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Exibir&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Janela&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Ajuda&lt;/span&gt;
+    &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
+    &lt;span class=&quot;menu-item&quot;&gt;Exportar PNG&lt;/span&gt;
+  &lt;/div&gt;
+
+  &lt;header class=&quot;topbar&quot;&gt;
+    &lt;div class=&quot;topbar-brand&quot;&gt;
+      &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
+      &lt;span class=&quot;brand-name&quot;&gt;Vetor&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-status&quot;&gt;
+      &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
+      &lt;div style=&quot;width:1px;height:18px;background:var(--border);margin:0 2px&quot;&gt;&lt;/div&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟸&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; title=&quot;Centralizar horizontal&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↔&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; title=&quot;Alinhar à direita&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟹&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; title=&quot;Alinhar no topo&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟰&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; title=&quot;Centralizar vertical&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↕&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; title=&quot;Alinhar na base&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟱&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnRedo&quot; title=&quot;Redo (Ctrl+Y)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;23 4 23 10 17 10&quot;/&gt;&lt;path d=&quot;M20.49 15a9 9 0 1 1-.49-4.5&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;span id=&quot;statusText&quot;&gt;Pronto&lt;/span&gt; &lt;span id=&quot;zoomTopLabel&quot; style=&quot;color:var(--ink2)&quot;&gt;ZOOM 100%&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-actions&quot;&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnDelete&quot; title=&quot;Apagar seleção (Del)&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;3 6 5 6 21 6&quot;/&gt;&lt;path d=&quot;M19 6l-1 14H6L5 6&quot;/&gt;&lt;path d=&quot;M10 11v6M14 11v6&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
+        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
+      &lt;/button&gt;
+      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;PNG&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+
+  &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
+  &lt;aside class=&quot;panel&quot;&gt;
+    &lt;div class=&quot;panel-body&quot;&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;&lt;div class=&quot;layer-empty&quot;&gt;Configurações de documento no menu superior &lt;strong&gt;Documento&lt;/strong&gt;.&lt;/div&gt;&lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
-      &lt;!-- JSON --&gt;
-      &lt;div class=&quot;panel-section&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Projeto&lt;/div&gt;
-        &lt;div style=&quot;display:flex;gap:6px&quot;&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnSaveJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Salvar&lt;/button&gt;
-          &lt;button class=&quot;tbtn&quot; id=&quot;btnLoadJson&quot; style=&quot;flex:1;justify-content:center;height:32px;font-size:10px&quot;&gt;Carregar&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
-
-      &lt;!-- Layers --&gt;
-      &lt;div class=&quot;panel-section&quot; style=&quot;flex:1&quot;&gt;
+      &lt;div class=&quot;panel-section&quot; style=&quot;max-height:360px;display:flex;flex-direction:column&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
           Camadas
           &lt;span id=&quot;layerCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
         &lt;/div&gt;
-        &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;width:100%;justify-content:center;height:32px;margin:0 0 8px 0&quot;&gt;+ Nova layer&lt;/button&gt;
-        &lt;div id=&quot;layersList&quot;&gt;&lt;/div&gt;
+        &lt;div class=&quot;layer-tools&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnCreateLayer&quot; style=&quot;justify-content:center;height:30px&quot;&gt;+ Layer&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnNewFolder&quot; style=&quot;justify-content:center;height:30px&quot;&gt;+ Pasta&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnGroup&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Agrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnUngroup&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Desagrupar&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnClipMask&quot; style=&quot;justify-content:center;height:30px&quot;&gt;ClipMask&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnReleaseClip&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Soltar clip&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div id=&quot;folderList&quot; style=&quot;margin-bottom:8px&quot;&gt;&lt;/div&gt;
+        &lt;div id=&quot;layersList&quot; style=&quot;flex:1;overflow:auto&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
@@ -1175,11 +1108,6 @@ textarea.modal-textarea{
 
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class=&quot;canvas-area&quot; id=&quot;canvasStage&quot;&gt;
-    &lt;div class=&quot;canvas-context&quot;&gt;
-      &lt;span class=&quot;ctx-pill&quot; id=&quot;canvasSelectionState&quot;&gt;&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;&lt;/span&gt;
-      &lt;span class=&quot;ctx-pill&quot;&gt;Snap&lt;/span&gt;
-      &lt;span class=&quot;ctx-pill&quot;&gt;100%&lt;/span&gt;
-    &lt;/div&gt;
     &lt;div id=&quot;fabricCanvas&quot;&gt;&lt;/div&gt;
     &lt;div class=&quot;artboard-plus-ui&quot; id=&quot;artboardPlusUI&quot;&gt;
       &lt;button class=&quot;ab-plus top&quot; id=&quot;btnAddArtTop&quot; title=&quot;Adicionar acima&quot;&gt;+&lt;/button&gt;
@@ -1188,14 +1116,71 @@ textarea.modal-textarea{
       &lt;button class=&quot;ab-plus left&quot; id=&quot;btnAddArtLeft&quot; title=&quot;Adicionar à esquerda&quot;&gt;+&lt;/button&gt;
     &lt;/div&gt;
 
-    &lt;div class=&quot;zoom-bar&quot;&gt;
-      &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomOut&quot;&gt;−&lt;/button&gt;
-      &lt;button class=&quot;zbtn label&quot; id=&quot;btnZoomReset&quot;&gt;&lt;span id=&quot;zoomLabel&quot;&gt;100%&lt;/span&gt;&lt;/button&gt;
-      &lt;button class=&quot;zbtn&quot; id=&quot;btnZoomIn&quot;&gt;+&lt;/button&gt;
-      &lt;div style=&quot;width:1px;height:20px;background:var(--border);margin:0 2px&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;zbtn&quot; id=&quot;btnFit&quot; title=&quot;Encaixar&quot;&gt;
-        &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;path d=&quot;M7 3H3v4M17 3h4v4M7 21H3v-4M21 17v4h-4&quot;/&gt;&lt;/svg&gt;
-      &lt;/button&gt;
+    &lt;div class=&quot;floating-toolbar-wrap&quot; id=&quot;floatingToolbar&quot;&gt;
+      &lt;div class=&quot;floating-toolbar-row top-tools&quot; id=&quot;floatingTopTools&quot;&gt;
+        &lt;button class=&quot;float-tool-btn active&quot; id=&quot;btnToolVector&quot;&gt;Vetor&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMove&quot; data-tool=&quot;move&quot;&gt;Mover&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolLasso&quot;&gt;Laço&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolPaint&quot;&gt;Pintar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCurve&quot;&gt;Curvar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCut&quot;&gt;Cortar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMore&quot;&gt;Mais ▾&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;floating-toolbar-row&quot;&gt;
+        &lt;button class=&quot;float-tool-btn icon active&quot; id=&quot;btnSelect&quot; data-tool=&quot;select&quot; title=&quot;Selecionar / mover&quot;&gt;↖&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnBezier&quot; title=&quot;Bezier&quot;&gt;∿&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnTextTool&quot; data-tool=&quot;text&quot; title=&quot;Texto: clique (artístico) / arraste (caixa)&quot;&gt;T&lt;/button&gt;
+        &lt;div class=&quot;float-tool-sep&quot;&gt;&lt;/div&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;text-float-panel&quot; id=&quot;textFloatPanel&quot;&gt;
+      &lt;div class=&quot;text-float-head&quot;&gt;
+        &lt;div class=&quot;text-float-tabs&quot;&gt;
+          &lt;button class=&quot;text-float-tab active&quot; data-tf-tab=&quot;basico&quot;&gt;Básico&lt;/button&gt;
+          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;detalhes&quot;&gt;Detalhes&lt;/button&gt;
+          &lt;button class=&quot;text-float-tab&quot; data-tf-tab=&quot;variavel&quot;&gt;Variável&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;button class=&quot;text-float-close&quot; id=&quot;btnCloseTextFloat&quot;&gt;✕&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;text-float-body&quot;&gt;
+        &lt;div data-pane=&quot;basico&quot; class=&quot;active&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfFontSize&quot; type=&quot;number&quot; min=&quot;6&quot; step=&quot;1&quot; placeholder=&quot;Tamanho&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfColor&quot; type=&quot;color&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;seg&quot; id=&quot;tfAlignSeg&quot;&gt;
+            &lt;button class=&quot;seg-opt on&quot; data-val=&quot;left&quot;&gt;≡&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
+            &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div data-pane=&quot;detalhes&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfLineHeight&quot; type=&quot;number&quot; min=&quot;0.6&quot; max=&quot;4&quot; step=&quot;0.1&quot; placeholder=&quot;Entrelinha&quot;&gt;
+            &lt;input class=&quot;field-input&quot; id=&quot;tfLetterSpacing&quot; type=&quot;number&quot; min=&quot;-50&quot; max=&quot;200&quot; step=&quot;1&quot; placeholder=&quot;Espaçamento&quot;&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;tfWeight&quot;&gt;&lt;option value=&quot;300&quot;&gt;Light&lt;/option&gt;&lt;option value=&quot;400&quot;&gt;Regular&lt;/option&gt;&lt;option value=&quot;500&quot;&gt;Medium&lt;/option&gt;&lt;option value=&quot;600&quot;&gt;SemiBold&lt;/option&gt;&lt;option value=&quot;700&quot;&gt;Bold&lt;/option&gt;&lt;/select&gt;
+            &lt;select class=&quot;field-input&quot; id=&quot;tfStyle&quot;&gt;&lt;option value=&quot;normal&quot;&gt;Normal&lt;/option&gt;&lt;option value=&quot;italic&quot;&gt;Itálico&lt;/option&gt;&lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div data-pane=&quot;variavel&quot;&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfUnderline&quot; style=&quot;justify-content:center&quot;&gt;Sublinhado&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfStrike&quot; style=&quot;justify-content:center&quot;&gt;Riscado&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;text-float-grid2&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfUppercase&quot; style=&quot;justify-content:center&quot;&gt;MAIÚSCULAS&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;tfLowercase&quot; style=&quot;justify-content:center&quot;&gt;minúsculas&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
     &lt;/div&gt;
 
     &lt;div class=&quot;hint-bar&quot;&gt;
@@ -1211,8 +1196,7 @@ textarea.modal-textarea{
     &lt;div class=&quot;panel-body&quot;&gt;
       &lt;div class=&quot;panel-tabs&quot; id=&quot;propTabs&quot;&gt;
         &lt;button class=&quot;panel-tab active&quot; data-tab=&quot;cor&quot;&gt;Cor&lt;/button&gt;
-        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;amostras&quot;&gt;Amostras&lt;/button&gt;
-        &lt;button class=&quot;panel-tab&quot; data-tab=&quot;tracado&quot;&gt;Traçado&lt;/button&gt;
+                &lt;button class=&quot;panel-tab&quot; data-tab=&quot;tracado&quot;&gt;Traçado&lt;/button&gt;
         &lt;button class=&quot;panel-tab&quot; data-tab=&quot;aparencia&quot;&gt;Aparência&lt;/button&gt;
       &lt;/div&gt;
       &lt;div data-tab-panel=&quot;cor&quot;&gt;
@@ -1263,6 +1247,8 @@ textarea.modal-textarea{
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
       &lt;!-- Style --&gt;
       &lt;div class=&quot;panel-section&quot; id=&quot;propStyle&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot;&gt;Estilo&lt;/div&gt;
@@ -1280,7 +1266,7 @@ textarea.modal-textarea{
 
       &lt;!-- Text --&gt;
       &lt;div class=&quot;panel-section&quot; id=&quot;propText&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Texto&lt;/div&gt;
+        &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;align-items:center;justify-content:space-between&quot;&gt;Texto &lt;button class=&quot;tbtn&quot; id=&quot;btnTypographyGear&quot; title=&quot;Abrir painel de tipografia&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;⚙&lt;/button&gt;&lt;/div&gt;
         &lt;div class=&quot;prop-row&quot;&gt;
           &lt;div class=&quot;field-item&quot;&gt;
             &lt;div class=&quot;field-label&quot;&gt;Fonte&lt;/div&gt;
@@ -1318,21 +1304,6 @@ textarea.modal-textarea{
             &lt;button class=&quot;seg-opt&quot; data-val=&quot;center&quot;&gt;≣&lt;/button&gt;
             &lt;button class=&quot;seg-opt&quot; data-val=&quot;right&quot;&gt;≡&lt;/button&gt;
           &lt;/div&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;!-- Brand palette (injected by postMessage) --&gt;
-      &lt;div class=&quot;sep&quot; id=&quot;paletteSep&quot; style=&quot;display:none&quot;&gt;&lt;/div&gt;
-      &lt;div class=&quot;panel-section&quot; id=&quot;paletteSection&quot; style=&quot;display:none&quot;&gt;
-        &lt;div class=&quot;panel-section-label&quot;&gt;Paleta da Marca&lt;/div&gt;
-        &lt;div class=&quot;swatch-grid&quot; id=&quot;brandPalette&quot;&gt;&lt;/div&gt;
-      &lt;/div&gt;
-      &lt;/div&gt;
-
-      &lt;div data-tab-panel=&quot;amostras&quot; style=&quot;display:none&quot;&gt;
-        &lt;div class=&quot;panel-section&quot;&gt;
-          &lt;div class=&quot;panel-section-label&quot;&gt;Amostras da marca&lt;/div&gt;
-          &lt;div class=&quot;swatch-grid&quot; id=&quot;paletteRow2&quot;&gt;&lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
@@ -1461,6 +1432,9 @@ let zoom = 1;
 let isPanning = false, isSpaceDown = false;
 let lastX = 0, lastY = 0;
 let artboardMode = false;
+let activeTool = 'select';
+let textDragStart = null;
+let textDragMoved = false;
 
 // Artboard objects
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
@@ -1657,8 +1631,11 @@ function updateArtboardPlusUI() {
 }
 
 function updateZoomLabel() {
+  const pct = Math.round(zoom*100) + '%';
   const el = $('zoomLabel');
-  if (el) el.textContent = Math.round(zoom*100) + '%';
+  if (el) el.textContent = pct;
+  const top = $('zoomTopLabel');
+  if (top) top.textContent = 'ZOOM ' + pct;
 }
 
 // ─── Pan / Zoom ──────────────────────────────────────────
@@ -1676,21 +1653,49 @@ canvas.on('mouse:down', opt =&gt; {
     isPanning = true; canvas.setCursor('grab');
     lastX = e.clientX; lastY = e.clientY;
     opt.e.preventDefault();
+    return;
+  }
+  if (activeTool === 'text' &amp;&amp; !opt.target) {
+    const p = canvas.getPointer(e);
+    textDragStart = { x:p.x, y:p.y };
+    textDragMoved = false;
+    opt.e.preventDefault();
   }
 });
 
 canvas.on('mouse:move', opt =&gt; {
-  if (!isPanning) return;
-  const e = opt.e;
-  const vpt = canvas.viewportTransform;
-  vpt[4] += e.clientX - lastX;
-  vpt[5] += e.clientY - lastY;
-  canvas.setViewportTransform(vpt);
-  lastX = e.clientX; lastY = e.clientY;
-  updateArtboardPlusUI();
+  if (isPanning) {
+    const e = opt.e;
+    const vpt = canvas.viewportTransform;
+    vpt[4] += e.clientX - lastX;
+    vpt[5] += e.clientY - lastY;
+    canvas.setViewportTransform(vpt);
+    lastX = e.clientX; lastY = e.clientY;
+    updateArtboardPlusUI();
+    return;
+  }
+  if (activeTool === 'text' &amp;&amp; textDragStart) {
+    const p = canvas.getPointer(opt.e);
+    textDragMoved = Math.hypot(p.x - textDragStart.x, p.y - textDragStart.y) &gt; 8;
+  }
 });
 
-canvas.on('mouse:up', () =&gt; { if (isPanning) { isPanning = false; canvas.setCursor('default'); } });
+canvas.on('mouse:up', opt =&gt; {
+  if (isPanning) { isPanning = false; canvas.setCursor(activeTool==='text' ? 'text' : 'default'); }
+  if (activeTool === 'text' &amp;&amp; textDragStart) {
+    const pointer = canvas.getPointer(opt.e);
+    const dx = pointer.x - textDragStart.x;
+    const dy = pointer.y - textDragStart.y;
+    if (!textDragMoved || Math.hypot(dx, dy) &lt; 8) {
+      addArtTextAt(pointer.x, pointer.y);
+    } else {
+      addTextBoxAt(Math.min(textDragStart.x, pointer.x), Math.min(textDragStart.y, pointer.y), Math.abs(dx), Math.abs(dy));
+    }
+    textDragStart = null;
+    textDragMoved = false;
+    setActiveTool('select');
+  }
+});
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   if (!target) return;
@@ -1724,10 +1729,9 @@ function setStatus(txt) {
 }
 
 // ─── Add objects ─────────────────────────────────────────
-function addArtText() {
-  ensureArtboard();
+function addArtTextAt(left, top) {
   const t = new fabric.IText('Texto artístico', {
-    left: artboard.left + 60, top: artboard.top + 60,
+    left, top,
     fontFamily: 'Outfit', fontSize: 42,
     fill: '#111', editable: true
   });
@@ -1735,16 +1739,27 @@ function addArtText() {
   setStatus('Texto artístico adicionado');
 }
 
-function addTextBox() {
-  ensureArtboard();
+function addTextBoxAt(left, top, width=360, height=120) {
   const t = new fabric.Textbox('Caixa de texto', {
-    left: artboard.left + 60, top: artboard.top + 140,
-    width: 360, fontFamily: 'Outfit', fontSize: 32,
+    left, top,
+    width: Math.max(120, width),
+    height: Math.max(48, height),
+    fontFamily: 'Outfit', fontSize: 32,
     fill: '#111', editable: true,
     textAlign: 'left'
   });
   canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
   setStatus('Caixa de texto adicionada');
+}
+
+function addArtText() {
+  ensureArtboard();
+  addArtTextAt(artboard.left + 60, artboard.top + 60);
+}
+
+function addTextBox() {
+  ensureArtboard();
+  addTextBoxAt(artboard.left + 60, artboard.top + 140, 360, 120);
 }
 
 function addRect() {
@@ -1772,6 +1787,22 @@ function addLine() {
     stroke:'rgba(0,0,0,.55)', strokeWidth:2
   });
   canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
+}
+
+function addBezier() {
+  ensureArtboard();
+  const x = artboard.left + 100;
+  const y = artboard.top + Math.max(120, docH*0.45);
+  const p = new fabric.Path(`M ${x} ${y} C ${x+120} ${y-140}, ${x+260} ${y+140}, ${x+420} ${y}`, {
+    fill: '',
+    stroke: 'rgba(127,90,240,.95)',
+    strokeWidth: 3,
+    strokeLineCap: 'round',
+    strokeLineJoin: 'round'
+  });
+  p.dataName = 'Bezier';
+  canvas.add(p); canvas.setActiveObject(p); canvas.requestRenderAll();
+  setStatus('Curva bezier adicionada');
 }
 
 function addLayer() {
@@ -2034,6 +2065,36 @@ function normalizeHex(c) {
   return null;
 }
 
+function isTextObject(obj){
+  return !!obj &amp;&amp; (obj.type==='textbox' || obj.type==='text' || obj.type==='i-text');
+}
+
+function focusTextPanel(show){
+  const tabsRoot = $('propTabs');
+  if (show &amp;&amp; tabsRoot) {
+    const corTab = tabsRoot.querySelector('[data-tab="cor"]');
+    corTab?.click();
+    $('propText')?.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+}
+
+function syncFloatingTextPanel(){
+  const obj = activeObj();
+  const panel = $('textFloatPanel');
+  if(!panel) return;
+  const disabled = !isTextObject(obj);
+  ['tfFontSize','tfColor','tfLineHeight','tfLetterSpacing','tfWeight','tfStyle'].forEach(id=&gt;{ const el=$(id); if(el) el.disabled = disabled; });
+  if(disabled) return;
+  if($('tfFontSize')) $('tfFontSize').value = Math.round(obj.fontSize||16);
+  if($('tfColor')) $('tfColor').value = normalizeHex(obj.fill)||'#111111';
+  if($('tfLineHeight')) $('tfLineHeight').value = Number(obj.lineHeight||1.2).toFixed(1);
+  if($('tfLetterSpacing')) $('tfLetterSpacing').value = Math.round((obj.charSpacing||0)/50);
+  if($('tfWeight')) $('tfWeight').value = String(obj.fontWeight||400);
+  if($('tfStyle')) $('tfStyle').value = obj.fontStyle||'normal';
+  const align = obj.textAlign||'left';
+  document.querySelectorAll('#tfAlignSeg .seg-opt').forEach(btn=&gt;btn.classList.toggle('on', btn.dataset.val===align));
+}
+
 function refreshProps() {
   const obj = activeObj();
   const info = $('selInfo');
@@ -2045,6 +2106,7 @@ function refreshProps() {
     if (info) info.textContent = 'Nada selecionado';
     const c1=$('ctxSelectionState'); if(c1) c1.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
     const c2=$('canvasSelectionState'); if(c2) c2.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
+    syncFloatingTextPanel();
     return;
   }
 
@@ -2075,6 +2137,7 @@ function refreshProps() {
   if(UI.rx) UI.rx.value = Math.round(obj.rx??obj.ry??0);
 
   if (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text') {
+    focusTextPanel(true);
     if(UI.font &amp;&amp; obj.fontFamily) UI.font.value = obj.fontFamily;
     if(UI.fontSize) UI.fontSize.value = obj.fontSize??'';
     const align = obj.textAlign || 'left';
@@ -2082,6 +2145,7 @@ function refreshProps() {
       s.classList.toggle('on', s.dataset.val === align);
     });
   }
+  syncFloatingTextPanel();
 }
 
 function applyProps(key) {
@@ -2149,12 +2213,83 @@ const typeIcons = {
   textbox:'type', text:'type', 'i-text':'type',
   rect:'square', circle:'circle', ellipse:'circle-ellipsis', line:'slash', image:'image', group:'layers'
 };
+const blendModes = ['source-over','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','difference','exclusion'];
+let layerFolders = ['Geral'];
+let draggingLayerId = null;
+
+function ensureFoldersForObjects(objs){
+  objs.forEach(obj =&gt; {
+    if(!obj.dataFolder) obj.dataFolder = 'Geral';
+    if(!layerFolders.includes(obj.dataFolder)) layerFolders.push(obj.dataFolder);
+  });
+}
+
+function renderFolderChips(){
+  const root = $('folderList');
+  if(!root) return;
+  root.innerHTML = layerFolders.map(name =&gt; `&lt;span class=&quot;folder-chip&quot;&gt;📁 ${name}&lt;/span&gt;`).join('');
+}
+
+function moveLayerByDisplayIndex(obj, displayIndex){
+  const objects = canvas.getObjects().filter(o=&gt;!isGuide(o));
+  const targetIndex = Math.max(0, Math.min(objects.length - 1, objects.length - 1 - displayIndex));
+  canvas.moveTo(obj, targetIndex);
+  canvas.requestRenderAll();
+}
+
+function applyClipMask(){
+  const sel = canvas.getActiveObject();
+  if(!sel || sel.type !== 'activeSelection' || sel._objects.length &lt; 2){
+    setStatus('Selecione 2 objetos para criar clip mask.');
+    return;
+  }
+  const objs = sel._objects.slice();
+  const mask = objs[0];
+  const target = objs[1];
+  mask.clone(clone =&gt; {
+    clone.absolutePositioned = true;
+    clone.set({ left: mask.left, top: mask.top, angle: mask.angle, scaleX: mask.scaleX, scaleY: mask.scaleY, originX: mask.originX, originY: mask.originY });
+    target.clipPath = clone;
+    canvas.remove(mask);
+    canvas.discardActiveObject();
+    canvas.setActiveObject(target);
+    canvas.requestRenderAll();
+    refreshLayers();
+    setStatus('Clip mask aplicado');
+  });
+}
+
+function releaseClipMask(){
+  const obj = activeObj();
+  if(!obj || !obj.clipPath){
+    setStatus('Selecione um objeto com clip mask.');
+    return;
+  }
+  obj.clipPath = null;
+  canvas.requestRenderAll();
+  refreshLayers();
+  setStatus('Clip mask removido');
+}
+
+function createLayerFolder(){
+  const name = prompt('Nome da pasta de camadas:');
+  if(!name) return;
+  const clean = name.trim();
+  if(!clean) return;
+  if(layerFolders.includes(clean)) { setStatus('Essa pasta já existe.'); return; }
+  layerFolders.push(clean);
+  renderFolderChips();
+  refreshLayers();
+  setStatus('Pasta criada');
+}
 
 function refreshLayers() {
   const list = $('layersList');
   const cnt = $('layerCount');
   if (!list) return;
   const objs = canvas.getObjects().filter(o=&gt;!isGuide(o)).slice().reverse();
+  ensureFoldersForObjects(objs);
+  renderFolderChips();
   if (cnt) cnt.textContent = objs.length;
   const active = canvas.getActiveObject();
   list.innerHTML = '';
@@ -2168,14 +2303,54 @@ function refreshLayers() {
     const name = obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type);
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '');
-    div.innerHTML = `&lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}% • ${obj.globalCompositeOperation||'source-over'}&lt;/div&gt;`;
+    div.draggable = true;
+    div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
+    const folderOps = layerFolders.map(f=&gt;`&lt;option value=&quot;${f}&quot; ${obj.dataFolder===f?'selected':''}&gt;${f}&lt;/option&gt;`).join('');
+    const blendOps = blendModes.map(m=&gt;`&lt;option value=&quot;${m}&quot; ${ (obj.globalCompositeOperation||'source-over')===m?'selected':'' }&gt;${m}&lt;/option&gt;`).join('');
+    div.innerHTML = `
+      &lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;
+      &lt;div style=&quot;min-width:0&quot;&gt;
+        &lt;div class=&quot;layer-main&quot;&gt;
+          &lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;
+          &lt;div class=&quot;layer-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}%&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;layer-controls&quot;&gt;
+          &lt;select class=&quot;layer-ctl layer-blend&quot;&gt;${blendOps}&lt;/select&gt;
+          &lt;input class=&quot;layer-ctl layer-opacity&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;100&quot; value=&quot;${Math.round((obj.opacity??1)*100)}&quot;&gt;
+        &lt;/div&gt;
+        &lt;select class=&quot;layer-ctl layer-folder&quot; style=&quot;width:100%&quot;&gt;${folderOps}&lt;/select&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;layer-meta&quot;&gt;↕&lt;/div&gt;`;
+
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
+    div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
+    div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
+    div.addEventListener('drop', e =&gt; {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      if(!draggingLayerId || draggingLayerId===div.dataset.layerId) return;
+      const draggedObj = objs.find(o =&gt; o.__uid===draggingLayerId);
+      if(!draggedObj) return;
+      moveLayerByDisplayIndex(draggedObj, i);
+      refreshLayers();
+    });
+
+    const blendEl = div.querySelector('.layer-blend');
+    const opacityEl = div.querySelector('.layer-opacity');
+    const folderEl = div.querySelector('.layer-folder');
+    [blendEl,opacityEl,folderEl].forEach(el =&gt; el?.addEventListener('click', e =&gt; e.stopPropagation()));
+    blendEl?.addEventListener('change', () =&gt; { obj.set({ globalCompositeOperation: blendEl.value }); canvas.requestRenderAll(); refreshLayers(); });
+    opacityEl?.addEventListener('input', () =&gt; { const op=Math.max(0,Math.min(100,Number(opacityEl.value)||100)); obj.set({ opacity: op/100 }); canvas.requestRenderAll(); });
+    folderEl?.addEventListener('change', () =&gt; { obj.dataFolder = folderEl.value; refreshLayers(); });
+
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
 }
 
 let brandLibrary=[];
+let draggedLibraryIndex = null;
 
 function refreshLibrary(){
   const list=$('libraryList');
@@ -2192,8 +2367,11 @@ function refreshLibrary(){
     div.className='lib-item';
     const icon = item.kind==='logo' ? 'image' : item.kind==='color' ? 'droplets' : 'type';
     const meta = item.kind==='logo' ? 'Logo' : item.kind==='color' ? (item.color||'Cor') : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
-    div.innerHTML=`&lt;div class=&quot;lib-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${meta}&lt;/div&gt;`;
+    div.draggable = true;
+    const preview = item.kind==='logo' &amp;&amp; item.src ? `background-image:url('${item.src}')` : item.kind==='color' ? `background:${item.color||'#999'}` : 'background:linear-gradient(135deg, rgba(127,90,240,.35), rgba(44,182,125,.35))';
+    div.innerHTML=`&lt;div class=&quot;lib-preview&quot; style=&quot;${preview}&quot;&gt;&lt;/div&gt;&lt;div class=&quot;lib-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;layer-name&quot;&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class=&quot;lib-meta&quot;&gt;${meta}&lt;/div&gt;`;
     div.addEventListener('click',()=>applyLibraryItem(idx));
+    div.addEventListener('dragstart',()=>{ draggedLibraryIndex = idx; });
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
@@ -2250,6 +2428,14 @@ function applyLibraryItem(idx){
     }, {crossOrigin:'anonymous'});
   }
 }
+
+stageEl?.addEventListener('dragover', e =&gt; { if (draggedLibraryIndex==null) return; e.preventDefault(); });
+stageEl?.addEventListener('drop', e =&gt; {
+  if (draggedLibraryIndex==null) return;
+  e.preventDefault();
+  applyLibraryItem(draggedLibraryIndex);
+  draggedLibraryIndex = null;
+});
 
 // ─── Modal ───────────────────────────────────────────────
 const modalBg = $('modalBg');
@@ -2423,14 +2609,96 @@ canvas.on('object:moving', opt =&gt; {
   if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
 });
 
+// ─── Menu Documento (dropdown) ──────────────────────────
+(function initMenuDocumento(){
+  const root = $('menuDocRoot');
+  const trigger = $('btnMenuDocumento');
+  if(!root || !trigger) return;
+  trigger.addEventListener('click', e =&gt; {
+    e.stopPropagation();
+    root.classList.toggle('open');
+  });
+  document.addEventListener('click', e =&gt; {
+    if(!root.contains(e.target)) root.classList.remove('open');
+  });
+})();
+
+function setActiveTool(tool){
+  activeTool = tool;
+  const isText = tool === 'text';
+  canvas.defaultCursor = isText ? 'text' : 'default';
+  canvas.selection = !isText;
+  canvas.forEachObject(o =&gt; { if(!isGuide(o)) o.selectable = !isText; });
+  document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
+  if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
+  if (tool === 'text') { setStatus('Texto: clique para artístico, arraste para caixa.'); focusTextPanel(true); }
+  if (tool === 'bezier') setStatus('Bezier ativa: menu superior exibido.');
+  canvas.requestRenderAll();
+}
+
+// ─── Floating typography panel ──────────────────────────
+(function initTextFloatPanel(){
+  const panel = $('textFloatPanel');
+  if(!panel) return;
+  $('btnTypographyGear')?.addEventListener('click', (e)=&gt;{
+    e.stopPropagation();
+    panel.classList.toggle('open');
+    focusTextPanel(true);
+    syncFloatingTextPanel();
+  });
+  $('btnCloseTextFloat')?.addEventListener('click', ()=&gt; panel.classList.remove('open'));
+  document.addEventListener('click', e =&gt; {
+    if(!panel.classList.contains('open')) return;
+    if(panel.contains(e.target) || e.target.id==='btnTypographyGear') return;
+    panel.classList.remove('open');
+  });
+  document.querySelectorAll('[data-tf-tab]').forEach(btn =&gt; {
+    btn.addEventListener('click', () =&gt; {
+      document.querySelectorAll('[data-tf-tab]').forEach(b=&gt;b.classList.remove('active'));
+      btn.classList.add('active');
+      const key=btn.dataset.tfTab;
+      panel.querySelectorAll('[data-pane]').forEach(p=&gt;p.classList.toggle('active', p.dataset.pane===key));
+    });
+  });
+
+  const applyText = (fn)=&gt;{
+    const obj = activeObj();
+    if(!isTextObject(obj)) { setStatus('Selecione um texto para editar.'); return; }
+    fn(obj);
+    syncTextStyleRender(obj);
+    canvas.requestRenderAll();
+    refreshProps();
+  };
+  $('tfFontSize')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({fontSize: clamp(Number($('tfFontSize').value)||16,6,512)})));
+  $('tfColor')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({fill:$('tfColor').value||obj.fill})));
+  $('tfLineHeight')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({lineHeight: clamp(Number($('tfLineHeight').value)||1.2,0.6,4)})));
+  $('tfLetterSpacing')?.addEventListener('input', ()=&gt; applyText(obj=&gt;obj.set({charSpacing: (Number($('tfLetterSpacing').value)||0)*50})));
+  $('tfWeight')?.addEventListener('change', ()=&gt; applyText(obj=&gt;obj.set({fontWeight: Number($('tfWeight').value)||400})));
+  $('tfStyle')?.addEventListener('change', ()=&gt; applyText(obj=&gt;obj.set({fontStyle: $('tfStyle').value||'normal'})));
+  document.querySelectorAll('#tfAlignSeg .seg-opt').forEach(btn =&gt; {
+    btn.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({textAlign: btn.dataset.val||'left'})));
+  });
+  $('tfUnderline')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({underline: !obj.underline})));
+  $('tfStrike')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.set({linethrough: !obj.linethrough})));
+  $('tfUppercase')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.text &amp;&amp; obj.set({text: String(obj.text).toUpperCase()})));
+  $('tfLowercase')?.addEventListener('click', ()=&gt; applyText(obj=&gt;obj.text &amp;&amp; obj.set({text: String(obj.text).toLowerCase()})));
+})();
+
 // ─── Bind toolbar buttons ─────────────────────────────────
-$('btnAddArtText')?.addEventListener('click', addArtText);
-$('btnAddTextBox')?.addEventListener('click', addTextBox);
-$('btnRect')?.addEventListener('click', addRect);
-$('btnCircle')?.addEventListener('click', addCircle);
+$('btnSelect')?.addEventListener('click', () =&gt; setActiveTool('select'));
+$('btnToolMove')?.addEventListener('click', () =&gt; setActiveTool('move'));
+$('btnTextTool')?.addEventListener('click', () =&gt; setActiveTool('text'));
+$('btnRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addRect(); });
+$('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); });
 $('btnCreateLayer')?.addEventListener('click', addLayer);
-$('btnLine')?.addEventListener('click', addLine);
+$('btnLine')?.addEventListener('click', () =&gt; { setActiveTool('select'); addLine(); });
+$('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); });
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
+$('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
+$('btnToolCurve')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); });
+$('btnToolCut')?.addEventListener('click', () =&gt; applyClipMask());
+$('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
 $('btnFit')?.addEventListener('click', fitToArtboard);
 $('btnZoomReset')?.addEventListener('click', fitToArtboard);
 $('btnZoomIn')?.addEventListener('click', () =&gt; {
@@ -2484,16 +2752,12 @@ $('btnDistributeX')?.addEventListener('click', () =&gt; distributeSelection('x')
 $('btnDistributeY')?.addEventListener('click', () =&gt; distributeSelection('y'));
 $('btnGroup')?.addEventListener('click', groupSelection);
 $('btnUngroup')?.addEventListener('click', ungroupSelection);
+$('btnClipMask')?.addEventListener('click', applyClipMask);
+$('btnReleaseClip')?.addEventListener('click', releaseClipMask);
+$('btnNewFolder')?.addEventListener('click', createLayerFolder);
 $('btnLoadFont')?.addEventListener('click', loadGoogleFontForSelection);
 
 
-// modo visual da barra lateral de ferramentas
-document.querySelectorAll('.tools-rail .rail-btn').forEach(btn =&gt; {
-  btn.addEventListener('click', () =&gt; {
-    document.querySelectorAll('.tools-rail .rail-btn').forEach(b =&gt; b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
 
 // abas do painel direito
 $('propTabs')?.addEventListener('click', e =&gt; {
@@ -2605,43 +2869,6 @@ window.addEventListener('message', ev =&gt; {
         opt.value = ff; opt.textContent = ff;
         UI.font.appendChild(opt); existing.add(ff);
       });
-    }
-    if (Array.isArray(msg.colors) &amp;&amp; msg.colors.length) {
-      const sec = $('paletteSection');
-      const sep = $('paletteSep');
-      const grid = $('brandPalette');
-      if (sec) sec.style.display = '';
-      if (sep) sep.style.display = '';
-      if (grid) {
-        grid.innerHTML = '';
-        const grid2=$('paletteRow2');
-        if(grid2) grid2.innerHTML = '';
-        msg.colors.filter(c=&gt;c&amp;&amp;c.hex).slice(0,32).forEach(c =&gt; {
-          const b = document.createElement('button');
-          b.className = 'swatch';
-          b.style.background = c.hex;
-          b.title = (c.name||'') + ' ' + c.hex;
-          b.addEventListener('click', () =&gt; {
-            const obj = activeObj();
-            if(!obj) return;
-            if(obj.type==='textbox'||obj.type==='text'||obj.type==='i-text'){
-              obj.set({fill:c.hex});
-              if(UI.textColor) UI.textColor.value = c.hex;
-            } else {
-              obj.set({fill:c.hex});
-              if(UI.fill) UI.fill.value = c.hex;
-            }
-            canvas.requestRenderAll();
-          });
-          grid.appendChild(b);
-          const grid2=$('paletteRow2');
-          if(grid2){
-            const c2=b.cloneNode(true);
-            c2.addEventListener('click',()=>b.click());
-            grid2.appendChild(c2);
-          }
-        });
-      }
     }
   }
 });
