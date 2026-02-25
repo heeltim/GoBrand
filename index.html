@@ -1755,6 +1755,7 @@ canvas.on('mouse:down', opt =&gt; {
   }
 
   if (activeTool === 'bezier' || activeTool === 'bezier-v2') {
+    if (e.button !== 0) return;
     const pointer = canvas.getPointer(e);
     if (bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
       if (target?.isBezierEditorControl) {
@@ -1891,6 +1892,8 @@ canvas.on('mouse:down', opt =&gt; {
 
   if (!target) {
     if (bezierEditor.enabled) finalizeBezierEditor();
+    vectorToolState.pendingEditTarget = null;
+    vectorToolState.pendingEditAt = 0;
     canvas.discardActiveObject();
     if (activeTool !== 'select') setActiveTool('select');
     setInteractionState('idle');
@@ -1899,17 +1902,23 @@ canvas.on('mouse:down', opt =&gt; {
   }
 
   if (pathIsBezierEditable(target)) {
-    const isSameSelected = activeObj() === target;
-
     if (!bezierEditor.enabled) {
       if (activeTool === 'direct-select') {
         canvas.setActiveObject(target);
         attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
-      } else if (activeTool === 'select' && isSameSelected) {
-        canvas.setActiveObject(target);
-        attachBezierEditor(target, { handlesActive:false, modelKey:resolveBezierModelKey(target) });
       } else if (activeTool === 'select') {
-        setInteractionState('selection');
+        const now = performance.now();
+        const samePending = vectorToolState.pendingEditTarget === target &amp;&amp; (now - Number(vectorToolState.pendingEditAt || 0)) &lt; 900;
+        if (samePending) {
+          vectorToolState.pendingEditTarget = null;
+          vectorToolState.pendingEditAt = 0;
+          canvas.setActiveObject(target);
+          attachBezierEditor(target, { handlesActive:false, modelKey:resolveBezierModelKey(target) });
+        } else {
+          vectorToolState.pendingEditTarget = target;
+          vectorToolState.pendingEditAt = now;
+          setInteractionState('selection');
+        }
       }
       return;
     }
@@ -1918,7 +1927,7 @@ canvas.on('mouse:down', opt =&gt; {
       finalizeBezierEditor();
       canvas.setActiveObject(target);
       if (activeTool === 'direct-select') attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
-      else setInteractionState('selection');
+      else { vectorToolState.pendingEditTarget = target; vectorToolState.pendingEditAt = performance.now(); setInteractionState('selection'); }
       return;
     }
 
@@ -2115,7 +2124,9 @@ const vectorToolState = {
   pendingClose: false,
   lastPointAddedAt: 0,
   lastPointAddedPos: null,
-  modelKey: 'vectorModel'
+  modelKey: 'vectorModel',
+  pendingEditTarget: null,
+  pendingEditAt: 0
 };
 
 const bezierEditor = {
@@ -2529,7 +2540,11 @@ function finishBezierCreation({toEditing=true}={}){
     stroke:'rgba(127,90,240,.95)',
     strokeWidth:3,
     strokeLineCap:'round',
-    strokeLineJoin:'round'
+    strokeLineJoin:'round',
+    selectable:true,
+    evented:true,
+    hasControls:true,
+    hasBorders:true
   });
   path.dataName = 'Bezier';
   path[vectorToolState.modelKey || 'vectorModel'] = { points: cloneBezierPoints(pts), closed: !!vectorToolState.closed };
@@ -2546,7 +2561,7 @@ function finishBezierCreation({toEditing=true}={}){
   vectorToolState.lastPointAddedPos = null;
   vectorToolState.mode = toEditing ? 'editing' : 'idle';
   if (toEditing) attachBezierEditor(path, { handlesActive:false, modelKey: vectorToolState.modelKey || resolveBezierModelKey(path) });
-  else setInteractionState('selection');
+  else { vectorToolState.pendingEditTarget = path; vectorToolState.pendingEditAt = performance.now(); setInteractionState('selection'); }
   canvas.requestRenderAll();
   snapshot();
   return path;
@@ -2603,11 +2618,12 @@ function addBezierPoint(pointer, e){
   const now = performance.now();
   const lastPos = vectorToolState.lastPointAddedPos;
   const isV2 = (vectorToolState.modelKey === 'vectorModelV2' || activeTool === 'bezier-v2');
-  const minInterval = isV2 ? 70 : 170;
-  const minDistance = (isV2 ? 2.2 : 5) / Math.max(zoom, 0.1);
+  const minInterval = isV2 ? 110 : 170;
+  const minDistance = (isV2 ? 3.4 : 5) / Math.max(zoom, 0.1);
   const tooFast = now - Number(vectorToolState.lastPointAddedAt || 0) < minInterval;
   const tooClose = !!lastPos && distance(pointer, lastPos) < minDistance;
-  if (tooFast && tooClose) return;
+  const repeatedClick = Number(e?.detail || 1) > 1;
+  if ((tooFast && tooClose) || (isV2 && repeatedClick && tooClose)) return;
 
   const p = makeBezierPoint(pointer.x, pointer.y);
   const pts = vectorToolState.points;
@@ -2887,6 +2903,8 @@ function finalizeBezierEditor(){
   clearBezierEditor();
   vectorToolState.mode = 'idle';
   canvas.setActiveObject(p);
+  vectorToolState.pendingEditTarget = p;
+  vectorToolState.pendingEditAt = performance.now();
   setInteractionState('selection');
   canvas.requestRenderAll();
 }
