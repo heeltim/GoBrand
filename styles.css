@@ -1170,13 +1170,14 @@ a { color: var(--accent); text-decoration: none; }
 #viewAppEditor .appedit-shell{ height:100dvh; border:0; border-radius:0; box-shadow:none; }
 .appedit-shell{
   height: 100%;
+  min-height: 100dvh;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   overflow:hidden;
   box-shadow: var(--shadow-lg);
-  display:grid;
-  grid-template-rows: 56px 1fr;
+  display:flex;
+  flex-direction:column;
 }
 .appedit-top{
   display:flex; align-items:center; justify-content:space-between;
@@ -1196,6 +1197,8 @@ a { color: var(--accent); text-decoration: none; }
   display:grid;
   grid-template-columns: 1fr;
   min-height: 0;
+  height: 100%;
+  flex: 1;
 }
 @media (max-width: 1050px){
   .appedit-body{ grid-template-columns: 240px 1fr; }
