@@ -1746,6 +1746,8 @@ canvas.on('mouse:down', opt =&gt; {
     const pointer = canvas.getPointer(e);
     if (vectorToolState.mode !== 'creating') startBezierCreation();
     addBezierPoint(pointer, e);
+    vectorToolState.dragStart = { x:pointer.x, y:pointer.y };
+    vectorToolState.dragStarted = false;
     opt.e.preventDefault();
     return;
   }
@@ -1808,7 +1810,13 @@ canvas.on('mouse:up', opt =&gt; {
   if (isPanning) { isPanning = false; canvas.setCursor(activeTool==='text' ? 'text' : 'default'); }
 
   if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
+    const i = vectorToolState.dragPointIndex;
+    if (i >= 0 &amp;&amp; !vectorToolState.dragStarted &amp;&amp; !vectorToolState.pendingClose) resetCreatePointToCorner(vectorToolState.points[i]);
     vectorToolState.dragPointIndex = -1;
+    vectorToolState.dragStart = null;
+    vectorToolState.dragStarted = false;
+    updateBezierCreationPreview();
+    finalizeBezierPendingClose();
   }
 
   if (vectorToolState.segmentDrag) {
@@ -1864,7 +1872,13 @@ canvas.on('mouse:down', opt =&gt; {
 canvas.on('mouse:dblclick', opt =&gt; {
   const target = opt.target;
   const pointer = canvas.getPointer(opt.e);
-  if (!target) return;
+  if (!target) {
+    if (bezierEditor.enabled) {
+      finalizeBezierEditor();
+      setActiveTool('select');
+    }
+    return;
+  }
   if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
     const path = finishBezierCreation({toEditing:false});
     if (path) {
@@ -1873,9 +1887,21 @@ canvas.on('mouse:dblclick', opt =&gt; {
     }
     return;
   }
+  if (target.isBezierEditorControl) {
+    const [role, idxStr] = String(target.bziRole || '').split('-');
+    if (role === 'anchor' &amp;&amp; bezierEditor.path) {
+      removePointAtIndex(bezierEditor.path, Number(idxStr));
+    }
+    return;
+  }
   if (pathIsBezierEditable(target)) {
     if (activeTool === 'select') {
-      attachBezierEditor(target);
+      if (bezierEditor.enabled &amp;&amp; bezierEditor.path === target) {
+        const seg = getNearestBezierSegment(target, pointer);
+        if (seg &gt;= 0) insertPointOnSegment(target, seg);
+      } else {
+        attachBezierEditor(target);
+      }
       return;
     }
     if (activeTool !== 'direct-select') setActiveTool('direct-select');
@@ -2006,7 +2032,10 @@ const vectorToolState = {
   closed: false,
   previewPath: null,
   dragPointIndex: -1,
-  segmentDrag: null
+  segmentDrag: null,
+  dragStart: null,
+  dragStarted: false,
+  pendingClose: false
 };
 
 const bezierEditor = {
@@ -2364,6 +2393,9 @@ function startBezierCreation(){
   vectorToolState.closed = false;
   vectorToolState.dragPointIndex = -1;
   vectorToolState.segmentDrag = null;
+  vectorToolState.dragStart = null;
+  vectorToolState.dragStarted = false;
+  vectorToolState.pendingClose = false;
   clearBezierPreview();
   setStatus('Vetor: clique para ponto reto, arraste para alças. Enter finaliza, Esc desfaz.');
 }
@@ -2391,6 +2423,9 @@ function finishBezierCreation({toEditing=true}={}){
   clearBezierPreview();
   vectorToolState.points = [];
   vectorToolState.closed = false;
+  vectorToolState.dragStart = null;
+  vectorToolState.dragStarted = false;
+  vectorToolState.pendingClose = false;
   vectorToolState.mode = toEditing ? 'editing' : 'idle';
   if (toEditing) attachBezierEditor(path);
   canvas.requestRenderAll();
@@ -2403,6 +2438,9 @@ function cancelBezierCreationStep(){
   vectorToolState.points = [];
   vectorToolState.closed = false;
   vectorToolState.dragPointIndex = -1;
+  vectorToolState.dragStart = null;
+  vectorToolState.dragStarted = false;
+  vectorToolState.pendingClose = false;
   clearBezierPreview();
   setStatus('Criação Bézier cancelada e pontos temporários limpos.');
   vectorToolState.mode = 'idle';
@@ -2411,16 +2449,20 @@ function cancelBezierCreationStep(){
 
 function distance(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
 
+function resetCreatePointToCorner(pt){
+  if (!pt) return;
+  pt.inX = pt.x; pt.inY = pt.y;
+  pt.outX = pt.x; pt.outY = pt.y;
+  pt.kind = 'corner';
+}
+
 function maybeCloseBezierPath(pointer){
-  if (vectorToolState.points.length &lt; 3) return false;
+  if (vectorToolState.points.length < 3) return false;
   const first = vectorToolState.points[0];
-  if (distance(pointer, first) &gt; BEZIER_CREATE_HIT / Math.max(zoom, .1)) return false;
+  if (distance(pointer, first) > BEZIER_CREATE_HIT / Math.max(zoom, .1)) return false;
   vectorToolState.closed = true;
-  const path = finishBezierCreation({toEditing:false});
-  if (path) {
-    canvas.setActiveObject(path);
-    setActiveTool('select');
-  }
+  vectorToolState.pendingClose = true;
+  vectorToolState.dragPointIndex = vectorToolState.points.length - 1;
   return true;
 }
 
@@ -2428,23 +2470,21 @@ function addBezierPoint(pointer, e){
   if (maybeCloseBezierPath(pointer)) return;
   const p = makeBezierPoint(pointer.x, pointer.y);
   const pts = vectorToolState.points;
-  const prev = pts[pts.length-1];
-  if (prev &amp;&amp; prev.kind !== 'corner' &amp;&amp; !e.altKey) {
-    const vx = prev.x - prev.outX;
-    const vy = prev.y - prev.outY;
-    p.inX = p.x + vx;
-    p.inY = p.y + vy;
-    p.kind = 'smooth';
-  }
   pts.push(p);
   vectorToolState.dragPointIndex = pts.length - 1;
+  vectorToolState.dragStart = { x:pointer.x, y:pointer.y };
+  vectorToolState.dragStarted = false;
   updateBezierCreationPreview();
 }
 
 function updateDraggedCreatePoint(pointer, e){
   const i = vectorToolState.dragPointIndex;
-  if (i &lt; 0) return;
+  if (i < 0) return;
   const pt = vectorToolState.points[i];
+  const start = vectorToolState.dragStart || { x: pt.x, y: pt.y };
+  const moved = Math.hypot(pointer.x - start.x, pointer.y - start.y);
+  if (!vectorToolState.dragStarted && moved < 4) return;
+  vectorToolState.dragStarted = true;
   let dx = pointer.x - pt.x;
   let dy = pointer.y - pt.y;
   if (e.shiftKey) ({dx, dy} = normalizeVectorByShift(dx, dy));
@@ -2458,6 +2498,16 @@ function updateDraggedCreatePoint(pointer, e){
     pt.kind = 'smooth';
   }
   updateBezierCreationPreview();
+}
+
+
+function finalizeBezierPendingClose(){
+  if (!vectorToolState.pendingClose) return;
+  const path = finishBezierCreation({toEditing:false});
+  if (path) {
+    canvas.setActiveObject(path);
+    setActiveTool('select');
+  }
 }
 
 function getHandleVisualScale(){
@@ -2706,6 +2756,23 @@ function insertPointOnSegment(pathObj, segIndex){
 }
 
 
+
+function removePointAtIndex(pathObj, index){
+  const m = ensurePathVectorModel(pathObj);
+  if (!m || !Number.isFinite(index) || !m.points[index]) return;
+  const minAllowed = m.closed ? 3 : 2;
+  if (m.points.length <= minAllowed) {
+    setStatus('Não é possível remover mais nós desta curva.');
+    return;
+  }
+  m.points.splice(index, 1);
+  applyVectorModelToPath(pathObj);
+  attachBezierEditor(pathObj);
+  const next = Math.max(0, Math.min(index - 1, m.points.length - 1));
+  selectBezierAnchorIndices([next]);
+  snapshot();
+}
+
 function addLayer() {
   ensureArtboard();
   const idx = canvas.getObjects().filter(o=>!isGuide(o)).length + 1;
@@ -2844,6 +2911,9 @@ function del() {
     vectorToolState.points = [];
     vectorToolState.closed = false;
     vectorToolState.dragPointIndex = -1;
+    vectorToolState.dragStart = null;
+    vectorToolState.dragStarted = false;
+    vectorToolState.pendingClose = false;
     clearBezierPreview();
   }
 
