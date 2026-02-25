@@ -1509,6 +1509,16 @@ const canvas = new fabric.Canvas('c', {
   stopContextMenu: true
 });
 
+canvas.selectionColor = 'rgba(47,155,255,.08)';
+canvas.selectionBorderColor = '#2f9bff';
+canvas.selectionLineWidth = 1.2;
+fabric.Object.prototype.borderColor = '#2f9bff';
+fabric.Object.prototype.cornerColor = '#ffffff';
+fabric.Object.prototype.cornerStrokeColor = '#2f9bff';
+fabric.Object.prototype.cornerStyle = 'rect';
+fabric.Object.prototype.transparentCorners = false;
+fabric.Object.prototype.cornerSize = 8;
+
 const stageEl = $('canvasStage');
 
 // Document state
@@ -1860,6 +1870,7 @@ canvas.on('mouse:down', opt =&gt; {
     if (bezierEditor.enabled) finalizeBezierEditor();
     canvas.discardActiveObject();
     if (activeTool !== 'select') setActiveTool('select');
+    setStatus('Sem seleção.');
     canvas.requestRenderAll();
     return;
   }
@@ -1871,6 +1882,8 @@ canvas.on('mouse:down', opt =&gt; {
       if (activeTool === 'direct-select' || isSameSelected) {
         canvas.setActiveObject(target);
         attachBezierEditor(target);
+      } else if (activeTool === 'select') {
+        setStatus('Modo seleção/transformação ativo (1 clique).');
       }
       return;
     }
@@ -2134,9 +2147,15 @@ function selectBezierAnchorIndices(indices=[]){
   const selected = new Set(bezierEditor.selectedAnchors);
   bezierEditor.controls.forEach(ctrl =&gt; {
     const [role, idxStr] = String(ctrl.bziRole).split('-');
-    if (role !== 'anchor') return;
-    const on = selected.has(Number(idxStr));
-    ctrl.set({ stroke: on ? '#7f5af0' : '#2f9bff', strokeWidth: on ? 2.6 : 2 });
+    const idx = Number(idxStr);
+    const on = selected.has(idx);
+    if (role === 'anchor') {
+      ctrl.set({ fill: on ? '#2f9bff' : '#ffffff', stroke:'#2f9bff', strokeWidth: on ? 2.4 : 2 });
+      return;
+    }
+    if (role === 'in' || role === 'out') {
+      ctrl.set({ fill:'#ffffff', stroke: on ? '#2f9bff' : 'rgba(47,155,255,.7)', strokeWidth: on ? 1.8 : 1.3, opacity:on ? 1 : .82 });
+    }
   });
   ensureBezierNodePanel();
   canvas.requestRenderAll();
@@ -2586,10 +2605,11 @@ function createBezierControl(x, y, role){
   const c = new fabric.Circle({
     left:x, top:y, radius:r,
     originX:'center', originY:'center',
-    fill:isAnchor ? '#ffffff' : '#111',
-    stroke:'#2f9bff', strokeWidth:2,
+    fill:'#ffffff',
+    stroke:'#2f9bff', strokeWidth:isAnchor ? 2 : 1.6,
     selectable:false, evented:true, hasControls:false, hasBorders:false,
-    excludeFromExport:true, hoverCursor:'move'
+    excludeFromExport:true, hoverCursor:'move',
+    opacity:isAnchor ? 1 : .95
   });
   const sc = getHandleVisualScale();
   c.set({ scaleX:sc, scaleY:sc });
@@ -2636,7 +2656,7 @@ function refreshBezierEditorControls(){
     if (hin) hin.set({ left:pt.inX, top:pt.inY, scaleX:sc, scaleY:sc });
     if (hout) hout.set({ left:pt.outX, top:pt.outY, scaleX:sc, scaleY:sc });
 
-    const style = { stroke:'rgba(47,155,255,.45)', strokeWidth:1.2*sc, selectable:false, evented:false, excludeFromExport:true };
+    const style = { stroke:'rgba(113,124,146,.55)', strokeWidth:1.15*sc, selectable:false, evented:false, excludeFromExport:true };
     if (distance({x:pt.x,y:pt.y},{x:pt.inX,y:pt.inY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.inX,pt.inY], style));
     if (distance({x:pt.x,y:pt.y},{x:pt.outX,y:pt.outY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.outX,pt.outY], style));
   });
@@ -2655,7 +2675,7 @@ function attachBezierEditor(pathObj){
   if (!model || model.points.length &lt; 2) return setStatus('Curva incompatível para edição.');
   clearBezierEditor();
 
-  pathObj.set({ selectable:false, evented:true, hasControls:false, lockMovementX:true, lockMovementY:true });
+  pathObj.set({ selectable:false, evented:true, hasControls:false, hasBorders:false, lockMovementX:true, lockMovementY:true });
   bezierEditor.path = pathObj;
   bezierEditor.enabled = true;
   vectorToolState.mode = 'editing';
@@ -2683,18 +2703,21 @@ function attachBezierEditor(pathObj){
       const cy = ctrl.top;
 
       if (role === 'anchor') {
+        setStatus('Modo edição com alças ativas (3 cliques).');
         const dx = cx - pt.x;
         const dy = cy - pt.y;
         pt.x = cx; pt.y = cy;
         pt.inX += dx; pt.inY += dy;
         pt.outX += dx; pt.outY += dy;
       } else if (role === 'in') {
+        setStatus('Modo edição com alças ativas (3 cliques).');
         let dx = cx - pt.x, dy = cy - pt.y;
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
         pt.inX = pt.x + dx; pt.inY = pt.y + dy;
         if (!e.altKey) applyAnchorCoupling(pt, 'in', dx, dy);
       } else if (role === 'out') {
+        setStatus('Modo edição com alças ativas (3 cliques).');
         let dx = cx - pt.x, dy = cy - pt.y;
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
@@ -2734,13 +2757,13 @@ function attachBezierEditor(pathObj){
   controls.forEach(c =&gt; canvas.add(c));
   selectBezierAnchorIndices([0]);
   refreshBezierEditorControls();
-  setStatus('Edição de nós ativa: arraste pontos/alças, clique no nó alterna corner/smooth.');
+  setStatus('Modo edição ativo (2 cliques): arraste nós e alças; clique no nó alterna corner/smooth.');
 }
 
 function finalizeBezierEditor(){
   if (!bezierEditor.path) return clearBezierEditor();
   const p = bezierEditor.path;
-  p.set({ selectable:true, evented:true, lockMovementX:false, lockMovementY:false, hasControls:true });
+  p.set({ selectable:true, evented:true, lockMovementX:false, lockMovementY:false, hasControls:true, hasBorders:true });
   clearBezierEditor();
   vectorToolState.mode = 'idle';
   canvas.setActiveObject(p);
