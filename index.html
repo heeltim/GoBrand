@@ -1852,11 +1852,18 @@ canvas.on('mouse:dblclick', opt =&gt; {
   const pointer = canvas.getPointer(opt.e);
   if (!target) return;
   if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
-    finishBezierCreation({toEditing:true});
-    setActiveTool('direct-select');
+    const path = finishBezierCreation({toEditing:false});
+    if (path) {
+      canvas.setActiveObject(path);
+      setActiveTool('select');
+    }
     return;
   }
   if (pathIsBezierEditable(target)) {
+    if (activeTool === 'select') {
+      attachBezierEditor(target);
+      return;
+    }
     if (activeTool !== 'direct-select') setActiveTool('direct-select');
     if (bezierEditor.enabled &amp;&amp; bezierEditor.path === target) {
       const seg = getNearestBezierSegment(target, pointer);
@@ -1871,8 +1878,11 @@ window.addEventListener('keydown', e =&gt; {
   if (activeTool === 'bezier' &amp;&amp; vectorToolState.mode === 'creating') {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const path = finishBezierCreation({toEditing:true});
-      if (path) setActiveTool('direct-select');
+      const path = finishBezierCreation({toEditing:false});
+      if (path) {
+        canvas.setActiveObject(path);
+        setActiveTool('select');
+      }
       return;
     }
     if (e.key === 'Escape') {
@@ -2031,6 +2041,23 @@ function bezierPointsToPathData(points, closed=false){
   return segs.join(' ');
 }
 
+function bezierPointsToPathCommands(points, closed=false){
+  if (!points || points.length &lt; 2) return [];
+  const commands = [['M', points[0].x, points[0].y]];
+  for (let i=1;i&lt;points.length;i++) {
+    const prev = points[i-1];
+    const curr = points[i];
+    commands.push(['C', prev.outX, prev.outY, curr.inX, curr.inY, curr.x, curr.y]);
+  }
+  if (closed &amp;&amp; points.length &gt; 2) {
+    const last = points[points.length-1];
+    const first = points[0];
+    commands.push(['C', last.outX, last.outY, first.inX, first.inY, first.x, first.y]);
+    commands.push(['Z']);
+  }
+  return commands;
+}
+
 const bezierCreateViz = { nodes: [], guides: [], cursor: null };
 
 function ensureBezierPreview(){
@@ -2041,6 +2068,7 @@ function ensureBezierPreview(){
     strokeWidth:2.5,
     strokeLineCap:'round',
     strokeLineJoin:'round',
+    objectCaching:false,
     selectable:false,
     evented:false,
     excludeFromExport:true
@@ -2051,13 +2079,18 @@ function ensureBezierPreview(){
 }
 
 function createCreationNode(x, y, kind='anchor'){
-  const r = kind === 'cursor' ? 4.5 : 4;
-  return new fabric.Circle({
-    left:x-r, top:y-r, radius:r,
-    fill: kind === 'cursor' ? '#fff' : '#111',
+  const isAnchor = kind === 'anchor';
+  const r = kind === 'cursor' ? getBezierHandleRadius('handle') : getBezierHandleRadius(isAnchor ? 'anchor' : 'handle');
+  const sc = getHandleVisualScale();
+  const node = new fabric.Circle({
+    left:x, top:y, radius:r,
+    originX:'center', originY:'center',
+    fill: kind === 'cursor' ? '#fff' : (isAnchor ? '#ffffff' : '#111'),
     stroke:'#2f9bff', strokeWidth:2,
     selectable:false, evented:false, excludeFromExport:true
   });
+  node.set({ scaleX:sc, scaleY:sc });
+  return node;
 }
 
 function createCreationGuide(x1,y1,x2,y2){
@@ -2083,20 +2116,29 @@ function updateBezierCreationPreview(pointer=null){
   if (vectorToolState.mode !== 'creating') return;
   const points = vectorToolState.points;
 
-  if (points.length) {
-    const previewPoints = cloneBezierPoints(points);
-    if (pointer) previewPoints.push(makeBezierPoint(pointer.x, pointer.y));
-    if (previewPoints.length &gt;= 2) {
-      const pathData = bezierPointsToPathData(previewPoints, false);
-      const pre = ensureBezierPreview();
-      pre.set({ path: parsePathDataSafe(pathData) });
-      pre.setCoords();
-    } else {
-      if (vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
-        canvas.remove(vectorToolState.previewPath);
-        vectorToolState.previewPath = null;
-      }
+  const previewPoints = cloneBezierPoints(points);
+  if (pointer) previewPoints.push(makeBezierPoint(pointer.x, pointer.y));
+  if (previewPoints.length &gt;= 2) {
+    const pre = ensureBezierPreview();
+    const commands = bezierPointsToPathCommands(previewPoints, false);
+    try {
+      pre.set({ path: commands, dirty: true });
+    } catch (err) {
+      const lastPoint = previewPoints[previewPoints.length - 1] || null;
+      console.warn('Bezier preview update failed; keeping last valid preview path.', {
+        pointsLength: previewPoints.length,
+        lastPoint,
+        error: err
+      });
     }
+    pre.setCoords();
+    canvas.requestRenderAll();
+  }
+
+  const shouldRemovePreview = points.length &lt; 2 &amp;&amp; !pointer;
+  if (shouldRemovePreview &amp;&amp; vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
+    canvas.remove(vectorToolState.previewPath);
+    vectorToolState.previewPath = null;
   }
 
   // rebuild construction overlays (nodes + structural lines)
@@ -2106,12 +2148,8 @@ function updateBezierCreationPreview(pointer=null){
   bezierCreateViz.nodes = [];
   bezierCreateViz.guides = [];
 
-  points.forEach((pt, i) =&gt; {
+  points.forEach((pt) =&gt; {
     bezierCreateViz.nodes.push(createCreationNode(pt.x, pt.y));
-    if (i &gt; 0) {
-      const prev = points[i-1];
-      bezierCreateViz.guides.push(createCreationGuide(prev.x, prev.y, pt.x, pt.y));
-    }
     if (Math.hypot(pt.outX - pt.x, pt.outY - pt.y) &gt; 0.5) {
       bezierCreateViz.guides.push(createCreationGuide(pt.x, pt.y, pt.outX, pt.outY));
       bezierCreateViz.nodes.push(createCreationNode(pt.outX, pt.outY, 'handle'));
@@ -2124,10 +2162,6 @@ function updateBezierCreationPreview(pointer=null){
 
   if (pointer) {
     bezierCreateViz.cursor = createCreationNode(pointer.x, pointer.y, 'cursor');
-    if (points.length) {
-      const last = points[points.length - 1];
-      bezierCreateViz.guides.push(createCreationGuide(last.x, last.y, pointer.x, pointer.y));
-    }
   } else {
     bezierCreateViz.cursor = null;
   }
@@ -2172,7 +2206,7 @@ function applyVectorModelToPath(pathObj){
   const model = ensurePathVectorModel(pathObj);
   if (!model || model.points.length &lt; 2) return;
   const d = bezierPointsToPathData(model.points, !!model.closed);
-  pathObj.set({ path: parsePathDataSafe(d) });
+  pathObj.set({ path: parsePathDataSafe(d), dirty:true });
   pathObj.setCoords();
 }
 
@@ -2204,6 +2238,7 @@ function finishBezierCreation({toEditing=true}={}){
   });
   path.dataName = 'Bezier';
   path.vectorModel = { points: cloneBezierPoints(pts), closed: !!vectorToolState.closed };
+  trackPathPosition(path);
   canvas.add(path);
   canvas.setActiveObject(path);
   clearBezierPreview();
@@ -2236,7 +2271,11 @@ function maybeCloseBezierPath(pointer){
   const first = vectorToolState.points[0];
   if (distance(pointer, first) &gt; BEZIER_CREATE_HIT / Math.max(zoom, .1)) return false;
   vectorToolState.closed = true;
-  finishBezierCreation({toEditing:true});
+  const path = finishBezierCreation({toEditing:false});
+  if (path) {
+    canvas.setActiveObject(path);
+    setActiveTool('select');
+  }
   return true;
 }
 
@@ -2280,11 +2319,16 @@ function getHandleVisualScale(){
   return 1 / Math.max(zoom, 0.05);
 }
 
+function getBezierHandleRadius(kind='handle'){
+  return kind === 'anchor' ? 5.5 : 4.5;
+}
+
 function createBezierControl(x, y, role){
   const isAnchor = role.includes('anchor');
-  const r = isAnchor ? 5.5 : 4.5;
+  const r = getBezierHandleRadius(isAnchor ? 'anchor' : 'handle');
   const c = new fabric.Circle({
-    left:x-r, top:y-r, radius:r,
+    left:x, top:y, radius:r,
+    originX:'center', originY:'center',
     fill:isAnchor ? '#ffffff' : '#111',
     stroke:'#2f9bff', strokeWidth:2,
     selectable:false, evented:true, hasControls:false, hasBorders:false,
@@ -2329,9 +2373,9 @@ function refreshBezierEditorControls(){
     const a = byRole[`anchor-${i}`];
     const hin = byRole[`in-${i}`];
     const hout = byRole[`out-${i}`];
-    if (a) a.set({ left:pt.x-a.radius, top:pt.y-a.radius, scaleX:sc, scaleY:sc });
-    if (hin) hin.set({ left:pt.inX-hin.radius, top:pt.inY-hin.radius, scaleX:sc, scaleY:sc });
-    if (hout) hout.set({ left:pt.outX-hout.radius, top:pt.outY-hout.radius, scaleX:sc, scaleY:sc });
+    if (a) a.set({ left:pt.x, top:pt.y, scaleX:sc, scaleY:sc });
+    if (hin) hin.set({ left:pt.inX, top:pt.inY, scaleX:sc, scaleY:sc });
+    if (hout) hout.set({ left:pt.outX, top:pt.outY, scaleX:sc, scaleY:sc });
 
     const style = { stroke:'rgba(47,155,255,.45)', strokeWidth:1.2*sc, selectable:false, evented:false, excludeFromExport:true };
     if (distance({x:pt.x,y:pt.y},{x:pt.inX,y:pt.inY}) &gt; 0.5) bezierEditor.links.push(new fabric.Line([pt.x,pt.y,pt.inX,pt.inY], style));
@@ -2345,6 +2389,7 @@ function refreshBezierEditorControls(){
 
 function attachBezierEditor(pathObj){
   if (!pathIsBezierEditable(pathObj)) return setStatus('Selecione uma curva vetorial para editar nós.');
+  syncPathVectorModelByDelta(pathObj);
   const model = ensurePathVectorModel(pathObj);
   if (!model || model.points.length &lt; 2) return setStatus('Curva incompatível para edição.');
   clearBezierEditor();
@@ -2362,15 +2407,18 @@ function attachBezierEditor(pathObj){
   });
 
   controls.forEach(ctrl =&gt; {
+    ctrl.__moved = false;
+    ctrl.on('mousedown', () =&gt; { ctrl.__moved = false; });
     ctrl.on('moving', evt =&gt; {
+      ctrl.__moved = true;
       const m = getPathModel(bezierEditor.path);
       if (!m) return;
       const [role, idxStr] = String(ctrl.bziRole).split('-');
       const i = Number(idxStr);
       const pt = m.points[i];
       if (!pt) return;
-      const cx = ctrl.left + ctrl.radius;
-      const cy = ctrl.top + ctrl.radius;
+      const cx = ctrl.left;
+      const cy = ctrl.top;
 
       if (role === 'anchor') {
         const dx = cx - pt.x;
@@ -2395,11 +2443,12 @@ function attachBezierEditor(pathObj){
       applyVectorModelToPath(bezierEditor.path);
       refreshBezierEditorControls();
     });
-    ctrl.on('mousedblclick', () =&gt; {
+    ctrl.on('mouseup', () =&gt; {
+      if (ctrl.__moved) return;
       const m = getPathModel(bezierEditor.path);
       const [role, idxStr] = String(ctrl.bziRole).split('-');
       if (role !== 'anchor') return;
-      const pt = m.points[Number(idxStr)];
+      const pt = m?.points?.[Number(idxStr)];
       if (!pt) return;
       const isCorner = pt.kind === 'corner';
       pt.kind = isCorner ? 'smooth' : 'corner';
@@ -2420,7 +2469,7 @@ function attachBezierEditor(pathObj){
   bezierEditor.controls = controls;
   controls.forEach(c =&gt; canvas.add(c));
   refreshBezierEditorControls();
-  setStatus('Edição de nós ativa: arraste pontos/alças, duplo clique no nó alterna corner/smooth.');
+  setStatus('Edição de nós ativa: arraste pontos/alças, clique no nó alterna corner/smooth.');
 }
 
 function finalizeBezierEditor(){
@@ -2568,12 +2617,42 @@ function importExternalFile(file){
 }
 
 
+// ─── Serialization helpers ───────────────────────────────
+const SERIALIZE_PROPS = ['excludeFromExport','dataName','vectorModel'];
+
+function refreshObjectCoords(){
+  canvas.getObjects().forEach(o =&gt; o.setCoords());
+}
+
+function trackPathPosition(pathObj){
+  if (!pathObj) return;
+  pathObj.__bziLastLeft = Number(pathObj.left || 0);
+  pathObj.__bziLastTop = Number(pathObj.top || 0);
+}
+
+function syncPathVectorModelByDelta(pathObj){
+  if (!pathObj?.vectorModel?.points?.length) return;
+  const prevLeft = Number(pathObj.__bziLastLeft ?? pathObj.left ?? 0);
+  const prevTop = Number(pathObj.__bziLastTop ?? pathObj.top ?? 0);
+  const nextLeft = Number(pathObj.left || 0);
+  const nextTop = Number(pathObj.top || 0);
+  const dx = nextLeft - prevLeft;
+  const dy = nextTop - prevTop;
+  if (Math.abs(dx) &lt; 0.001 &amp;&amp; Math.abs(dy) &lt; 0.001) return;
+  pathObj.vectorModel.points.forEach(pt =&gt; {
+    pt.x += dx; pt.y += dy;
+    pt.inX += dx; pt.inY += dy;
+    pt.outX += dx; pt.outY += dy;
+  });
+  trackPathPosition(pathObj);
+}
+
 // ─── History ─────────────────────────────────────────────
 const history = { stack:[], idx:-1, lock:false };
 function snapshot() {
   if (history.lock) return;
   try {
-    const json = canvas.toJSON(['excludeFromExport','dataName']);
+    const json = canvas.toJSON(SERIALIZE_PROPS);
     history.stack = history.stack.slice(0, history.idx+1);
     history.stack.push(json);
     if (history.stack.length &gt; 60) history.stack.shift();
@@ -2584,6 +2663,8 @@ function restore(idx) {
   if (idx &lt; 0 || idx &gt;= history.stack.length) return;
   history.lock = true;
   canvas.loadFromJSON(history.stack[idx], () =&gt; {
+    refreshObjectCoords();
+    canvas.getObjects().forEach(o =&gt; { if (pathIsBezierEditable(o)) trackPathPosition(o); });
     canvas.requestRenderAll();
     history.idx = idx;
     history.lock = false;
@@ -2596,12 +2677,27 @@ function redo() { if (history.idx &lt; history.stack.length-1) restore(history.i
 canvas.on('object:added', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
 canvas.on('object:modified', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
 canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); });
+canvas.on('object:modified', e =&gt; {
+  const obj = e.target;
+  if (!obj || !pathIsBezierEditable(obj)) return;
+  syncPathVectorModelByDelta(obj);
+  trackPathPosition(obj);
+});
 
 // ─── Delete / Duplicate ──────────────────────────────────
 function del() {
-  const o = activeObj(); if(!o) return;
-  canvas.remove(o); canvas.discardActiveObject(); canvas.requestRenderAll();
-  refreshProps(); refreshLayers();
+  const objs = selectedObjects();
+  if(!objs.length) return;
+
+  if (bezierEditor.enabled && objs.includes(bezierEditor.path)) {
+    clearBezierEditor();
+  }
+
+  objs.forEach(o => canvas.remove(o));
+  canvas.discardActiveObject();
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
 }
 function duplicate() {
   const o = activeObj(); if(!o) return;
@@ -3324,7 +3420,7 @@ function loadSVGFromParent(svgText) {
 
 // ─── JSON save / load ─────────────────────────────────────
 function saveJSON() {
-  const json = JSON.stringify(canvas.toJSON(['excludeFromExport','dataName']), null, 2);
+  const json = JSON.stringify(canvas.toJSON(SERIALIZE_PROPS), null, 2);
   openModal('Salvar JSON', `
     &lt;textarea class=&quot;modal-textarea&quot;&gt;${json}&lt;/textarea&gt;
     &lt;div style=&quot;display:flex;gap:8px;margin-top:12px&quot;&gt;
@@ -3342,7 +3438,7 @@ function loadJSON() {
       &lt;button class=&quot;tbtn accent&quot; onclick=&quot;
         try{
           const json=JSON.parse(document.getElementById('jsonInput').value);
-          canvas.loadFromJSON(json,()=&gt;{canvas.requestRenderAll();refreshLayers();refreshProps();setStatus('JSON carregado')});
+          canvas.loadFromJSON(json,()=&gt;{refreshObjectCoords();canvas.getObjects().forEach(o=&gt;{if(pathIsBezierEditable(o))trackPathPosition(o);});canvas.requestRenderAll();refreshLayers();refreshProps();setStatus('JSON carregado')});
           closeModal();
         }catch(e){alert('JSON inválido')}
       &quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Carregar&lt;/button&gt;
@@ -3412,15 +3508,21 @@ async function pasteFromClipboard() {
 // ─── Constrain to artboard ───────────────────────────────
 canvas.on('object:moving', opt =&gt; {
   const obj = opt.target;
-  if (!artboard || !obj || isGuide(obj)) return;
-  const b = obj.getBoundingRect(true, true);
-  const L = artboard.left, T = artboard.top, R = L+docW, B = T+docH;
-  let dx=0, dy=0;
-  if(b.left&lt;L) dx=L-b.left;
-  if(b.top&lt;T) dy=T-b.top;
-  if(b.left+b.width&gt;R) dx=R-(b.left+b.width);
-  if(b.top+b.height&gt;B) dy=B-(b.top+b.height);
-  if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
+  if (!obj || isGuide(obj)) return;
+  if (artboard) {
+    const b = obj.getBoundingRect(true, true);
+    const L = artboard.left, T = artboard.top, R = L+docW, B = T+docH;
+    let dx=0, dy=0;
+    if(b.left&lt;L) dx=L-b.left;
+    if(b.top&lt;T) dy=T-b.top;
+    if(b.left+b.width&gt;R) dx=R-(b.left+b.width);
+    if(b.top+b.height&gt;B) dy=B-(b.top+b.height);
+    if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
+  }
+  if (pathIsBezierEditable(obj)) {
+    syncPathVectorModelByDelta(obj);
+    if (bezierEditor.enabled &amp;&amp; bezierEditor.path === obj) refreshBezierEditorControls();
+  }
 });
 
 // ─── Command menus (Arquivo / Editar / etc) ───────────────
@@ -3796,12 +3898,13 @@ function setBezierSubmenuMode(_enabled){
 }
 
 function setActiveTool(tool){
-  if (bezierEditor.enabled &amp;&amp; tool !== 'direct-select' &amp;&amp; tool !== 'bezier') finalizeBezierEditor();
+  if (bezierEditor.enabled &amp;&amp; tool !== 'direct-select' &amp;&amp; tool !== 'bezier' &amp;&amp; tool !== 'select') finalizeBezierEditor();
   activeTool = tool;
   const isText = tool === 'text';
   const isDirect = tool === 'direct-select';
+  const isBezier = tool === 'bezier';
   canvas.defaultCursor = isText ? 'text' : 'default';
-  canvas.selection = !isText;
+  canvas.selection = !(isText || isDirect || isBezier);
   canvas.forEachObject(o =&gt; {
     if (isGuide(o) || o.isBezierEditorControl) return;
     o.selectable = !isText;
