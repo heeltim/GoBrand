@@ -789,6 +789,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .floating-toolbar-wrap.show-bezier-submenu .top-tools{display:flex}
 .top-tools{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%)}
 .fixed-tools{position:relative}
+.tool-submenu{position:absolute;bottom:calc(100% + 8px);left:0;display:none;flex-direction:column;gap:4px;min-width:168px;padding:6px;background:rgba(24,24,29,.98);border:1px solid var(--border2);border-radius:10px;box-shadow:0 18px 36px rgba(0,0,0,.45)}
+.tool-submenu.open{display:flex}
+.tool-submenu-btn{height:30px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--ink2);font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.tool-submenu-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.tool-submenu-btn.active{background:rgba(127,90,240,.18);border-color:rgba(127,90,240,.32);color:#fff}
 .ctx-pop{position:fixed;display:none;min-width:220px;background:rgba(24,24,29,.98);border:1px solid var(--border2);border-radius:12px;box-shadow:0 18px 36px rgba(0,0,0,.45);padding:6px;z-index:80}
 .ctx-pop.open{display:block}
 .ctx-pop-item{height:34px;border-radius:8px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;color:var(--ink2);font-size:12px;font-family:var(--mono)}
@@ -1178,6 +1183,10 @@ textarea.modal-textarea{
       &lt;/div&gt;
       &lt;div class=&quot;floating-toolbar-row fixed-tools&quot;&gt;
         &lt;button class=&quot;float-tool-btn icon active&quot; id=&quot;btnSelect&quot; data-tool=&quot;select&quot; title=&quot;Selecionar / mover&quot;&gt;↖&lt;/button&gt;
+        &lt;div class=&quot;tool-submenu&quot; id=&quot;selectToolSubmenu&quot;&gt;
+          &lt;button class=&quot;tool-submenu-btn active&quot; id=&quot;btnSelectNormal&quot; data-tool=&quot;select&quot;&gt;&lt;span&gt;Seleção&lt;/span&gt;&lt;span&gt;V&lt;/span&gt;&lt;/button&gt;
+          &lt;button class=&quot;tool-submenu-btn&quot; id=&quot;btnSelectDirect&quot; data-tool=&quot;direct-select&quot;&gt;&lt;span&gt;Seleção direta&lt;/span&gt;&lt;span&gt;A&lt;/span&gt;&lt;/button&gt;
+        &lt;/div&gt;
         &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
         &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
         &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
@@ -1768,6 +1777,17 @@ canvas.on('mouse:down', opt =&gt; {
   syncActiveArtboardRefs();
   updateArtboardPlusUI();
   setStatus('Prancheta ativa selecionada');
+});
+
+
+canvas.on('mouse:down', opt =&gt; {
+  if (activeTool !== 'direct-select') return;
+  const target = opt.target;
+  if (!target) { if (bezierEditor.enabled) finalizeBezierEditor(); return; }
+  if (isBezierPathObject(target)) {
+    canvas.setActiveObject(target);
+    attachBezierEditor(target);
+  }
 });
 
 window.addEventListener('keydown', e =&gt; {
@@ -2489,7 +2509,7 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
-  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'bezier') {
+  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; (activeTool === 'bezier' || activeTool === 'direct-select')) {
     const obj = activeObj();
     if (isBezierPathObject(obj)) attachBezierEditor(obj);
   }
@@ -3175,7 +3195,7 @@ function executeMenuCommand(cmdId){
     'edit.show': () =&gt; notifyTodo('Mostrar'),
 
     'selection.normal': () =&gt; setActiveTool('select'),
-    'selection.direct': () =&gt; notifyTodo('Seleção direta'),
+    'selection.direct': () =&gt; setActiveTool('direct-select'),
     'selection.selectAll': selectAllObjects,
     'selection.deselectAll': () =&gt; { canvas.discardActiveObject(); canvas.requestRenderAll(); },
     'selection.byColor': () =&gt; notifyTodo('Selecionar por cor'),
@@ -3334,6 +3354,7 @@ function setActiveTool(tool){
   if (activeTool === 'bezier' &amp;&amp; tool !== 'bezier' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
   activeTool = tool;
   const isText = tool === 'text';
+  const isDirect = tool === 'direct-select';
   canvas.defaultCursor = isText ? 'text' : 'default';
   canvas.selection = !isText;
   canvas.forEachObject(o =&gt; {
@@ -3341,10 +3362,15 @@ function setActiveTool(tool){
     o.selectable = !isText;
   });
   document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
+  $('btnSelect')?.classList.toggle('active', tool === 'select' || isDirect);
+  $('btnSelectNormal')?.classList.toggle('active', tool === 'select');
+  $('btnSelectDirect')?.classList.toggle('active', isDirect);
+  $('selectToolSubmenu')?.classList.remove('open');
   const tb = $('floatingToolbar');
   if (tb) tb.classList.toggle('show-bezier-submenu', tool === 'bezier');
   setBezierSubmenuMode(tool === 'bezier');
   if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
+  if (isDirect) setStatus('Seleção direta ativa: selecione uma curva para editar alças.');
   if (tool === 'text') { setStatus('Texto: clique para artístico, arraste para caixa.'); focusTextPanel(true); }
   if (tool === 'bezier') setStatus('BZI ativa: use o submenu para editar nós/alças.');
   canvas.requestRenderAll();
@@ -3399,7 +3425,22 @@ function setActiveTool(tool){
 })();
 
 // ─── Bind toolbar buttons ─────────────────────────────────
-$('btnSelect')?.addEventListener('click', () =&gt; setActiveTool('select'));
+$('btnSelect')?.addEventListener('click', (e) =&gt; {
+  e.stopPropagation();
+  if (activeTool === 'select' || activeTool === 'direct-select') {
+    $('selectToolSubmenu')?.classList.toggle('open');
+    return;
+  }
+  setActiveTool('select');
+});
+$('btnSelectNormal')?.addEventListener('click', () =&gt; setActiveTool('select'));
+$('btnSelectDirect')?.addEventListener('click', () =&gt; setActiveTool('direct-select'));
+document.addEventListener('click', e =&gt; {
+  const sub = $('selectToolSubmenu');
+  if (!sub) return;
+  if (sub.contains(e.target) || $('btnSelect')?.contains(e.target)) return;
+  sub.classList.remove('open');
+});
 $('btnToolVector')?.addEventListener('click', () =&gt; {
   if (activeTool==='bezier') {
     const obj = activeObj();
