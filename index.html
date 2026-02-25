@@ -1126,6 +1126,20 @@ textarea.modal-textarea{
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
+      &lt;div class=&quot;panel-section&quot; id=&quot;vectorNodePanel&quot; style=&quot;display:none&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Vetor · Estilizar nó&lt;/div&gt;
+        &lt;div class=&quot;layer-empty&quot; id=&quot;vectorNodeHint&quot;&gt;Selecione um nó.&lt;/div&gt;
+        &lt;div id=&quot;vectorNodeControls&quot; style=&quot;display:none&quot;&gt;
+          &lt;div class=&quot;field-label&quot; style=&quot;margin-bottom:6px&quot;&gt;Tipo do nó&lt;/div&gt;
+          &lt;div style=&quot;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeCorner&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Canto&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeSmooth&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Suave&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeMirrored&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Espelhado&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnNodeBreak&quot; style=&quot;width:100%;justify-content:center;height:30px;margin-top:8px&quot;&gt;Quebrar alças&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
       &lt;div class=&quot;panel-section&quot; style=&quot;max-height:360px;display:flex;flex-direction:column&quot;&gt;
         &lt;div class=&quot;panel-section-label&quot; style=&quot;display:flex;justify-content:space-between&quot;&gt;
           Camadas
@@ -1999,7 +2013,8 @@ const bezierEditor = {
   path: null,
   controls: [],
   links: [],
-  enabled: false
+  enabled: false,
+  selectedAnchors: []
 };
 
 const BEZIER_CREATE_HIT = 12;
@@ -2010,6 +2025,134 @@ function makeBezierPoint(x, y) {
 
 function cloneBezierPoints(points=[]) {
   return points.map(p =&gt; ({...p}));
+}
+
+
+function normalizeBezierPointKind(pt){
+  if (!pt) return;
+  if (!pt.kind) pt.kind = 'corner';
+  if (typeof pt.broken !== 'boolean') pt.broken = pt.kind === 'corner';
+}
+
+function inferAnchorDisplayType(pt){
+  if (!pt) return 'corner';
+  if (pt.kind === 'mirrored') return 'mirrored';
+  if (pt.kind === 'smooth') return 'smooth';
+  return 'corner';
+}
+
+function ensureBezierNodePanel(){
+  const panel = $('vectorNodePanel');
+  const hint = $('vectorNodeHint');
+  const controls = $('vectorNodeControls');
+  if (!panel || !hint || !controls) return;
+
+  const activePath = bezierEditor.enabled ? bezierEditor.path : activeObj();
+  const canShow = activeTool === 'direct-select' &amp;&amp; pathIsBezierEditable(activePath);
+  panel.style.display = canShow ? 'block' : 'none';
+  if (!canShow) return;
+
+  const m = ensurePathVectorModel(activePath);
+  const selected = (bezierEditor.selectedAnchors || []).filter(i =&gt; m?.points?.[i]);
+  const hasSelection = !!selected.length;
+
+  hint.style.display = hasSelection ? 'none' : 'block';
+  controls.style.display = hasSelection ? 'block' : 'none';
+  if (!hasSelection) {
+    $('btnNodeCorner')?.classList.remove('active');
+    $('btnNodeSmooth')?.classList.remove('active');
+    $('btnNodeMirrored')?.classList.remove('active');
+    if ($('btnNodeBreak')) $('btnNodeBreak').textContent = 'Quebrar alças';
+    return;
+  }
+
+  const first = m.points[selected[0]];
+  const mixedType = selected.some(i =&gt; inferAnchorDisplayType(m.points[i]) !== inferAnchorDisplayType(first));
+  const mixedBreak = selected.some(i =&gt; !!m.points[i].broken !== !!first.broken);
+  const type = mixedType ? '' : inferAnchorDisplayType(first);
+  $('btnNodeCorner')?.classList.toggle('active', type === 'corner');
+  $('btnNodeSmooth')?.classList.toggle('active', type === 'smooth');
+  $('btnNodeMirrored')?.classList.toggle('active', type === 'mirrored');
+  if ($('btnNodeBreak')) $('btnNodeBreak').textContent = (mixedBreak || !first.broken) ? 'Quebrar alças' : 'Religar alças';
+}
+
+function selectBezierAnchorIndices(indices=[]){
+  bezierEditor.selectedAnchors = Array.from(new Set(indices.filter(Number.isFinite)));
+  const selected = new Set(bezierEditor.selectedAnchors);
+  bezierEditor.controls.forEach(ctrl =&gt; {
+    const [role, idxStr] = String(ctrl.bziRole).split('-');
+    if (role !== 'anchor') return;
+    const on = selected.has(Number(idxStr));
+    ctrl.set({ stroke: on ? '#7f5af0' : '#2f9bff', strokeWidth: on ? 2.6 : 2 });
+  });
+  ensureBezierNodePanel();
+  canvas.requestRenderAll();
+}
+
+function applyAnchorCoupling(pt, role, dx, dy){
+  if (!pt || pt.broken || pt.kind === 'corner') return;
+  const movedLen = Math.hypot(dx, dy) || 1;
+  if (role === 'in') {
+    if (pt.kind === 'mirrored') {
+      pt.outX = pt.x - dx; pt.outY = pt.y - dy;
+      return;
+    }
+    const outLen = Math.hypot(pt.outX - pt.x, pt.outY - pt.y) || movedLen;
+    pt.outX = pt.x - (dx / movedLen) * outLen;
+    pt.outY = pt.y - (dy / movedLen) * outLen;
+    return;
+  }
+  if (role === 'out') {
+    if (pt.kind === 'mirrored') {
+      pt.inX = pt.x - dx; pt.inY = pt.y - dy;
+      return;
+    }
+    const inLen = Math.hypot(pt.inX - pt.x, pt.inY - pt.y) || movedLen;
+    pt.inX = pt.x - (dx / movedLen) * inLen;
+    pt.inY = pt.y - (dy / movedLen) * inLen;
+  }
+}
+
+function applySelectedNodeType(type){
+  if (!bezierEditor.path) return;
+  const m = ensurePathVectorModel(bezierEditor.path);
+  const selected = (bezierEditor.selectedAnchors || []).filter(i =&gt; m?.points?.[i]);
+  if (!selected.length) return;
+  selected.forEach(i =&gt; {
+    const pt = m.points[i];
+    normalizeBezierPointKind(pt);
+    if (type === 'corner') {
+      pt.kind = 'corner';
+      pt.broken = true;
+      return;
+    }
+    pt.kind = type === 'mirrored' ? 'mirrored' : 'smooth';
+    pt.broken = false;
+  });
+  applyVectorModelToPath(bezierEditor.path);
+  refreshBezierEditorControls();
+  snapshot();
+}
+
+function toggleSelectedNodeBreak(){
+  if (!bezierEditor.path) return;
+  const m = ensurePathVectorModel(bezierEditor.path);
+  const selected = (bezierEditor.selectedAnchors || []).filter(i =&gt; m?.points?.[i]);
+  if (!selected.length) return;
+  const allBroken = selected.every(i =&gt; !!m.points[i].broken);
+  selected.forEach(i =&gt; {
+    const pt = m.points[i];
+    normalizeBezierPointKind(pt);
+    if (allBroken) {
+      pt.broken = false;
+      if (pt.kind === 'corner') pt.kind = 'smooth';
+    } else {
+      pt.broken = true;
+    }
+  });
+  applyVectorModelToPath(bezierEditor.path);
+  refreshBezierEditorControls();
+  snapshot();
 }
 
 function normalizeVectorByShift(dx, dy, stepDeg=15){
@@ -2193,9 +2336,13 @@ function parseSimpleBezierModel(pathObj){
 }
 
 function ensurePathVectorModel(pathObj){
-  if (pathObj?.vectorModel?.points?.length) return pathObj.vectorModel;
+  if (pathObj?.vectorModel?.points?.length) {
+    pathObj.vectorModel.points.forEach(normalizeBezierPointKind);
+    return pathObj.vectorModel;
+  }
   const parsed = parseSimpleBezierModel(pathObj);
   if (parsed) {
+    parsed.points.forEach(normalizeBezierPointKind);
     pathObj.vectorModel = parsed;
     return parsed;
   }
@@ -2253,13 +2400,11 @@ function finishBezierCreation({toEditing=true}={}){
 
 function cancelBezierCreationStep(){
   if (vectorToolState.mode !== 'creating') return;
-  if (vectorToolState.points.length) {
-    vectorToolState.points.pop();
-    setStatus(vectorToolState.points.length ? 'Último ponto removido.' : 'Criação Bézier cancelada.');
-    updateBezierCreationPreview();
-    return;
-  }
+  vectorToolState.points = [];
+  vectorToolState.closed = false;
+  vectorToolState.dragPointIndex = -1;
   clearBezierPreview();
+  setStatus('Criação Bézier cancelada e pontos temporários limpos.');
   vectorToolState.mode = 'idle';
   setActiveTool('select');
 }
@@ -2349,7 +2494,9 @@ function clearBezierEditor(){
   bezierEditor.controls = [];
   bezierEditor.links = [];
   bezierEditor.enabled = false;
+  bezierEditor.selectedAnchors = [];
   vectorToolState.segmentDrag = null;
+  ensureBezierNodePanel();
   canvas.requestRenderAll();
 }
 
@@ -2384,6 +2531,8 @@ function refreshBezierEditorControls(){
 
   bezierEditor.links.forEach(l =&gt; canvas.add(l));
   bezierEditor.controls.forEach(c =&gt; canvas.bringToFront(c));
+  if (!bezierEditor.selectedAnchors.length &amp;&amp; model.points.length) selectBezierAnchorIndices([0]);
+  else ensureBezierNodePanel();
   canvas.requestRenderAll();
 }
 
@@ -2408,7 +2557,7 @@ function attachBezierEditor(pathObj){
 
   controls.forEach(ctrl =&gt; {
     ctrl.__moved = false;
-    ctrl.on('mousedown', () =&gt; { ctrl.__moved = false; });
+    ctrl.on('mousedown', (evt) =&gt; { ctrl.__moved = false; const [role, idxStr] = String(ctrl.bziRole).split('-'); if (role === 'anchor') { const idx = Number(idxStr); if (evt?.e?.shiftKey) { const has = bezierEditor.selectedAnchors.includes(idx); const next = has ? bezierEditor.selectedAnchors.filter(n =&gt; n !== idx) : [...bezierEditor.selectedAnchors, idx]; selectBezierAnchorIndices(next); } else { selectBezierAnchorIndices([idx]); } } });
     ctrl.on('moving', evt =&gt; {
       ctrl.__moved = true;
       const m = getPathModel(bezierEditor.path);
@@ -2417,6 +2566,7 @@ function attachBezierEditor(pathObj){
       const i = Number(idxStr);
       const pt = m.points[i];
       if (!pt) return;
+      normalizeBezierPointKind(pt);
       const cx = ctrl.left;
       const cy = ctrl.top;
 
@@ -2431,13 +2581,13 @@ function attachBezierEditor(pathObj){
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
         pt.inX = pt.x + dx; pt.inY = pt.y + dy;
-        if (!e.altKey &amp;&amp; pt.kind !== 'corner') { pt.outX = pt.x - dx; pt.outY = pt.y - dy; }
+        if (!e.altKey) applyAnchorCoupling(pt, 'in', dx, dy);
       } else if (role === 'out') {
         let dx = cx - pt.x, dy = cy - pt.y;
         const e = evt?.e || {};
         if (e.shiftKey) ({dx,dy} = normalizeVectorByShift(dx,dy));
         pt.outX = pt.x + dx; pt.outY = pt.y + dy;
-        if (!e.altKey &amp;&amp; pt.kind !== 'corner') { pt.inX = pt.x - dx; pt.inY = pt.y - dy; }
+        if (!e.altKey) applyAnchorCoupling(pt, 'out', dx, dy);
       }
 
       applyVectorModelToPath(bezierEditor.path);
@@ -2450,8 +2600,10 @@ function attachBezierEditor(pathObj){
       if (role !== 'anchor') return;
       const pt = m?.points?.[Number(idxStr)];
       if (!pt) return;
+      normalizeBezierPointKind(pt);
       const isCorner = pt.kind === 'corner';
       pt.kind = isCorner ? 'smooth' : 'corner';
+      pt.broken = !isCorner;
       if (isCorner) {
         pt.inX = pt.x - 36; pt.inY = pt.y;
         pt.outX = pt.x + 36; pt.outY = pt.y;
@@ -2468,6 +2620,7 @@ function attachBezierEditor(pathObj){
 
   bezierEditor.controls = controls;
   controls.forEach(c =&gt; canvas.add(c));
+  selectBezierAnchorIndices([0]);
   refreshBezierEditorControls();
   setStatus('Edição de nós ativa: arraste pontos/alças, clique no nó alterna corner/smooth.');
 }
@@ -2548,6 +2701,7 @@ function insertPointOnSegment(pathObj, segIndex){
   m.points.splice(i1, 0, mid);
   applyVectorModelToPath(pathObj);
   attachBezierEditor(pathObj);
+  selectBezierAnchorIndices([i1]);
   snapshot();
 }
 
@@ -2686,6 +2840,13 @@ canvas.on('object:modified', e =&gt; {
 
 // ─── Delete / Duplicate ──────────────────────────────────
 function del() {
+  if (vectorToolState.mode === 'creating') {
+    vectorToolState.points = [];
+    vectorToolState.closed = false;
+    vectorToolState.dragPointIndex = -1;
+    clearBezierPreview();
+  }
+
   const objs = selectedObjects();
   if(!objs.length) return;
 
@@ -3052,10 +3213,11 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
-  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; (activeTool === 'bezier' || activeTool === 'direct-select')) {
+  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; (activeTool === 'bezier' || activeTool === 'direct-select' || activeTool === 'select')) {
     const obj = activeObj();
     if (pathIsBezierEditable(obj)) attachBezierEditor(obj);
   }
+  ensureBezierNodePanel();
 }));
 
 // ─── Layers ──────────────────────────────────────────────
@@ -3921,6 +4083,7 @@ function setActiveTool(tool){
   if (isDirect) setStatus('Seleção direta ativa: selecione uma curva para editar alças.');
   if (tool === 'text') { setStatus('Texto: clique para artístico, arraste para caixa.'); focusTextPanel(true); }
   if (tool === 'bezier') setStatus('Vetor ativo: clique para criar pontos, arraste para alças.');
+  ensureBezierNodePanel();
   canvas.requestRenderAll();
 }
 
@@ -4005,7 +4168,11 @@ $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
-$('btnToolCurve')?.addEventListener('click', () =&gt; setStatus('Curvar: em breve.'));
+$('btnToolCurve')?.addEventListener('click', () =&gt; { setActiveTool('direct-select'); setStatus('Curvar/PCE ativo: selecione uma curva e um nó.'); ensureBezierNodePanel(); });
+$('btnNodeCorner')?.addEventListener('click', () =&gt; applySelectedNodeType('corner'));
+$('btnNodeSmooth')?.addEventListener('click', () =&gt; applySelectedNodeType('smooth'));
+$('btnNodeMirrored')?.addEventListener('click', () =&gt; applySelectedNodeType('mirrored'));
+$('btnNodeBreak')?.addEventListener('click', () =&gt; toggleSelectedNodeBreak());
 $('btnToolCut')?.addEventListener('click', () =&gt; applyClipMask());
 $('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
 $('btnFit')?.addEventListener('click', fitToArtboard);
