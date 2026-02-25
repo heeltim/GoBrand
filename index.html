@@ -544,36 +544,6 @@
 ========================================================= -->
 <div id="viewAppEditor" class="view">
   <div class="appedit-shell">
-    <div class="appedit-top">
-      <div class="left">
-        <button class="btn btn-ghost" onclick="closeAppEditor()" style="padding:10px 14px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-          Voltar
-        </button>
-        <span id="appEditName" class="badge">Aplicação</span>
-      </div>
-      <div class="mid" style="display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap">
-        <input id="appEditNameInput" class="inp" style="max-width:320px;height:38px" placeholder="Nome da aplicação" />
-        <button class="btn btn-ghost" onclick="renameCurrentApplication()" title="Renomear aplicação">Renomear</button>
-        <span id="appEditMeta" style="font-size:12px;color:var(--ink3);font-family:var(--mono)">—</span>
-      </div>
-      <div class="right">
-        <button class="btn btn-primary" onclick="saveCurrentApplication()" title="Salvar aplicação nas Aplicações">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Salvar Aplicação
-        </button>
-        <button class="btn btn-ghost" onclick="geFit()" title="Encaixar na tela">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3H3v4M17 3h4v4M7 21H3v-4M21 17v4h-4"/></svg>
-          Encaixar
-        </button>
-        <button class="btn btn-primary" onclick="geExportPNG()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Exportar PNG
-        </button>
-        <button class="btn btn-ghost" onclick="closeAppEditor()" style="width:38px;padding:0;justify-content:center">✕</button>
-      </div>
-    </div>
-
     <!-- EDITOR BODY: apenas o iframe ocupa tudo -->
     <div class="appedit-body">
       <div class="ge-iframeWrap">
@@ -690,10 +660,19 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .topbar-brand{
   display:flex;align-items:center;gap:10px;
   padding:0 20px;
-  width:var(--panel-w);
+  flex:1;
+  min-width:0;
   border-right:1px solid var(--border);
   height:100%;
   flex-shrink:0;
+}
+.topbar-name-input{
+  flex:1;
+  min-width:0;
+  height:30px;
+  font-size:11px;
+  border-radius:8px;
+  background:rgba(255,255,255,.03);
 }
 .brand-dot{
   width:20px;height:20px;border-radius:6px;
@@ -720,7 +699,6 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .topbar-actions{
   display:flex;align-items:center;gap:6px;
   padding:0 12px;
-  width:var(--panel-w);
   border-left:1px solid var(--border);
   height:100%;
   flex-shrink:0;
@@ -1079,25 +1057,17 @@ textarea.modal-textarea{
       &lt;/div&gt;
     &lt;/div&gt;
     &lt;span class=&quot;menu-spacer&quot;&gt;&lt;/span&gt;
-    &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnQuickExportPng&quot;&gt;Exportar PNG&lt;/button&gt;
   &lt;/div&gt;
 
   &lt;header class=&quot;topbar&quot;&gt;
     &lt;div class=&quot;topbar-brand&quot;&gt;
       &lt;div class=&quot;brand-dot&quot;&gt;&lt;/div&gt;
-      &lt;span class=&quot;brand-name&quot;&gt;Vetor&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;div class=&quot;topbar-status&quot;&gt;
+      &lt;input id=&quot;projectNameInline&quot; class=&quot;field-input topbar-name-input&quot; type=&quot;text&quot; value=&quot;Aplicação&quot; /&gt;
       &lt;button class=&quot;tbtn active&quot;&gt;Vetor&lt;/button&gt;
       &lt;button class=&quot;tbtn&quot;&gt;Pixel&lt;/button&gt;
       &lt;button class=&quot;tbtn&quot;&gt;Layout&lt;/button&gt;
-      &lt;div style=&quot;width:1px;height:18px;background:var(--border);margin:0 2px&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟸&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; title=&quot;Centralizar horizontal&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↔&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; title=&quot;Alinhar à direita&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟹&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; title=&quot;Alinhar no topo&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟰&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; title=&quot;Centralizar vertical&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;↕&lt;/button&gt;
-      &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; title=&quot;Alinhar na base&quot; style=&quot;width:30px;padding:0;justify-content:center&quot;&gt;⟱&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;topbar-status&quot;&gt;
       &lt;button class=&quot;tbtn&quot; id=&quot;btnUndo&quot; title=&quot;Undo (Ctrl+Z)&quot;&gt;
         &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;polyline points=&quot;1 4 1 10 7 10&quot;/&gt;&lt;path d=&quot;M3.51 15a9 9 0 1 0 .49-4.5&quot;/&gt;&lt;/svg&gt;
       &lt;/button&gt;
@@ -1113,7 +1083,7 @@ textarea.modal-textarea{
       &lt;button class=&quot;tbtn&quot; id=&quot;btnDuplicate&quot; title=&quot;Duplicar&quot;&gt;
         &lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2.5&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;9&quot; width=&quot;13&quot; height=&quot;13&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1&quot;/&gt;&lt;/svg&gt;
       &lt;/button&gt;
-      &lt;button class=&quot;tbtn accent&quot; id=&quot;btnExportPng&quot;&gt;PNG&lt;/button&gt;
+      &lt;button class=&quot;tbtn&quot; id=&quot;btnCloseEditor&quot; title=&quot;Fechar editor&quot;&gt;✕&lt;/button&gt;
     &lt;/div&gt;
   &lt;/header&gt;
 
@@ -1273,6 +1243,34 @@ textarea.modal-textarea{
         &lt;button class=&quot;panel-tab&quot; data-tab=&quot;aparencia&quot;&gt;Aparência&lt;/button&gt;
       &lt;/div&gt;
       &lt;div data-tab-panel=&quot;cor&quot;&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Informações&lt;/div&gt;
+        &lt;div id=&quot;docInfoLabel&quot; style=&quot;font-size:11px;font-family:'JetBrains Mono', ui-monospace, monospace;color:var(--ink3);padding:4px 0&quot;&gt;Web • 1920×1080px • 72dpi&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Alinhamento&lt;/div&gt;
+        &lt;div style=&quot;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px&quot;&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignLeft&quot; title=&quot;Alinhar à esquerda&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟸&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignCenter&quot; title=&quot;Centralizar horizontal&quot; style=&quot;height:30px;justify-content:center&quot;&gt;↔&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignRight&quot; title=&quot;Alinhar à direita&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟹&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignTop&quot; title=&quot;Alinhar no topo&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟰&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignMiddle&quot; title=&quot;Centralizar vertical&quot; style=&quot;height:30px;justify-content:center&quot;&gt;↕&lt;/button&gt;
+          &lt;button class=&quot;tbtn&quot; id=&quot;btnAlignBottom&quot; title=&quot;Alinhar na base&quot; style=&quot;height:30px;justify-content:center&quot;&gt;⟱&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;panel-section&quot;&gt;
+        &lt;div class=&quot;panel-section-label&quot;&gt;Exportar&lt;/div&gt;
+        &lt;button class=&quot;tbtn&quot; id=&quot;btnExportPanelPng&quot; style=&quot;width:100%;justify-content:center;height:32px&quot;&gt;Exportar PNG&lt;/button&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
 
       &lt;!-- Selection info --&gt;
       &lt;div class=&quot;panel-section&quot;&gt;
@@ -3904,7 +3902,7 @@ function exportSVGToParent() {
       height: docH
     }
   });
-  window.parent.postMessage({ type: 'geExportSVG', svg }, '*');
+  window.parent.postMessage({ type: 'geExportSVG', svg, name: $('projectNameInline')?.value || '' }, '*');
 }
 
 
@@ -4268,8 +4266,8 @@ function executeMenuCommand(cmdId){
     'file.new': () =&gt; loadSVGFromParent(''),
     'file.open': () =&gt; $('fileInput')?.click(),
     'file.close': () =&gt; loadSVGFromParent(''),
-    'file.save': saveJSON,
-    'file.saveAs': saveJSON,
+    'file.save': exportSVGToParent,
+    'file.saveAs': exportSVGToParent,
     'file.exportPng': exportPNG,
     'file.exportJpg': () =&gt; notifyTodo('Exportar JPG'),
     'file.exportSvg': exportSVGToParent,
@@ -4583,8 +4581,8 @@ $('btnDelete')?.addEventListener('click', del);
 $('btnDuplicate')?.addEventListener('click', duplicate);
 $('btnUndo')?.addEventListener('click', undo);
 $('btnRedo')?.addEventListener('click', redo);
-$('btnExportPng')?.addEventListener('click', exportPNG);
-$('btnQuickExportPng')?.addEventListener('click', exportPNG);
+$('btnExportPanelPng')?.addEventListener('click', exportPNG);
+$('btnCloseEditor')?.addEventListener('click', () => window.parent.postMessage({ type: 'geCloseEditor' }, '*'));
 $('btnSaveJson')?.addEventListener('click', saveJSON);
 $('btnLoadJson')?.addEventListener('click', loadJSON);
 $('btnApplyDoc')?.addEventListener('click', () =&gt; {
@@ -4738,6 +4736,12 @@ window.addEventListener('message', ev =&gt; {
       });
     }
   }
+  if (msg.type === 'geSetApplicationMeta') {
+    const nameInput = $('projectNameInline');
+    if (nameInput &amp;&amp; msg.name) nameInput.value = msg.name;
+    const info = $('docInfoLabel');
+    if (info) info.textContent = `${msg.modeLabel || 'Web'} • ${msg.width || 0}×${msg.height || 0}${msg.unit || 'px'} • ${msg.dpi || 72}dpi`;
+  }
 });
 
 // ─── Boot ────────────────────────────────────────────────
@@ -4760,6 +4764,24 @@ function boot() {
     ro.observe(stageEl);
     window.addEventListener('resize', () =&gt; { resizeCanvasToViewport(); fitToArtboard(); updateArtboardPlusUI(); });
     snapshot();
+
+    const inlineNameInput = $('projectNameInline');
+    if (inlineNameInput) {
+      const syncName = () =&gt; {
+        const nm = String(inlineNameInput.value || '').trim();
+        if (!nm) return;
+        window.parent.postMessage({ type: 'geRenameApplication', name: nm }, '*');
+      };
+      let nameTimer;
+      inlineNameInput.addEventListener('input', () =&gt; {
+        clearTimeout(nameTimer);
+        nameTimer = setTimeout(syncName, 260);
+      });
+      inlineNameInput.addEventListener('blur', syncName);
+      inlineNameInput.addEventListener('keydown', e =&gt; {
+        if (e.key === 'Enter') { e.preventDefault(); inlineNameInput.blur(); }
+      });
+    }
   }));
 }
 boot();

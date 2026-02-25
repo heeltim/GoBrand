@@ -1176,7 +1176,7 @@ a { color: var(--accent); text-decoration: none; }
   overflow:hidden;
   box-shadow: var(--shadow-lg);
   display:grid;
-  grid-template-rows: 56px 1fr;
+  grid-template-rows: 1fr;
 }
 .appedit-top{
   display:flex; align-items:center; justify-content:space-between;
