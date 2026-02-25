@@ -1908,6 +1908,15 @@ function ensureAppEditorReady(a,p){
       gePost({type:"setSVG", svg:normalizedSvg});
     }
     gePushBrandData(p);
+    gePost({
+      type:"geSetApplicationMeta",
+      name:a.name || "Aplicação",
+      modeLabel:a.type==="print"?"Impressão":"Web",
+      width:a.w,
+      height:a.h,
+      unit:a.unit||"px",
+      dpi:a.dpi||72
+    });
   }, 450);
 }
 
@@ -2703,6 +2712,26 @@ function geEnsureIframeLoaded(){
 
   window.addEventListener('message',(ev)=>{
     const msg=ev.data||{};
+
+    if(msg.type==="geCloseEditor"){
+      closeAppEditor();
+      return;
+    }
+
+    if(msg.type==="geRenameApplication"){
+      const p=P(); if(!p) return;
+      const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
+      if(!a) return;
+      const nv=String(msg.name||"").trim();
+      if(!nv) return;
+      a.name = nv;
+      a.updatedAt = Date.now();
+      p.updatedAt = Date.now();
+      save(S.projects);
+      renderApps();
+      return;
+    }
+
     if(msg.type!=="geExportSVG") return;
     const p=P(); if(!p) return;
     const a=(p.applications||[]).find(x=>x.id===_appEdit.appId);
@@ -2721,7 +2750,7 @@ function geEnsureIframeLoaded(){
 
     const xml = raw.startsWith('<?xml') ? raw : `<?xml version="1.0" encoding="UTF-8"?>
 ${raw}`;
-    const nv=($("appEditNameInput")?.value||"").trim();
+    const nv=String(msg.name || $("appEditNameInput")?.value || a.name || "").trim();
     if(nv) a.name = nv;
     a.svg = xml;
     a.updatedAt = Date.now();
@@ -2732,9 +2761,3 @@ ${raw}`;
     toast('Aplicação salva em Aplicações','success');
   });
 
-  $("appEditNameInput")?.addEventListener('keydown',(e)=>{
-    if(e.key==='Enter'){
-      e.preventDefault();
-      renameCurrentApplication();
-    }
-  });
