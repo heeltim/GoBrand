@@ -782,6 +782,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
 .floating-toolbar-wrap.show-bezier-submenu .top-tools{display:flex}
 .top-tools{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%)}
 .fixed-tools{position:relative}
+.ctx-pop{position:fixed;display:none;min-width:220px;background:rgba(24,24,29,.98);border:1px solid var(--border2);border-radius:12px;box-shadow:0 18px 36px rgba(0,0,0,.45);padding:6px;z-index:80}
+.ctx-pop.open{display:block}
+.ctx-pop-item{height:34px;border-radius:8px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;color:var(--ink2);font-size:12px;font-family:var(--mono)}
+.ctx-pop-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.ctx-pop-sep{height:1px;background:var(--border);margin:6px 2px}
 
 .text-float-panel{position:absolute;left:24px;bottom:24px;z-index:13;width:300px;background:rgba(24,24,29,.96);border:1px solid var(--border2);border-radius:14px;box-shadow:0 20px 44px rgba(0,0,0,.45);display:none;overflow:hidden}
 .text-float-panel.open{display:block}
@@ -972,6 +977,8 @@ textarea.modal-textarea{
   &lt;div class=&quot;menu-bar&quot;&gt;
     &lt;span class=&quot;menu-item active&quot;&gt;Arquivo&lt;/span&gt;
     &lt;span class=&quot;menu-item&quot;&gt;Editar&lt;/span&gt;
+    &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnImportFile&quot;&gt;Importar&lt;/button&gt;
+    &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnNewArtboard&quot;&gt;Nova prancheta&lt;/button&gt;
     &lt;div class=&quot;menu-dd&quot; id=&quot;menuDocRoot&quot;&gt;
       &lt;button class=&quot;menu-item menu-item-btn&quot; id=&quot;btnMenuDocumento&quot;&gt;Documento&lt;/button&gt;
       &lt;div class=&quot;menu-dd-panel&quot; id=&quot;menuDocumentoPanel&quot;&gt;
@@ -1088,7 +1095,7 @@ textarea.modal-textarea{
           &lt;button class=&quot;tbtn&quot; id=&quot;btnReleaseClip&quot; style=&quot;justify-content:center;height:30px&quot;&gt;Soltar clip&lt;/button&gt;
         &lt;/div&gt;
         &lt;div id=&quot;folderList&quot; style=&quot;margin-bottom:8px&quot;&gt;&lt;/div&gt;
-        &lt;div id=&quot;layersList&quot; style=&quot;flex:1;overflow:auto&quot;&gt;&lt;/div&gt;
+        &lt;div id=&quot;layersList&quot; style=&quot;flex:1;overflow-y:auto;overflow-x:hidden&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
 
       &lt;div class=&quot;sep&quot;&gt;&lt;/div&gt;
@@ -1106,7 +1113,7 @@ textarea.modal-textarea{
 
     &lt;/div&gt;
 
-    &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;image/*&quot; style=&quot;display:none&quot;&gt;
+    &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;.svg,.png,.jpg,.jpeg,.webp,.ai,.eps,application/postscript,image/*&quot; style=&quot;display:none&quot;&gt;
   &lt;/aside&gt;
 
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
@@ -1379,6 +1386,19 @@ textarea.modal-textarea{
   &lt;/aside&gt;
 
 &lt;/div&gt;&lt;!-- .app --&gt;
+
+
+&lt;div class=&quot;ctx-pop&quot; id=&quot;canvasCtx&quot;&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;paste&quot;&gt;&lt;span&gt;Colar&lt;/span&gt;&lt;span&gt;Ctrl+V&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;group&quot;&gt;&lt;span&gt;Agrupar&lt;/span&gt;&lt;span&gt;Ctrl+G&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;ungroup&quot;&gt;&lt;span&gt;Desagrupar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+G&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-sep&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;front&quot;&gt;&lt;span&gt;Trazer para frente&lt;/span&gt;&lt;span&gt;]&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;back&quot;&gt;&lt;span&gt;Enviar para trás&lt;/span&gt;&lt;span&gt;[&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-sep&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;duplicate&quot;&gt;&lt;span&gt;Duplicar&lt;/span&gt;&lt;span&gt;Ctrl+D&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;ctx-pop-item&quot; data-act=&quot;delete&quot;&gt;&lt;span&gt;Excluir&lt;/span&gt;&lt;span&gt;Del&lt;/span&gt;&lt;/div&gt;
+&lt;/div&gt;
 
 &lt;!-- ═══ MODAL ════════════════════════════════════════════ --&gt;
 &lt;div class=&quot;modal-bg&quot; id=&quot;modalBg&quot;&gt;
@@ -1719,6 +1739,8 @@ window.addEventListener('keydown', e =&gt; {
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; !e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); groupSelection(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); ungroupSelection(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key === ']') { e.preventDefault(); bringForwardSelection(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key === '[') { e.preventDefault(); sendBackwardSelection(); }
   if ((e.key === 'Delete' || e.key === 'Backspace') &amp;&amp; !e.target.matches('input,textarea')) { del(); }
 }, {passive:false});
 
@@ -1821,6 +1843,55 @@ function addLayer() {
   canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
   refreshLayers(); refreshProps();
   setStatus('Nova layer criada');
+}
+
+function bringForwardSelection(){
+  const obj = activeObj(); if(!obj) return;
+  canvas.bringForward(obj); canvas.requestRenderAll(); refreshLayers();
+}
+function sendBackwardSelection(){
+  const obj = activeObj(); if(!obj) return;
+  canvas.sendBackwards(obj); canvas.requestRenderAll(); refreshLayers();
+}
+
+function importExternalFile(file){
+  if(!file) return;
+  const name = String(file.name||'').toLowerCase();
+  const isSvg = file.type==='image/svg+xml' || name.endsWith('.svg');
+  const isRaster = file.type.startsWith('image/') || ['.png','.jpg','.jpeg','.webp','.gif'].some(ext=>name.endsWith(ext));
+  const isVectorUnsupported = ['.ai','.eps'].some(ext=>name.endsWith(ext));
+
+  if (isSvg) {
+    const fr = new FileReader();
+    fr.onload = ev => loadSVGFromParent(String(ev.target?.result||''));
+    fr.readAsText(file);
+    return;
+  }
+  if (isRaster) {
+    const fr = new FileReader();
+    fr.onload = ev => {
+      fabric.Image.fromURL(ev.target.result, img => {
+        ensureArtboard();
+        const maxW = Math.min(docW * 0.8, 600);
+        if (img.width > maxW) img.scaleToWidth(maxW);
+        img.set({ left: artboard.left + 40, top: artboard.top + 40, dataName:file.name || 'Imagem colada' });
+        canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+        refreshLayers();
+      });
+    };
+    fr.readAsDataURL(file);
+    return;
+  }
+  if (isVectorUnsupported) {
+    ensureArtboard();
+    const ph = new fabric.Rect({ left:artboard.left+80, top:artboard.top+80, width:260, height:120, fill:'rgba(127,90,240,.12)', stroke:'rgba(127,90,240,.6)', strokeDashArray:[6,4] });
+    const label = new fabric.Text(file.name + ' (importado)', { left:artboard.left+94, top:artboard.top+128, fontSize:14, fill:'#fff', fontFamily:'Outfit' });
+    const g = new fabric.Group([ph,label], { dataName:file.name || 'Arquivo vetorial' });
+    canvas.add(g); canvas.setActiveObject(g); canvas.requestRenderAll(); refreshLayers();
+    setStatus('Arquivo importado como referência visual.');
+    return;
+  }
+  setStatus('Formato não suportado para importação.');
 }
 
 
@@ -2308,22 +2379,22 @@ function refreshLayers() {
     div.className = 'layer-item' + (isAct ? ' active' : '');
     div.draggable = true;
     div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
-    const folderOps = layerFolders.map(f=&gt;`&lt;option value=&quot;${f}&quot; ${obj.dataFolder===f?'selected':''}&gt;${f}&lt;/option&gt;`).join('');
-    const blendOps = blendModes.map(m=&gt;`&lt;option value=&quot;${m}&quot; ${ (obj.globalCompositeOperation||'source-over')===m?'selected':'' }&gt;${m}&lt;/option&gt;`).join('');
+    const thumbStyle = (() =&gt; {
+      if (obj.type === 'image' &amp;&amp; obj._element?.src) return `background-image:url('${obj._element.src}')`;
+      const fill = typeof obj.fill==='string' ? obj.fill : 'rgba(255,255,255,.08)';
+      const stroke = typeof obj.stroke==='string' ? obj.stroke : 'rgba(255,255,255,.2)';
+      return `background:linear-gradient(135deg, ${fill}, ${stroke})`;
+    })();
     div.innerHTML = `
       &lt;div class=&quot;layer-icon&quot;&gt;&lt;i data-lucide=&quot;${icon}&quot; data-size=&quot;13&quot;&gt;&lt;/i&gt;&lt;/div&gt;
       &lt;div style=&quot;min-width:0&quot;&gt;
         &lt;div class=&quot;layer-main&quot;&gt;
+          &lt;div class=&quot;layer-thumb&quot; style=&quot;${thumbStyle}&quot;&gt;&lt;/div&gt;
           &lt;div class=&quot;layer-name&quot;&gt;${name}&lt;/div&gt;
           &lt;div class=&quot;layer-meta&quot;&gt;${Math.round((obj.opacity??1)*100)}%&lt;/div&gt;
         &lt;/div&gt;
-        &lt;div class=&quot;layer-controls&quot;&gt;
-          &lt;select class=&quot;layer-ctl layer-blend&quot;&gt;${blendOps}&lt;/select&gt;
-          &lt;input class=&quot;layer-ctl layer-opacity&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;100&quot; value=&quot;${Math.round((obj.opacity??1)*100)}&quot;&gt;
-        &lt;/div&gt;
-        &lt;select class=&quot;layer-ctl layer-folder&quot; style=&quot;width:100%&quot;&gt;${folderOps}&lt;/select&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;layer-meta&quot;&gt;↕&lt;/div&gt;`;
+      &lt;div class=&quot;layer-meta&quot;&gt;${obj.dataFolder||'Geral'}&lt;/div&gt;`;
 
     div.addEventListener('click', () =&gt; { canvas.setActiveObject(obj); canvas.requestRenderAll(); refreshProps(); refreshLayers(); });
     div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
@@ -2338,14 +2409,6 @@ function refreshLayers() {
       moveLayerByDisplayIndex(draggedObj, i);
       refreshLayers();
     });
-
-    const blendEl = div.querySelector('.layer-blend');
-    const opacityEl = div.querySelector('.layer-opacity');
-    const folderEl = div.querySelector('.layer-folder');
-    [blendEl,opacityEl,folderEl].forEach(el =&gt; el?.addEventListener('click', e =&gt; e.stopPropagation()));
-    blendEl?.addEventListener('change', () =&gt; { obj.set({ globalCompositeOperation: blendEl.value }); canvas.requestRenderAll(); refreshLayers(); });
-    opacityEl?.addEventListener('input', () =&gt; { const op=Math.max(0,Math.min(100,Number(opacityEl.value)||100)); obj.set({ opacity: op/100 }); canvas.requestRenderAll(); });
-    folderEl?.addEventListener('change', () =&gt; { obj.dataFolder = folderEl.value; refreshLayers(); });
 
     list.appendChild(div);
   });
@@ -2439,6 +2502,34 @@ stageEl?.addEventListener('drop', e =&gt; {
   applyLibraryItem(draggedLibraryIndex);
   draggedLibraryIndex = null;
 });
+
+// ─── Context menu (canvas) ─────────────────────────────
+(function initCanvasContextMenu(){
+  const menu = $('canvasCtx');
+  if(!menu || !canvas.upperCanvasEl) return;
+  const close = () =&gt; menu.classList.remove('open');
+  canvas.upperCanvasEl.addEventListener('contextmenu', e =&gt; {
+    e.preventDefault();
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+    menu.classList.add('open');
+  });
+  document.addEventListener('click', e =&gt; {
+    if(!menu.contains(e.target)) close();
+  });
+  menu.addEventListener('click', e =&gt; {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if(!act) return;
+    if(act==='paste') pasteFromClipboard();
+    if(act==='group') groupSelection();
+    if(act==='ungroup') ungroupSelection();
+    if(act==='front') bringForwardSelection();
+    if(act==='back') sendBackwardSelection();
+    if(act==='duplicate') duplicate();
+    if(act==='delete') del();
+    close();
+  });
+})();
 
 // ─── Modal ───────────────────────────────────────────────
 const modalBg = $('modalBg');
@@ -2582,21 +2673,61 @@ function loadJSON() {
 
 // ─── Upload image ─────────────────────────────────────────
 $('fileInput')?.addEventListener('change', e =&gt; {
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev =&gt; {
-    fabric.Image.fromURL(ev.target.result, img =&gt; {
-      ensureArtboard();
-      const maxW = Math.min(docW * 0.8, 600);
-      if (img.width &gt; maxW) img.scaleToWidth(maxW);
-      img.set({ left: artboard.left + 40, top: artboard.top + 40 });
-      canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
-      setStatus('Imagem importada');
-    });
-  };
-  reader.readAsDataURL(file);
+  const files = Array.from(e.target.files||[]);
+  files.forEach(importExternalFile);
   e.target.value = '';
 });
+
+window.addEventListener('paste', e =&gt; {
+  const items = Array.from(e.clipboardData?.items || []);
+  let used = false;
+  items.forEach(it =&gt; {
+    if (it.kind === 'file') {
+      const f = it.getAsFile();
+      if (f) { importExternalFile(f); used = true; }
+    }
+    if (it.kind === 'string' &amp;&amp; it.type === 'text/plain') {
+      it.getAsString(txt =&gt; {
+        const s = String(txt||'').trim();
+        if (s.startsWith('&lt;svg') || s.includes('&lt;svg')) { loadSVGFromParent(s); }
+      });
+    }
+  });
+  if (used) e.preventDefault();
+});
+
+
+async function pasteFromClipboard() {
+  if (!navigator.clipboard?.read) {
+    setStatus('Menu de colar indisponível. Use Ctrl+V no workspace.');
+    return;
+  }
+  try {
+    const clipItems = await navigator.clipboard.read();
+    let imported = false;
+    for (const clipItem of clipItems) {
+      const pngType = clipItem.types.find(t =&gt; t.startsWith('image/'));
+      if (pngType) {
+        const blob = await clipItem.getType(pngType);
+        const file = new File([blob], `clipboard.${pngType.split('/')[1] || 'png'}`, { type: pngType });
+        importExternalFile(file);
+        imported = true;
+        continue;
+      }
+      if (clipItem.types.includes('text/plain')) {
+        const txtBlob = await clipItem.getType('text/plain');
+        const txt = (await txtBlob.text()).trim();
+        if (txt.startsWith('&lt;svg') || txt.includes('&lt;svg')) {
+          loadSVGFromParent(txt);
+          imported = true;
+        }
+      }
+    }
+    if (!imported) setStatus('Nada compatível para colar.');
+  } catch (err) {
+    setStatus('Permita acesso à área de transferência ou use Ctrl+V.');
+  }
+}
 
 // ─── Constrain to artboard ───────────────────────────────
 canvas.on('object:moving', opt =&gt; {
@@ -2699,6 +2830,8 @@ $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { setActiveTool('select'); addLine(); });
 $('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); });
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
 $('btnToolCurve')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); });
