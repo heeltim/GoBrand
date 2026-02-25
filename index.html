@@ -2010,6 +2010,11 @@ function normalizeVectorByShift(dx, dy, stepDeg=15){
   return { dx: Math.cos(a) * len, dy: Math.sin(a) * len };
 }
 
+function parsePathDataSafe(pathData){
+  if (fabric?.util?.parsePath) return fabric.util.parsePath(pathData);
+  return new fabric.Path(pathData).path;
+}
+
 function bezierPointsToPathData(points, closed=false){
   if (!points || points.length &lt; 2) return '';
   const segs = [`M ${points[0].x} ${points[0].y}`];
@@ -2084,7 +2089,7 @@ function updateBezierCreationPreview(pointer=null){
     if (previewPoints.length &gt;= 2) {
       const pathData = bezierPointsToPathData(previewPoints, false);
       const pre = ensureBezierPreview();
-      pre.set({ path: fabric.Path.parsePath(pathData) });
+      pre.set({ path: parsePathDataSafe(pathData) });
       pre.setCoords();
     } else {
       if (vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
@@ -2167,7 +2172,7 @@ function applyVectorModelToPath(pathObj){
   const model = ensurePathVectorModel(pathObj);
   if (!model || model.points.length &lt; 2) return;
   const d = bezierPointsToPathData(model.points, !!model.closed);
-  pathObj.set({ path: fabric.Path.parsePath(d) });
+  pathObj.set({ path: parsePathDataSafe(d) });
   pathObj.setCoords();
 }
 
