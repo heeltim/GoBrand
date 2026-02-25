@@ -769,34 +769,15 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(12
   margin-bottom:8px;font-weight:600;
 }
 
-/* ─── TOOL BUTTONS (left panel) ──────────────────────── */
-.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.tool-btn{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:5px;padding:10px 6px;border-radius:var(--r);
-  background:var(--surface);border:1px solid var(--border);
-  color:var(--ink2);font-size:10px;font-family:'JetBrains Mono', ui-monospace, monospace;
-  font-weight:500;letter-spacing:.04em;
-  transition:all .12s ease;
-}
-.tool-btn:hover{background:rgba(127,90,240,.08);border-color:rgba(127,90,240,.24);color:var(--accent)}
-.tool-btn svg{opacity:.7;transition:opacity .12s}
-.tool-btn:hover svg{opacity:1}
-
-.tools-rail{
-  width:46px;
-  border-right:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-  padding:10px 6px;
-  background:#191920;
-}
-.rail-btn{width:32px;height:32px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink2);display:inline-flex;align-items:center;justify-content:center}
-.rail-btn:hover{background:rgba(255,255,255,.08);color:var(--ink)}
-.rail-btn.active{background:rgba(127,90,240,.18);border-color:rgba(127,90,240,.35);color:#fff}
-.rail-sep{width:18px;height:1px;background:var(--border2);margin:2px 0}
+/* ─── TOOLBAR (floating) ─────────────────────────────── */
+.floating-toolbar-wrap{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:12;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+.floating-toolbar-row{display:flex;align-items:center;background:rgba(24,24,29,.94);border:1px solid var(--border2);border-radius:14px;box-shadow:0 16px 36px rgba(0,0,0,.45);overflow:hidden}
+.float-tool-btn{height:42px;padding:0 14px;border-right:1px solid var(--border);background:transparent;color:var(--ink2);font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:6px}
+.float-tool-btn:last-child{border-right:none}
+.float-tool-btn:hover{background:rgba(255,255,255,.06);color:var(--ink)}
+.float-tool-btn.active{background:rgba(127,90,240,.20);color:#fff}
+.float-tool-btn.icon{width:42px;justify-content:center;padding:0}
+.float-tool-sep{width:1px;height:24px;background:var(--border)}
 
 /* ─── DOC INPUTS ──────────────────────────────────────── */
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
@@ -1088,17 +1069,6 @@ textarea.modal-textarea{
 
   &lt;!-- ═══ LEFT PANEL ════════════════════════════════════ --&gt;
   &lt;aside class=&quot;panel&quot;&gt;
-    &lt;div class=&quot;tools-rail&quot;&gt;
-      &lt;button class=&quot;rail-btn active&quot; id=&quot;btnAddArtText&quot; title=&quot;Texto artístico&quot;&gt;T&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnAddTextBox&quot; title=&quot;Caixa de texto&quot;&gt;T▭&lt;/button&gt;
-      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
-      &lt;div class=&quot;rail-sep&quot;&gt;&lt;/div&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
-      &lt;button class=&quot;rail-btn&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
-    &lt;/div&gt;
     &lt;div class=&quot;panel-body&quot;&gt;
 
       &lt;div class=&quot;panel-section&quot;&gt;&lt;div class=&quot;layer-empty&quot;&gt;Configurações de documento no menu superior &lt;strong&gt;Documento&lt;/strong&gt;.&lt;/div&gt;&lt;/div&gt;
@@ -1129,6 +1099,29 @@ textarea.modal-textarea{
       &lt;button class=&quot;ab-plus right&quot; id=&quot;btnAddArtRight&quot; title=&quot;Adicionar à direita&quot;&gt;+&lt;/button&gt;
       &lt;button class=&quot;ab-plus bottom&quot; id=&quot;btnAddArtBottom&quot; title=&quot;Adicionar abaixo&quot;&gt;+&lt;/button&gt;
       &lt;button class=&quot;ab-plus left&quot; id=&quot;btnAddArtLeft&quot; title=&quot;Adicionar à esquerda&quot;&gt;+&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;floating-toolbar-wrap&quot;&gt;
+      &lt;div class=&quot;floating-toolbar-row&quot;&gt;
+        &lt;button class=&quot;float-tool-btn active&quot; id=&quot;btnToolVector&quot;&gt;Vetor&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMove&quot; data-tool=&quot;move&quot;&gt;Mover&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolLasso&quot;&gt;Laço&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolPaint&quot;&gt;Pintar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCurve&quot;&gt;Curvar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolCut&quot;&gt;Cortar&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn&quot; id=&quot;btnToolMore&quot;&gt;Mais ▾&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;floating-toolbar-row&quot;&gt;
+        &lt;button class=&quot;float-tool-btn icon active&quot; id=&quot;btnSelect&quot; data-tool=&quot;select&quot; title=&quot;Selecionar / mover&quot;&gt;↖&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnRect&quot; title=&quot;Retângulo&quot;&gt;▭&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnCircle&quot; title=&quot;Círculo&quot;&gt;◯&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnLine&quot; title=&quot;Linha&quot;&gt;／&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnBezier&quot; title=&quot;Bezier&quot;&gt;∿&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnTextTool&quot; data-tool=&quot;text&quot; title=&quot;Texto: clique (artístico) / arraste (caixa)&quot;&gt;T&lt;/button&gt;
+        &lt;div class=&quot;float-tool-sep&quot;&gt;&lt;/div&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnUpload&quot; title=&quot;Inserir imagem&quot;&gt;▣&lt;/button&gt;
+        &lt;button class=&quot;float-tool-btn icon&quot; id=&quot;btnHelp&quot; title=&quot;Atalhos&quot;&gt;?&lt;/button&gt;
+      &lt;/div&gt;
     &lt;/div&gt;
 
     &lt;div class=&quot;zoom-bar&quot;&gt;
@@ -1423,6 +1416,9 @@ let zoom = 1;
 let isPanning = false, isSpaceDown = false;
 let lastX = 0, lastY = 0;
 let artboardMode = false;
+let activeTool = 'select';
+let textDragStart = null;
+let textDragMoved = false;
 
 // Artboard objects
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
@@ -1638,21 +1634,49 @@ canvas.on('mouse:down', opt =&gt; {
     isPanning = true; canvas.setCursor('grab');
     lastX = e.clientX; lastY = e.clientY;
     opt.e.preventDefault();
+    return;
+  }
+  if (activeTool === 'text' &amp;&amp; !opt.target) {
+    const p = canvas.getPointer(e);
+    textDragStart = { x:p.x, y:p.y };
+    textDragMoved = false;
+    opt.e.preventDefault();
   }
 });
 
 canvas.on('mouse:move', opt =&gt; {
-  if (!isPanning) return;
-  const e = opt.e;
-  const vpt = canvas.viewportTransform;
-  vpt[4] += e.clientX - lastX;
-  vpt[5] += e.clientY - lastY;
-  canvas.setViewportTransform(vpt);
-  lastX = e.clientX; lastY = e.clientY;
-  updateArtboardPlusUI();
+  if (isPanning) {
+    const e = opt.e;
+    const vpt = canvas.viewportTransform;
+    vpt[4] += e.clientX - lastX;
+    vpt[5] += e.clientY - lastY;
+    canvas.setViewportTransform(vpt);
+    lastX = e.clientX; lastY = e.clientY;
+    updateArtboardPlusUI();
+    return;
+  }
+  if (activeTool === 'text' &amp;&amp; textDragStart) {
+    const p = canvas.getPointer(opt.e);
+    textDragMoved = Math.hypot(p.x - textDragStart.x, p.y - textDragStart.y) &gt; 8;
+  }
 });
 
-canvas.on('mouse:up', () =&gt; { if (isPanning) { isPanning = false; canvas.setCursor('default'); } });
+canvas.on('mouse:up', opt =&gt; {
+  if (isPanning) { isPanning = false; canvas.setCursor(activeTool==='text' ? 'text' : 'default'); }
+  if (activeTool === 'text' &amp;&amp; textDragStart) {
+    const pointer = canvas.getPointer(opt.e);
+    const dx = pointer.x - textDragStart.x;
+    const dy = pointer.y - textDragStart.y;
+    if (!textDragMoved || Math.hypot(dx, dy) &lt; 8) {
+      addArtTextAt(pointer.x, pointer.y);
+    } else {
+      addTextBoxAt(Math.min(textDragStart.x, pointer.x), Math.min(textDragStart.y, pointer.y), Math.abs(dx), Math.abs(dy));
+    }
+    textDragStart = null;
+    textDragMoved = false;
+    setActiveTool('select');
+  }
+});
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   if (!target) return;
@@ -1686,10 +1710,9 @@ function setStatus(txt) {
 }
 
 // ─── Add objects ─────────────────────────────────────────
-function addArtText() {
-  ensureArtboard();
+function addArtTextAt(left, top) {
   const t = new fabric.IText('Texto artístico', {
-    left: artboard.left + 60, top: artboard.top + 60,
+    left, top,
     fontFamily: 'Outfit', fontSize: 42,
     fill: '#111', editable: true
   });
@@ -1697,16 +1720,27 @@ function addArtText() {
   setStatus('Texto artístico adicionado');
 }
 
-function addTextBox() {
-  ensureArtboard();
+function addTextBoxAt(left, top, width=360, height=120) {
   const t = new fabric.Textbox('Caixa de texto', {
-    left: artboard.left + 60, top: artboard.top + 140,
-    width: 360, fontFamily: 'Outfit', fontSize: 32,
+    left, top,
+    width: Math.max(120, width),
+    height: Math.max(48, height),
+    fontFamily: 'Outfit', fontSize: 32,
     fill: '#111', editable: true,
     textAlign: 'left'
   });
   canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
   setStatus('Caixa de texto adicionada');
+}
+
+function addArtText() {
+  ensureArtboard();
+  addArtTextAt(artboard.left + 60, artboard.top + 60);
+}
+
+function addTextBox() {
+  ensureArtboard();
+  addTextBoxAt(artboard.left + 60, artboard.top + 140, 360, 120);
 }
 
 function addRect() {
@@ -1734,6 +1768,22 @@ function addLine() {
     stroke:'rgba(0,0,0,.55)', strokeWidth:2
   });
   canvas.add(l); canvas.setActiveObject(l); canvas.requestRenderAll();
+}
+
+function addBezier() {
+  ensureArtboard();
+  const x = artboard.left + 100;
+  const y = artboard.top + Math.max(120, docH*0.45);
+  const p = new fabric.Path(`M ${x} ${y} C ${x+120} ${y-140}, ${x+260} ${y+140}, ${x+420} ${y}`, {
+    fill: '',
+    stroke: 'rgba(127,90,240,.95)',
+    strokeWidth: 3,
+    strokeLineCap: 'round',
+    strokeLineJoin: 'round'
+  });
+  p.dataName = 'Bezier';
+  canvas.add(p); canvas.setActiveObject(p); canvas.requestRenderAll();
+  setStatus('Curva bezier adicionada');
 }
 
 function addLayer() {
@@ -2509,14 +2559,34 @@ canvas.on('object:moving', opt =&gt; {
   });
 })();
 
+function setActiveTool(tool){
+  activeTool = tool;
+  const isText = tool === 'text';
+  canvas.defaultCursor = isText ? 'text' : 'default';
+  canvas.selection = !isText;
+  canvas.forEachObject(o =&gt; { if(!isGuide(o)) o.selectable = !isText; });
+  document.querySelectorAll('[data-tool]').forEach(btn =&gt; btn.classList.toggle('active', btn.dataset.tool===tool));
+  if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
+  if (tool === 'text') setStatus('Texto: clique para artístico, arraste para caixa.');
+  if (tool === 'bezier') setStatus('Bezier: clique para inserir curva.');
+  canvas.requestRenderAll();
+}
+
 // ─── Bind toolbar buttons ─────────────────────────────────
-$('btnAddArtText')?.addEventListener('click', addArtText);
-$('btnAddTextBox')?.addEventListener('click', addTextBox);
-$('btnRect')?.addEventListener('click', addRect);
-$('btnCircle')?.addEventListener('click', addCircle);
+$('btnSelect')?.addEventListener('click', () =&gt; setActiveTool('select'));
+$('btnToolMove')?.addEventListener('click', () =&gt; setActiveTool('move'));
+$('btnTextTool')?.addEventListener('click', () =&gt; setActiveTool('text'));
+$('btnRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addRect(); });
+$('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); });
 $('btnCreateLayer')?.addEventListener('click', addLayer);
-$('btnLine')?.addEventListener('click', addLine);
+$('btnLine')?.addEventListener('click', () =&gt; { setActiveTool('select'); addLine(); });
+$('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); addBezier(); setActiveTool('select'); });
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
+$('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
+$('btnToolCurve')?.addEventListener('click', () =&gt; { addBezier(); });
+$('btnToolCut')?.addEventListener('click', () =&gt; applyClipMask());
+$('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
 $('btnFit')?.addEventListener('click', fitToArtboard);
 $('btnZoomReset')?.addEventListener('click', fitToArtboard);
 $('btnZoomIn')?.addEventListener('click', () =&gt; {
@@ -2576,13 +2646,6 @@ $('btnNewFolder')?.addEventListener('click', createLayerFolder);
 $('btnLoadFont')?.addEventListener('click', loadGoogleFontForSelection);
 
 
-// modo visual da barra lateral de ferramentas
-document.querySelectorAll('.tools-rail .rail-btn').forEach(btn =&gt; {
-  btn.addEventListener('click', () =&gt; {
-    document.querySelectorAll('.tools-rail .rail-btn').forEach(b =&gt; b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
 
 // abas do painel direito
 $('propTabs')?.addEventListener('click', e =&gt; {
