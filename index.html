@@ -2904,23 +2904,35 @@ function refreshObjectCoords(){
 
 function trackPathPosition(pathObj){
   if (!pathObj) return;
-  pathObj.__bziLastLeft = Number(pathObj.left || 0);
-  pathObj.__bziLastTop = Number(pathObj.top || 0);
+  const matrix = pathObj.calcTransformMatrix();
+  pathObj.__bziLastMatrix = Array.isArray(matrix) ? matrix.slice() : fabric.iMatrix.concat();
 }
 
 function syncPathVectorModelByDelta(pathObj){
   if (!pathObj?.vectorModel?.points?.length) return;
-  const prevLeft = Number(pathObj.__bziLastLeft ?? pathObj.left ?? 0);
-  const prevTop = Number(pathObj.__bziLastTop ?? pathObj.top ?? 0);
-  const nextLeft = Number(pathObj.left || 0);
-  const nextTop = Number(pathObj.top || 0);
-  const dx = nextLeft - prevLeft;
-  const dy = nextTop - prevTop;
-  if (Math.abs(dx) &lt; 0.001 &amp;&amp; Math.abs(dy) &lt; 0.001) return;
+  const prevMatrix = Array.isArray(pathObj.__bziLastMatrix) ? pathObj.__bziLastMatrix : pathObj.calcTransformMatrix();
+  const nextMatrix = pathObj.calcTransformMatrix();
+  const invPrev = fabric.util.invertTransform(prevMatrix);
+  if (!invPrev) {
+    trackPathPosition(pathObj);
+    return;
+  }
+  const delta = fabric.util.multiplyTransformMatrices(nextMatrix, invPrev);
+  const isAlmostIdentity =
+    Math.abs(delta[0] - 1) &lt; 0.0001 &amp;&amp;
+    Math.abs(delta[1]) &lt; 0.0001 &amp;&amp;
+    Math.abs(delta[2]) &lt; 0.0001 &amp;&amp;
+    Math.abs(delta[3] - 1) &lt; 0.0001 &amp;&amp;
+    Math.abs(delta[4]) &lt; 0.0001 &amp;&amp;
+    Math.abs(delta[5]) &lt; 0.0001;
+  if (isAlmostIdentity) return;
   pathObj.vectorModel.points.forEach(pt =&gt; {
-    pt.x += dx; pt.y += dy;
-    pt.inX += dx; pt.inY += dy;
-    pt.outX += dx; pt.outY += dy;
+    const a = fabric.util.transformPoint(new fabric.Point(pt.x, pt.y), delta);
+    const i = fabric.util.transformPoint(new fabric.Point(pt.inX, pt.inY), delta);
+    const o = fabric.util.transformPoint(new fabric.Point(pt.outX, pt.outY), delta);
+    pt.x = a.x; pt.y = a.y;
+    pt.inX = i.x; pt.inY = i.y;
+    pt.outX = o.x; pt.outY = o.y;
   });
   trackPathPosition(pathObj);
 }
