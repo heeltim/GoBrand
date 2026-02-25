@@ -3,11 +3,12 @@
 ============================================================ */
 const LS = "goblins_v3";
 
-const FONTS = [
+let FONTS = [
   "Outfit","Sora","DM Sans","Nunito","Work Sans","Poppins","Montserrat",
   "Source Sans 3","IBM Plex Sans","Noto Sans","Plus Jakarta Sans",
   "Raleway","Lexend","Manrope",
 ];
+let fontsLoaded = false;
 const WEIGHTS = [
   {l:"Light 300",v:300},{l:"Regular 400",v:400},{l:"Medium 500",v:500},
   {l:"SemiBold 600",v:600},{l:"Bold 700",v:700},{l:"ExtraBold 800",v:800},{l:"Black 900",v:900},
@@ -462,8 +463,41 @@ function saveProject(){
 ============================================================ */
 function fillFontSelects(){
   ["selPrimary","selSecondary"].forEach(id=>{
-    $(id).innerHTML=FONTS.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join("");
+    const el=$(id);
+    if(!el) return;
+    const current = el.value;
+    el.innerHTML=FONTS.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join("");
+    if(current && FONTS.includes(current)) el.value=current;
   });
+}
+
+async function loadGoogleFontsCatalog(){
+  if(fontsLoaded) return;
+  fontsLoaded = true;
+  try{
+    const res = await fetch("https://fonts.google.com/metadata/fonts");
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    let txt = await res.text();
+    if(txt.startsWith(")]}'")) txt = txt.slice(5);
+    const data = JSON.parse(txt);
+    const source = Array.isArray(data?.familyMetadataList) ? data.familyMetadataList : Object.values(data?.familyMetadataList || {});
+    const families = source
+      .map(entry=>String(entry?.family || "").trim())
+      .filter(Boolean)
+      .sort((a,b)=>a.localeCompare(b));
+    if(families.length){
+      FONTS = families;
+      fillFontSelects();
+      const p=P();
+      if(p){
+        [p.fontPri,p.fontSec].forEach(tryLoadGoogleFont);
+        renderTypoList();
+        renderPreview();
+      }
+    }
+  }catch(err){
+    console.warn("Google Fonts catalog indisponível, usando lista local.", err);
+  }
 }
 
 /* ============================================================
@@ -995,9 +1029,10 @@ function renderTypoList(){
   (p.typo||[]).forEach(s=>{
     const item=document.createElement("div");
     item.className="typo-item"+(S.styleKey===s.key?" active":"");
+    const css = resolvedCSS(p,s);
     item.innerHTML=`
       <div>
-        <div class="typo-item-name">${esc(s.key)}</div>
+        <div class="typo-item-name" style="font-family:${esc(css.fontFamily)};font-weight:${css.fontWeight};font-style:${css.fontStyle};">${esc(s.key)}</div>
         <div class="typo-item-meta">${esc(famLabel(s.fam,p))} • ${s.wt} • ${s.sz}px</div>
       </div>
       ${icon("chevron-right",12)}
@@ -1074,6 +1109,7 @@ function openStyleEditor(p,s){
   $("edFamily").innerHTML=famOpts.map(o=>o.sep?`<option disabled>${esc(o.l)}</option>`:`<option value="${esc(o.v)}">${esc(o.l)}</option>`).join("");
   $("edFamily").value=s.fam;
   if(!$("edFamily").value) $("edFamily").value=TOK_PRI;
+  tryLoadGoogleFont(resolveFont(p,$("edFamily").value));
 
   // weight
   $("edWeight").innerHTML=WEIGHTS.map(w=>`<option value="${w.v}">${esc(w.l)}</option>`).join("");
@@ -1105,6 +1141,11 @@ function mutateStyle(fn){
   const p=P();if(!p)return;
   const s=p.typo.find(x=>x.key===S.styleKey);if(!s)return;
   fn(s);
+  p.updatedAt=Date.now();
+  save(S.projects);
+  gePushBrandData(p);
+  renderTypoList();
+  renderPreview();
 }
 
 function saveStyle(){
@@ -1115,6 +1156,7 @@ function saveStyle(){
   s.sz=+$("edSize").value;
   s.lh=+$("edLine").value;
   s.ls=+$("edTrack").value;
+  tryLoadGoogleFont(resolveFont(p,s.fam));
   p.updatedAt=Date.now();save(S.projects);
   gePushBrandData(p);
   S.styleKey=null;
@@ -1124,6 +1166,11 @@ function saveStyle(){
 
 $("chkRestrict")?.addEventListener("change",()=>{ const p=P();if(p){const s=p.typo.find(x=>x.key===S.styleKey);if(s)openStyleEditor(p,s);} });
 $("edBaseStyle")?.addEventListener("change",applyBaseStyle);
+$("edFamily")?.addEventListener("change",()=>mutateStyle(s=>{ s.fam=$("edFamily").value; const p=P(); if(p) tryLoadGoogleFont(resolveFont(p,s.fam)); }));
+$("edWeight")?.addEventListener("change",()=>mutateStyle(s=>{ s.wt=+$("edWeight").value||s.wt; }));
+$("edSize")?.addEventListener("input",()=>mutateStyle(s=>{ s.sz=+$("edSize").value||s.sz; }));
+$("edLine")?.addEventListener("input",()=>mutateStyle(s=>{ s.lh=+$("edLine").value||s.lh; }));
+$("edTrack")?.addEventListener("input",()=>mutateStyle(s=>{ s.ls=+$("edTrack").value||s.ls; }));
 
 /* ============================================================
    LIVE PREVIEW
@@ -2421,7 +2468,7 @@ function addTextInApp(){
   t.setAttribute("data-name","Texto novo");
   t.setAttribute("x", "80");
   t.setAttribute("y", "140");
-  const fam = resolveFont(p, {fam:"secondary"}).replace(/"/g,"");
+  const fam = resolveFont(p, TOK_SEC).replace(/"/g,"");
   tryLoadGoogleFont(fam);
   t.setAttribute("font-family", fam);
   t.setAttribute("font-size", "18");
@@ -2662,6 +2709,7 @@ document.addEventListener("keydown",e=>{
    BOOT
 ============================================================ */
 fillFontSelects();
+loadGoogleFontsCatalog();
 renderHome();
 
 
@@ -2760,4 +2808,3 @@ ${raw}`;
     renderApps();
     toast('Aplicação salva em Aplicações','success');
   });
-
