@@ -3760,9 +3760,9 @@ function refreshLayers() {
   objs.forEach((obj, i) => {
     const isAct = obj === active;
     const isVisible = obj.visible !== false;
-    const name = esc(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type));
+    const name = String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
     const opacity = Math.round((obj.opacity??1)*100);
-    const folder = esc(obj.dataFolder || 'Geral');
+    const folder = String(obj.dataFolder || 'Geral');
     const visIcon = isVisible ? 'eye' : 'eye-off';
 
     const div = document.createElement('div');
