@@ -2206,7 +2206,7 @@ function applyVectorModelToPath(pathObj){
   const model = ensurePathVectorModel(pathObj);
   if (!model || model.points.length &lt; 2) return;
   const d = bezierPointsToPathData(model.points, !!model.closed);
-  pathObj.set({ path: parsePathDataSafe(d) });
+  pathObj.set({ path: parsePathDataSafe(d), dirty:true });
   pathObj.setCoords();
 }
 
@@ -2238,6 +2238,7 @@ function finishBezierCreation({toEditing=true}={}){
   });
   path.dataName = 'Bezier';
   path.vectorModel = { points: cloneBezierPoints(pts), closed: !!vectorToolState.closed };
+  trackPathPosition(path);
   canvas.add(path);
   canvas.setActiveObject(path);
   clearBezierPreview();
@@ -2388,6 +2389,7 @@ function refreshBezierEditorControls(){
 
 function attachBezierEditor(pathObj){
   if (!pathIsBezierEditable(pathObj)) return setStatus('Selecione uma curva vetorial para editar nós.');
+  syncPathVectorModelByDelta(pathObj);
   const model = ensurePathVectorModel(pathObj);
   if (!model || model.points.length &lt; 2) return setStatus('Curva incompatível para edição.');
   clearBezierEditor();
@@ -2615,12 +2617,42 @@ function importExternalFile(file){
 }
 
 
+// ─── Serialization helpers ───────────────────────────────
+const SERIALIZE_PROPS = ['excludeFromExport','dataName','vectorModel'];
+
+function refreshObjectCoords(){
+  canvas.getObjects().forEach(o =&gt; o.setCoords());
+}
+
+function trackPathPosition(pathObj){
+  if (!pathObj) return;
+  pathObj.__bziLastLeft = Number(pathObj.left || 0);
+  pathObj.__bziLastTop = Number(pathObj.top || 0);
+}
+
+function syncPathVectorModelByDelta(pathObj){
+  if (!pathObj?.vectorModel?.points?.length) return;
+  const prevLeft = Number(pathObj.__bziLastLeft ?? pathObj.left ?? 0);
+  const prevTop = Number(pathObj.__bziLastTop ?? pathObj.top ?? 0);
+  const nextLeft = Number(pathObj.left || 0);
+  const nextTop = Number(pathObj.top || 0);
+  const dx = nextLeft - prevLeft;
+  const dy = nextTop - prevTop;
+  if (Math.abs(dx) &lt; 0.001 &amp;&amp; Math.abs(dy) &lt; 0.001) return;
+  pathObj.vectorModel.points.forEach(pt =&gt; {
+    pt.x += dx; pt.y += dy;
+    pt.inX += dx; pt.inY += dy;
+    pt.outX += dx; pt.outY += dy;
+  });
+  trackPathPosition(pathObj);
+}
+
 // ─── History ─────────────────────────────────────────────
 const history = { stack:[], idx:-1, lock:false };
 function snapshot() {
   if (history.lock) return;
   try {
-    const json = canvas.toJSON(['excludeFromExport','dataName']);
+    const json = canvas.toJSON(SERIALIZE_PROPS);
     history.stack = history.stack.slice(0, history.idx+1);
     history.stack.push(json);
     if (history.stack.length &gt; 60) history.stack.shift();
@@ -2631,6 +2663,8 @@ function restore(idx) {
   if (idx &lt; 0 || idx &gt;= history.stack.length) return;
   history.lock = true;
   canvas.loadFromJSON(history.stack[idx], () =&gt; {
+    refreshObjectCoords();
+    canvas.getObjects().forEach(o =&gt; { if (pathIsBezierEditable(o)) trackPathPosition(o); });
     canvas.requestRenderAll();
     history.idx = idx;
     history.lock = false;
@@ -2643,6 +2677,12 @@ function redo() { if (history.idx &lt; history.stack.length-1) restore(history.i
 canvas.on('object:added', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
 canvas.on('object:modified', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
 canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); });
+canvas.on('object:modified', e =&gt; {
+  const obj = e.target;
+  if (!obj || !pathIsBezierEditable(obj)) return;
+  syncPathVectorModelByDelta(obj);
+  trackPathPosition(obj);
+});
 
 // ─── Delete / Duplicate ──────────────────────────────────
 function del() {
@@ -3380,7 +3420,7 @@ function loadSVGFromParent(svgText) {
 
 // ─── JSON save / load ─────────────────────────────────────
 function saveJSON() {
-  const json = JSON.stringify(canvas.toJSON(['excludeFromExport','dataName']), null, 2);
+  const json = JSON.stringify(canvas.toJSON(SERIALIZE_PROPS), null, 2);
   openModal('Salvar JSON', `
     &lt;textarea class=&quot;modal-textarea&quot;&gt;${json}&lt;/textarea&gt;
     &lt;div style=&quot;display:flex;gap:8px;margin-top:12px&quot;&gt;
@@ -3398,7 +3438,7 @@ function loadJSON() {
       &lt;button class=&quot;tbtn accent&quot; onclick=&quot;
         try{
           const json=JSON.parse(document.getElementById('jsonInput').value);
-          canvas.loadFromJSON(json,()=&gt;{canvas.requestRenderAll();refreshLayers();refreshProps();setStatus('JSON carregado')});
+          canvas.loadFromJSON(json,()=&gt;{refreshObjectCoords();canvas.getObjects().forEach(o=&gt;{if(pathIsBezierEditable(o))trackPathPosition(o);});canvas.requestRenderAll();refreshLayers();refreshProps();setStatus('JSON carregado')});
           closeModal();
         }catch(e){alert('JSON inválido')}
       &quot; style=&quot;flex:1;justify-content:center;height:36px&quot;&gt;Carregar&lt;/button&gt;
@@ -3468,15 +3508,21 @@ async function pasteFromClipboard() {
 // ─── Constrain to artboard ───────────────────────────────
 canvas.on('object:moving', opt =&gt; {
   const obj = opt.target;
-  if (!artboard || !obj || isGuide(obj)) return;
-  const b = obj.getBoundingRect(true, true);
-  const L = artboard.left, T = artboard.top, R = L+docW, B = T+docH;
-  let dx=0, dy=0;
-  if(b.left&lt;L) dx=L-b.left;
-  if(b.top&lt;T) dy=T-b.top;
-  if(b.left+b.width&gt;R) dx=R-(b.left+b.width);
-  if(b.top+b.height&gt;B) dy=B-(b.top+b.height);
-  if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
+  if (!obj || isGuide(obj)) return;
+  if (artboard) {
+    const b = obj.getBoundingRect(true, true);
+    const L = artboard.left, T = artboard.top, R = L+docW, B = T+docH;
+    let dx=0, dy=0;
+    if(b.left&lt;L) dx=L-b.left;
+    if(b.top&lt;T) dy=T-b.top;
+    if(b.left+b.width&gt;R) dx=R-(b.left+b.width);
+    if(b.top+b.height&gt;B) dy=B-(b.top+b.height);
+    if(dx||dy){ obj.left+=dx; obj.top+=dy; obj.setCoords(); }
+  }
+  if (pathIsBezierEditable(obj)) {
+    syncPathVectorModelByDelta(obj);
+    if (bezierEditor.enabled &amp;&amp; bezierEditor.path === obj) refreshBezierEditorControls();
+  }
 });
 
 // ─── Command menus (Arquivo / Editar / etc) ───────────────
