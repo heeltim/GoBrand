@@ -1572,6 +1572,14 @@ const smartOverlayState = {
   equalSpacing: [],
   liveMeasure: false
 };
+
+
+function clearSmartOverlayState({keepMeasurements=false}={}){
+  smartOverlayState.guides = [];
+  smartOverlayState.equalSpacing = [];
+  smartOverlayState.liveMeasure = false;
+  if(!keepMeasurements) smartOverlayState.measurements = [];
+}
 const smartSnapState = { enabled:true, threshold:6 };
 let isAltMeasureDown = false;
 const twoItemOverlay = {
@@ -1813,7 +1821,12 @@ function refreshSmartMeasurementState(){
 
   const bounds = getUnionBounds(sel);
   if(!bounds) return;
-  const others = canvas.getObjects().filter(o =&gt; !isEditorAuxObject(o) &amp;&amp; !sel.includes(o));
+  const selectedArtboardId = sel.find(o =&gt; o?.dataArtboardId)?.dataArtboardId || null;
+  const others = canvas.getObjects().filter(o =&gt; {
+    if (isEditorAuxObject(o) || sel.includes(o)) return false;
+    if (!selectedArtboardId) return true;
+    return o?.dataArtboardId === selectedArtboardId;
+  });
 
   const pick = { left:null, right:null, top:null, bottom:null };
   others.forEach(obj =&gt; {
@@ -1901,7 +1914,12 @@ function applySmartSnap(target){
   if(!smartSnapState.enabled || !target || isEditorAuxObject(target)) return;
   const moving = getBounds(target);
   const members = target.type === 'activeSelection' ? target.getObjects() : [target];
-  const others = canvas.getObjects().filter(o =&gt; !isEditorAuxObject(o) &amp;&amp; !members.includes(o));
+  const selectedArtboardId = members.find(o =&gt; o?.dataArtboardId)?.dataArtboardId || target?.dataArtboardId || null;
+  const others = canvas.getObjects().filter(o =&gt; {
+    if (isEditorAuxObject(o) || members.includes(o)) return false;
+    if (!selectedArtboardId) return true;
+    return o?.dataArtboardId === selectedArtboardId;
+  });
   if(!others.length) return;
   const threshold = smartSnapState.threshold / (canvas.getZoom() || 1);
 
@@ -2037,10 +2055,6 @@ const artboardCreateState = { active:false, start:null, ghost:null };
 
 function isGuide(o) {
   return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
-}
-
-function getArtboardById(id){
-  return artboards.find(a =&gt; a.id === id) || null;
 }
 
 function getArtboardById(id){
@@ -2455,11 +2469,12 @@ canvas.on('mouse:down', opt =&gt; {
     return;
   }
 
-  if (activeTool === 'text' &amp;&amp; !opt.target) {
+  if (activeTool === 'text' &amp;&amp; (!opt.target || isGuide(opt.target))) {
     const p = canvas.getPointer(e);
     textDragStart = { x:p.x, y:p.y };
     textDragMoved = false;
     opt.e.preventDefault();
+    return;
   }
 });
 
@@ -4007,9 +4022,7 @@ canvas.on('object:moving', e =&gt; {
 canvas.on('object:scaling', () =&gt; refreshAlignmentAssist());
 canvas.on('object:rotating', () =&gt; refreshAlignmentAssist());
 canvas.on('mouse:up', () =&gt; {
-  smartOverlayState.liveMeasure = false;
-  smartOverlayState.guides = [];
-  if (!isAltMeasureDown) smartOverlayState.measurements = [];
+  clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
   refreshAlignmentAssist();
 });
 canvas.on('after:render', () =&gt; {
@@ -4045,6 +4058,7 @@ function del() {
 }
 function duplicate() {
   const o = activeObj(); if(!o) return;
+  clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
   o.clone(cl =&gt; {
     cl.set({ left:(o.left||0)+18, top:(o.top||0)+18 });
     canvas.add(cl); canvas.setActiveObject(cl);
@@ -4400,6 +4414,8 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 });
 
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
+  if (ev === 'selection:cleared') clearSmartOverlayState();
+  else clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
   if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'direct-select') {
