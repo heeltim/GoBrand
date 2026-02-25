@@ -1857,13 +1857,10 @@ canvas.on('mouse:down', opt =&gt; {
   const pointer = canvas.getPointer(opt.e);
 
   if (!target) {
-    if (bezierEditor.enabled) {
-      const editedPath = bezierEditor.path;
-      finalizeBezierEditor();
-      if (editedPath && canvas.getObjects().includes(editedPath)) canvas.setActiveObject(editedPath);
-      if (activeTool !== 'select') setActiveTool('select');
-      canvas.requestRenderAll();
-    }
+    if (bezierEditor.enabled) finalizeBezierEditor();
+    canvas.discardActiveObject();
+    if (activeTool !== 'select') setActiveTool('select');
+    canvas.requestRenderAll();
     return;
   }
 
@@ -2044,6 +2041,11 @@ function addLine() {
 
 function addBezier() {
   setActiveTool('bezier');
+  if (bezierEditor.enabled &amp;&amp; bezierEditor.path) {
+    setStatus('Bézier ativo na edição: clique no segmento para inserir nó, duplo clique no nó para remover.');
+    ensureBezierNodePanel();
+    return;
+  }
   startBezierCreation();
 }
 
@@ -4305,7 +4307,7 @@ $('btnRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addR
 $('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); });
 $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { setActiveTool('select'); addLine(); });
-$('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); startBezierCreation(); });
+$('btnBezier')?.addEventListener('click', () =&gt; addBezier());
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
