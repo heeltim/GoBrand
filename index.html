@@ -1608,6 +1608,14 @@ function getBounds(obj){
   };
 }
 
+
+function moveObjectByDelta(obj, dx=0, dy=0){
+  if(!obj || (!dx && !dy)) return;
+  const c = obj.getCenterPoint();
+  obj.setPositionByOrigin(new fabric.Point(c.x + dx, c.y + dy), 'center', 'center');
+  obj.setCoords();
+}
+
 function getUnionBounds(objs=[]){
   if(!objs.length) return null;
   const list = objs.map(getBounds);
@@ -1718,7 +1726,18 @@ function updateTwoItemOverlay(){
   const objs = selectedObjects();
   if(objs.length &lt; 2){ hideTwoItemOverlay(); return; }
 
-  const union = getUnionBounds(objs);
+  const active = canvas.getActiveObject();
+  let union = getUnionBounds(objs);
+  if(active &amp;&amp; active.type === 'activeSelection') {
+    const b = active.getBoundingRect(true, true);
+    union = {
+      left:b.left, top:b.top,
+      right:b.left+b.width, bottom:b.top+b.height,
+      width:b.width, height:b.height,
+      centerX:b.left + b.width/2,
+      centerY:b.top + b.height/2
+    };
+  }
   if(!union){ hideTwoItemOverlay(); return; }
 
   const c = worldToScreen(union.centerX, union.centerY);
@@ -1988,16 +2007,17 @@ function applySmartSnap(target){
   if(equalWidthHint) smartOverlayState.guides.push(equalWidthHint.guide);
   if(equalHeightHint) smartOverlayState.guides.push(equalHeightHint.guide);
 
+  const snapDx = bestX ? bestX.delta : 0;
+  const snapDy = bestY ? bestY.delta : 0;
+  if (snapDx || snapDy) moveObjectByDelta(target, snapDx, snapDy);
+
+  const snapped = (snapDx || snapDy) ? getBounds(target) : own;
   if(bestX){
-    target.set({ left:(target.left||0) + bestX.delta });
-    smartOverlayState.guides.push({ a:{x:bestX.x, y:bestX.minY-40}, b:{x:bestX.x, y:bestX.maxY+40}, label:'snap X' });
+    smartOverlayState.guides.push({ a:{x:bestX.x, y:Math.min(snapped.top, bestX.minY)-40}, b:{x:bestX.x, y:Math.max(snapped.bottom, bestX.maxY)+40}, label:'snap X' });
   }
   if(bestY){
-    target.set({ top:(target.top||0) + bestY.delta });
-    smartOverlayState.guides.push({ a:{x:bestY.minX-40, y:bestY.y}, b:{x:bestY.maxX+40, y:bestY.y}, label:'snap Y' });
+    smartOverlayState.guides.push({ a:{x:Math.min(snapped.left, bestY.minX)-40, y:bestY.y}, b:{x:Math.max(snapped.right, bestY.maxX)+40, y:bestY.y}, label:'snap Y' });
   }
-
-  if(bestX || bestY) target.setCoords();
 }
 
 
@@ -2087,6 +2107,20 @@ function pointInArtboard(ab, point){
   if (!ab || !point) return false;
   const L = ab.board.left, T = ab.board.top, R = L + ab.w, B = T + ab.h;
   return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
+}
+
+
+function pointInAnyArtboard(point){
+  return artboards.some(ab =&gt; pointInArtboard(ab, point));
+}
+
+function setArtboardsEditable(enabled){
+  artboards.forEach(ab =&gt; {
+    if (!ab?.board) return;
+    ab.board.set({ selectable:!!enabled, evented:!!enabled });
+    ab.board.hoverCursor = enabled ? 'move' : 'default';
+    ab.board.setCoords();
+  });
 }
 
 function pickArtboardForPoint(point){
@@ -2423,6 +2457,11 @@ canvas.on('mouse:wheel', opt =&gt; {
 canvas.on('mouse:down', opt =&gt; {
   const e = opt.e;
   const target = opt.target;
+  const pointer = canvas.getPointer(e);
+  if (!artboardMode) {
+    if (!pointInAnyArtboard(pointer)) setArtboardsEditable(true);
+    else if (!isGuide(target)) setArtboardsEditable(false);
+  }
   if (e.button === 1 || isSpaceDown) {
     isPanning = true; canvas.setCursor('grab');
     lastX = e.clientX; lastY = e.clientY;
@@ -4416,6 +4455,8 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
   if (ev === 'selection:cleared') clearSmartOverlayState();
   else clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
+  const active = canvas.getActiveObject();
+  if (!artboardMode &amp;&amp; active &amp;&amp; !isGuide(active)) setArtboardsEditable(false);
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
   if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'direct-select') {
