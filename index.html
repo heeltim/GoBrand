@@ -1909,7 +1909,8 @@ canvas.on('mouse:down', opt =&gt; {
       } else if (activeTool === 'select') {
         const now = performance.now();
         const samePending = vectorToolState.pendingEditTarget === target &amp;&amp; (now - Number(vectorToolState.pendingEditAt || 0)) &lt; 900;
-        if (samePending) {
+        const alreadySelected = activeObj() === target;
+        if (samePending &amp;&amp; alreadySelected) {
           vectorToolState.pendingEditTarget = null;
           vectorToolState.pendingEditAt = 0;
           canvas.setActiveObject(target);
@@ -1985,6 +1986,10 @@ canvas.on('mouse:dblclick', opt =&gt; {
 
 window.addEventListener('keydown', e =&gt; {
   if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; vectorToolState.mode === 'creating') {
+    if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (undoBezierCreationAndFinalize()) return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       const path = finishBezierCreation({toEditing:false});
@@ -2567,6 +2572,33 @@ function finishBezierCreation({toEditing=true}={}){
   return path;
 }
 
+function undoBezierCreationAndFinalize(){
+  if (vectorToolState.mode !== 'creating') return false;
+  if (vectorToolState.points.length) vectorToolState.points.pop();
+  if (vectorToolState.points.length >= 2) {
+    const path = finishBezierCreation({toEditing:false});
+    if (path) {
+      canvas.setActiveObject(path);
+      setActiveTool('select');
+      setStatus('Último ponto desfeito (Ctrl+Z) e forma finalizada.');
+      return true;
+    }
+  }
+  vectorToolState.points = [];
+  vectorToolState.closed = false;
+  vectorToolState.dragPointIndex = -1;
+  vectorToolState.dragStart = null;
+  vectorToolState.dragStarted = false;
+  vectorToolState.pendingClose = false;
+  vectorToolState.lastPointAddedAt = 0;
+  vectorToolState.lastPointAddedPos = null;
+  clearBezierPreview();
+  vectorToolState.mode = 'idle';
+  setInteractionState('idle');
+  setActiveTool('select');
+  return true;
+}
+
 function cancelBezierCreationStep(){
   if (vectorToolState.mode !== 'creating') return;
   if (vectorToolState.points.length &gt;= 2) {
@@ -2623,7 +2655,7 @@ function addBezierPoint(pointer, e){
   const tooFast = now - Number(vectorToolState.lastPointAddedAt || 0) < minInterval;
   const tooClose = !!lastPos && distance(pointer, lastPos) < minDistance;
   const repeatedClick = Number(e?.detail || 1) > 1;
-  if ((tooFast && tooClose) || (isV2 && repeatedClick && tooClose)) return;
+  if ((tooFast && tooClose) || (isV2 && repeatedClick)) return;
 
   const p = makeBezierPoint(pointer.x, pointer.y);
   const pts = vectorToolState.points;
