@@ -1902,11 +1902,10 @@ canvas.on('mouse:down', opt =&gt; {
     const isSameSelected = activeObj() === target;
 
     if (!bezierEditor.enabled) {
-      const clickCount = Number(opt?.e?.detail || 1);
       if (activeTool === 'direct-select') {
         canvas.setActiveObject(target);
         attachBezierEditor(target, { handlesActive:true });
-      } else if (activeTool === 'select' && isSameSelected && clickCount >= 2) {
+      } else if (activeTool === 'select' && isSameSelected) {
         canvas.setActiveObject(target);
         attachBezierEditor(target, { handlesActive:false });
       } else if (activeTool === 'select') {
@@ -2102,7 +2101,9 @@ const vectorToolState = {
   segmentDrag: null,
   dragStart: null,
   dragStarted: false,
-  pendingClose: false
+  pendingClose: false,
+  lastPointAddedAt: 0,
+  lastPointAddedPos: null
 };
 
 const bezierEditor = {
@@ -2483,6 +2484,8 @@ function startBezierCreation(){
   vectorToolState.dragStart = null;
   vectorToolState.dragStarted = false;
   vectorToolState.pendingClose = false;
+  vectorToolState.lastPointAddedAt = 0;
+  vectorToolState.lastPointAddedPos = null;
   clearBezierPreview();
   setInteractionState('creating');
 }
@@ -2514,6 +2517,8 @@ function finishBezierCreation({toEditing=true}={}){
   vectorToolState.dragStart = null;
   vectorToolState.dragStarted = false;
   vectorToolState.pendingClose = false;
+  vectorToolState.lastPointAddedAt = 0;
+  vectorToolState.lastPointAddedPos = null;
   vectorToolState.mode = toEditing ? 'editing' : 'idle';
   if (toEditing) attachBezierEditor(path, { handlesActive:false });
   else setInteractionState('selection');
@@ -2539,6 +2544,8 @@ function cancelBezierCreationStep(){
   vectorToolState.dragStart = null;
   vectorToolState.dragStarted = false;
   vectorToolState.pendingClose = false;
+  vectorToolState.lastPointAddedAt = 0;
+  vectorToolState.lastPointAddedPos = null;
   clearBezierPreview();
   setStatus('Criação Bézier cancelada e pontos temporários limpos.');
   vectorToolState.mode = 'idle';
@@ -2568,9 +2575,17 @@ function maybeCloseBezierPath(pointer){
 
 function addBezierPoint(pointer, e){
   if (maybeCloseBezierPath(pointer)) return;
+  const now = performance.now();
+  const lastPos = vectorToolState.lastPointAddedPos;
+  const tooFast = now - Number(vectorToolState.lastPointAddedAt || 0) < 170;
+  const tooClose = !!lastPos && distance(pointer, lastPos) < (5 / Math.max(zoom, 0.1));
+  if (tooFast && tooClose) return;
+
   const p = makeBezierPoint(pointer.x, pointer.y);
   const pts = vectorToolState.points;
   pts.push(p);
+  vectorToolState.lastPointAddedAt = now;
+  vectorToolState.lastPointAddedPos = { x:pointer.x, y:pointer.y };
   vectorToolState.dragPointIndex = pts.length - 1;
   vectorToolState.dragStart = { x:pointer.x, y:pointer.y };
   vectorToolState.dragStarted = false;
@@ -2741,7 +2756,26 @@ function attachBezierEditor(pathObj, { handlesActive=false } = {}){
 
   controls.forEach(ctrl =&gt; {
     ctrl.__moved = false;
-    ctrl.on('mousedown', (evt) =&gt; { ctrl.__moved = false; const [role, idxStr] = String(ctrl.bziRole).split('-'); if (role === 'anchor') { const idx = Number(idxStr); if (evt?.e?.shiftKey) { const has = bezierEditor.selectedAnchors.includes(idx); const next = has ? bezierEditor.selectedAnchors.filter(n =&gt; n !== idx) : [...bezierEditor.selectedAnchors, idx]; selectBezierAnchorIndices(next); } else { selectBezierAnchorIndices([idx]); } } });
+    ctrl.on('mousedown', (evt) =&gt; {
+      ctrl.__moved = false;
+      const [role, idxStr] = String(ctrl.bziRole).split('-');
+      if (role === 'anchor') {
+        const idx = Number(idxStr);
+        if (evt?.e?.shiftKey) {
+          const has = bezierEditor.selectedAnchors.includes(idx);
+          const next = has ? bezierEditor.selectedAnchors.filter(n =&gt; n !== idx) : [...bezierEditor.selectedAnchors, idx];
+          selectBezierAnchorIndices(next);
+        } else {
+          selectBezierAnchorIndices([idx]);
+        }
+        if (!bezierEditor.handlesActive) {
+          bezierEditor.handlesActive = true;
+          ctrl.__justActivatedHandles = true;
+          setInteractionState('edit-handles');
+          refreshBezierEditorControls();
+        }
+      }
+    });
     ctrl.on('moving', evt =&gt; {
       ctrl.__moved = true;
       const m = getPathModel(bezierEditor.path);
@@ -2785,10 +2819,8 @@ function attachBezierEditor(pathObj, { handlesActive=false } = {}){
       const m = getPathModel(bezierEditor.path);
       const [role, idxStr] = String(ctrl.bziRole).split('-');
       if (role !== 'anchor') return;
-      if (!bezierEditor.handlesActive) {
-        bezierEditor.handlesActive = true;
-        setInteractionState('edit-handles');
-        refreshBezierEditorControls();
+      if (ctrl.__justActivatedHandles) {
+        ctrl.__justActivatedHandles = false;
         return;
       }
       const pt = m?.points?.[Number(idxStr)];
