@@ -2026,11 +2026,13 @@ function bezierPointsToPathData(points, closed=false){
   return segs.join(' ');
 }
 
+const bezierCreateViz = { nodes: [], guides: [], cursor: null };
+
 function ensureBezierPreview(){
   if (vectorToolState.previewPath) return vectorToolState.previewPath;
   const p = new fabric.Path('M 0 0', {
     fill:'',
-    stroke:'rgba(127,90,240,.95)',
+    stroke:'rgba(127,90,240,1)',
     strokeWidth:2.5,
     strokeLineCap:'round',
     strokeLineJoin:'round',
@@ -2038,29 +2040,98 @@ function ensureBezierPreview(){
     evented:false,
     excludeFromExport:true
   });
-  p.strokeDashArray = [8, 4];
   vectorToolState.previewPath = p;
   canvas.add(p);
-  canvas.bringToFront(p);
   return p;
 }
 
+function createCreationNode(x, y, kind='anchor'){
+  const r = kind === 'cursor' ? 4.5 : 4;
+  return new fabric.Circle({
+    left:x-r, top:y-r, radius:r,
+    fill: kind === 'cursor' ? '#fff' : '#111',
+    stroke:'#2f9bff', strokeWidth:2,
+    selectable:false, evented:false, excludeFromExport:true
+  });
+}
+
+function createCreationGuide(x1,y1,x2,y2){
+  return new fabric.Line([x1,y1,x2,y2], {
+    stroke:'rgba(47,155,255,.55)',
+    strokeWidth:1.3,
+    selectable:false,
+    evented:false,
+    excludeFromExport:true
+  });
+}
+
 function clearBezierPreview(){
-  const p = vectorToolState.previewPath;
-  if (p &amp;&amp; canvas.getObjects().includes(p)) canvas.remove(p);
+  const all = [vectorToolState.previewPath, ...bezierCreateViz.nodes, ...bezierCreateViz.guides, bezierCreateViz.cursor].filter(Boolean);
+  all.forEach(o =&gt; { if (canvas.getObjects().includes(o)) canvas.remove(o); });
   vectorToolState.previewPath = null;
+  bezierCreateViz.nodes = [];
+  bezierCreateViz.guides = [];
+  bezierCreateViz.cursor = null;
 }
 
 function updateBezierCreationPreview(pointer=null){
   if (vectorToolState.mode !== 'creating') return;
-  const pts = cloneBezierPoints(vectorToolState.points);
-  if (pointer &amp;&amp; pts.length) pts.push(makeBezierPoint(pointer.x, pointer.y));
-  if (pts.length &lt; 2) { clearBezierPreview(); canvas.requestRenderAll(); return; }
-  const pathData = bezierPointsToPathData(pts, false);
-  const pre = ensureBezierPreview();
-  pre.set({ path: fabric.Path.parsePath(pathData) });
-  pre.setCoords();
-  canvas.bringToFront(pre);
+  const points = vectorToolState.points;
+
+  if (points.length) {
+    const previewPoints = cloneBezierPoints(points);
+    if (pointer) previewPoints.push(makeBezierPoint(pointer.x, pointer.y));
+    if (previewPoints.length &gt;= 2) {
+      const pathData = bezierPointsToPathData(previewPoints, false);
+      const pre = ensureBezierPreview();
+      pre.set({ path: fabric.Path.parsePath(pathData) });
+      pre.setCoords();
+    } else {
+      if (vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
+        canvas.remove(vectorToolState.previewPath);
+        vectorToolState.previewPath = null;
+      }
+    }
+  }
+
+  // rebuild construction overlays (nodes + structural lines)
+  [...bezierCreateViz.nodes, ...bezierCreateViz.guides, bezierCreateViz.cursor].filter(Boolean).forEach(o =&gt; {
+    if (canvas.getObjects().includes(o)) canvas.remove(o);
+  });
+  bezierCreateViz.nodes = [];
+  bezierCreateViz.guides = [];
+
+  points.forEach((pt, i) =&gt; {
+    bezierCreateViz.nodes.push(createCreationNode(pt.x, pt.y));
+    if (i &gt; 0) {
+      const prev = points[i-1];
+      bezierCreateViz.guides.push(createCreationGuide(prev.x, prev.y, pt.x, pt.y));
+    }
+    if (Math.hypot(pt.outX - pt.x, pt.outY - pt.y) &gt; 0.5) {
+      bezierCreateViz.guides.push(createCreationGuide(pt.x, pt.y, pt.outX, pt.outY));
+      bezierCreateViz.nodes.push(createCreationNode(pt.outX, pt.outY, 'handle'));
+    }
+    if (Math.hypot(pt.inX - pt.x, pt.inY - pt.y) &gt; 0.5) {
+      bezierCreateViz.guides.push(createCreationGuide(pt.x, pt.y, pt.inX, pt.inY));
+      bezierCreateViz.nodes.push(createCreationNode(pt.inX, pt.inY, 'handle'));
+    }
+  });
+
+  if (pointer) {
+    bezierCreateViz.cursor = createCreationNode(pointer.x, pointer.y, 'cursor');
+    if (points.length) {
+      const last = points[points.length - 1];
+      bezierCreateViz.guides.push(createCreationGuide(last.x, last.y, pointer.x, pointer.y));
+    }
+  } else {
+    bezierCreateViz.cursor = null;
+  }
+
+  [...bezierCreateViz.guides, ...bezierCreateViz.nodes].forEach(o =&gt; canvas.add(o));
+  if (bezierCreateViz.cursor) canvas.add(bezierCreateViz.cursor);
+  if (vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) canvas.bringToFront(vectorToolState.previewPath);
+  [...bezierCreateViz.guides, ...bezierCreateViz.nodes, bezierCreateViz.cursor].filter(Boolean).forEach(o =&gt; canvas.bringToFront(o));
+
   canvas.requestRenderAll();
 }
 
@@ -3711,10 +3782,8 @@ function normalizeShortcutKey(e){
   });
 })();
 
-function setBezierSubmenuMode(enabled){
-  const labels = enabled
-    ? { btnToolVector:'Vetor', btnToolMove:'Finalizar', btnToolLasso:'Inverter', btnToolPaint:'Reta', btnToolCurve:'Editar nós', btnToolCut:'Cortar', btnToolMore:'Mais ▾' }
-    : { btnToolVector:'Vetor', btnToolMove:'Mover', btnToolLasso:'Laço', btnToolPaint:'Pintar', btnToolCurve:'Curvar', btnToolCut:'Cortar', btnToolMore:'Mais ▾' };
+function setBezierSubmenuMode(_enabled){
+  const labels = { btnToolVector:'Vetor', btnToolMove:'Mover', btnToolLasso:'Laço', btnToolPaint:'Pintar', btnToolCurve:'Curvar', btnToolCut:'Cortar', btnToolMore:'Mais ▾' };
   Object.entries(labels).forEach(([id, txt]) => {
     const el = $(id);
     if (el) el.textContent = txt;
@@ -3738,8 +3807,8 @@ function setActiveTool(tool){
   $('btnSelectDirect')?.classList.toggle('active', isDirect);
   $('selectToolSubmenu')?.classList.remove('open');
   const tb = $('floatingToolbar');
-  if (tb) tb.classList.toggle('show-bezier-submenu', tool === 'bezier');
-  setBezierSubmenuMode(tool === 'bezier');
+  if (tb) tb.classList.remove('show-bezier-submenu');
+  setBezierSubmenuMode(false);
   if (tool === 'move' || tool === 'select') setStatus('Ferramenta mover ativa');
   if (isDirect) setStatus('Seleção direta ativa: selecione uma curva para editar alças.');
   if (tool === 'text') { setStatus('Texto: clique para artístico, arraste para caixa.'); focusTextPanel(true); }
@@ -3816,15 +3885,7 @@ $('btnToolVector')?.addEventListener('click', () =&gt; {
   if (activeTool === 'bezier' || vectorToolState.mode === 'creating') return startBezierCreation();
   setActiveTool('select');
 });
-$('btnToolMove')?.addEventListener('click', () =&gt; {
-  if (activeTool==='bezier' &amp;&amp; vectorToolState.mode === 'creating') {
-    const path = finishBezierCreation({toEditing:true});
-    if (path) setActiveTool('direct-select');
-    return;
-  }
-  if (activeTool==='direct-select' &amp;&amp; bezierEditor.enabled) return finalizeBezierEditor();
-  setActiveTool('move');
-});
+$('btnToolMove')?.addEventListener('click', () =&gt; setActiveTool('move'));
 $('btnTextTool')?.addEventListener('click', () =&gt; setActiveTool('text'));
 $('btnRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addRect(); });
 $('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); });
@@ -3834,10 +3895,10 @@ $('btnBezier')?.addEventListener('click', () =&gt; { setActiveTool('bezier'); st
 $('btnUpload')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
-$('btnToolLasso')?.addEventListener('click', () =&gt; { if (activeTool==='bezier' || activeTool==='direct-select') return reverseBezierDirection(); setStatus('Laço: em breve.'); });
-$('btnToolPaint')?.addEventListener('click', () =&gt; { if (activeTool==='bezier' || activeTool==='direct-select') return convertBezierToLine(); setStatus('Pintar: em breve.'); });
-$('btnToolCurve')?.addEventListener('click', () =&gt; { const obj=activeObj(); if (pathIsBezierEditable(obj)) { setActiveTool('direct-select'); attachBezierEditor(obj); return; } setStatus('Selecione uma curva para editar nós.'); });
-$('btnToolCut')?.addEventListener('click', () =&gt; { if (activeTool==='bezier' || activeTool==='direct-select') { const obj=activeObj(); if (pathIsBezierEditable(obj)) return attachBezierEditor(obj); } applyClipMask(); });
+$('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
+$('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
+$('btnToolCurve')?.addEventListener('click', () =&gt; setStatus('Curvar: em breve.'));
+$('btnToolCut')?.addEventListener('click', () =&gt; applyClipMask());
 $('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
 $('btnFit')?.addEventListener('click', fitToArtboard);
 $('btnZoomReset')?.addEventListener('click', fitToArtboard);
