@@ -2120,7 +2120,8 @@ function updateBezierCreationPreview(pointer=null){
     canvas.requestRenderAll();
   }
 
-  if (points.length &lt; 2 &amp;&amp; vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
+  const shouldRemovePreview = points.length &lt; 2 &amp;&amp; !pointer;
+  if (shouldRemovePreview &amp;&amp; vectorToolState.previewPath &amp;&amp; canvas.getObjects().includes(vectorToolState.previewPath)) {
     canvas.remove(vectorToolState.previewPath);
     vectorToolState.previewPath = null;
   }
