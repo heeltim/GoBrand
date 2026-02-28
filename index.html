@@ -2053,6 +2053,10 @@ function pointInAnyArtboard(point){
   return artboards.some(ab =&gt; pointInArtboard(ab, point));
 }
 
+function isArtboardGuideTarget(target){
+  return !!(target &amp;&amp; (target.isArtboardBoard || target.isArtboardShadow || target.isArtboardBleed || target.isArtboardSafe));
+}
+
 function setArtboardsEditable(enabled){
   artboards.forEach(ab =&gt; {
     if (!ab?.board) return;
@@ -2152,8 +2156,8 @@ function applyArtboardVisualState(ab){
     fill,
     stroke:'rgba(0,0,0,.18)',
     strokeWidth:1,
-    selectable:true,
-    evented:true,
+    selectable:!!artboardMode,
+    evented:!!artboardMode,
     lockRotation:true,
     hasControls:true,
     hasBorders:true,
@@ -2169,9 +2173,9 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
   const id = 'ab_' + Math.random().toString(36).slice(2, 9);
   const shadow = new fabric.Rect({
     left:left+6, top:top+8, width:w, height:h,
-    fill:'rgba(0,0,0,.16)', rx:2, ry:2,
+    fill:'rgba(0,0,0,0)', rx:2, ry:2,
     selectable:false, evented:false, excludeFromExport:true,
-    opacity:.9
+    opacity:0
   });
   const board = new fabric.Rect({
     left, top, width:w, height:h,
@@ -2180,6 +2184,7 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     lockRotation:true
   });
   board.isArtboardBoard = true;
+  shadow.isArtboardShadow = true;
   board.artboardId = id;
   board.dataName = `Artboard ${artboards.length + 1}`;
 
@@ -2193,6 +2198,8 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     fill:'transparent', stroke:'rgba(59,109,243,.5)', strokeDashArray:[6,6], strokeWidth:1,
     selectable:false, evented:false, excludeFromExport:true
   });
+  bleed.isArtboardBleed = true;
+  safe.isArtboardSafe = true;
   const bundle = {
     id,
     w,
@@ -2401,7 +2408,13 @@ canvas.on('mouse:down', opt =&gt; {
   const pointer = canvas.getPointer(e);
   if (!artboardMode) {
     if (!pointInAnyArtboard(pointer)) setArtboardsEditable(true);
-    else if (!isGuide(target)) setArtboardsEditable(false);
+    else if (!target || isArtboardGuideTarget(target)) {
+      setArtboardsEditable(false);
+      if (canvas.getActiveObject() &amp;&amp; isArtboardGuideTarget(canvas.getActiveObject())) {
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+      }
+    }
   }
   if (e.button === 1 || isSpaceDown) {
     isPanning = true; canvas.setCursor('grab');
@@ -2425,6 +2438,10 @@ canvas.on('mouse:down', opt =&gt; {
   }
 
   if (activeTool === 'bezier' || activeTool === 'bezier-v2') {
+    if (isArtboardGuideTarget(target)) {
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+    }
     if (e.button !== 0) return;
     const pointer = canvas.getPointer(e);
     if (bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
@@ -3974,10 +3991,22 @@ function restore(idx) {
     refreshLayers(); refreshProps();
   });
 }
-function undo() { if (history.idx &gt; 0) restore(history.idx-1); }
+function undo() {
+  if (history.idx &lt;= 0) return;
+  if (artboardCreateState.ghost &amp;&amp; canvas.getObjects().includes(artboardCreateState.ghost)) {
+    canvas.remove(artboardCreateState.ghost);
+  }
+  artboardCreateState.active = false;
+  artboardCreateState.start = null;
+  artboardCreateState.ghost = null;
+  restore(history.idx-1);
+}
 function redo() { if (history.idx &lt; history.stack.length-1) restore(history.idx+1); }
 
-canvas.on('object:added', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
+canvas.on('object:added', e =&gt; {
+  if(history.lock || !e.target || isGuide(e.target) || e.target === artboardCreateState.ghost) return;
+  snapshot();
+});
 canvas.on('object:modified', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
 canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); removeObjectFromArtboard(e.target || null); });
 canvas.on('object:added', e =&gt; {
@@ -4804,16 +4833,16 @@ function loadSVGFromParent(svgText) {
       return;
     }
 
-    // Reposiciona o conteúdo para a prancheta ativa
-    const sel = new fabric.ActiveSelection(objects, { canvas });
-    const box = sel.getBoundingRect(true, true);
-    const dx = (artboard?.left||0) - box.left;
-    const dy = (artboard?.top||0) - box.top;
+    const parsed = new DOMParser().parseFromString(raw, 'image/svg+xml');
+    const root = parsed.querySelector('svg');
+    const vb = (root?.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
+    const vbX = (vb.length === 4 &amp;&amp; Number.isFinite(vb[0])) ? vb[0] : 0;
+    const vbY = (vb.length === 4 &amp;&amp; Number.isFinite(vb[1])) ? vb[1] : 0;
 
     objects.forEach(o =&gt; {
       o.set({
-        left: (o.left||0) + dx,
-        top: (o.top||0) + dy,
+        left: (o.left||0) - vbX,
+        top: (o.top||0) - vbY,
         selectable:true,
         evented:true,
         excludeFromExport:false
@@ -5035,7 +5064,8 @@ const menuCatalog = {
     {id:'create.artText', label:'Texto artístico'},
     {id:'create.textBox', label:'Texto em área'},
     {id:'create.textOnPath', label:'Texto em caminho'},
-    {id:'create.eyedropper', label:'Conta-gotas'}
+    {id:'create.eyedropper', label:'Conta-gotas'},
+    {id:'create.artboard', label:'Novo artboard'}
   ],
   transform: [
     {id:'transform.move', label:'Mover'},
@@ -5243,6 +5273,7 @@ function executeMenuCommand(cmdId){
     'create.star': () =&gt; notifyTodo('Estrela'),
     'create.line': addLine,
     'create.pen': addBezier,
+    'create.artboard': () =&gt; addAdjacentArtboard('right'),
     'create.pencil': () =&gt; notifyTodo('Lápis'),
     'create.brush': () =&gt; notifyTodo('Pincel vetorial'),
     'create.artText': () =&gt; setActiveTool('text'),
