@@ -2195,9 +2195,9 @@ function syncArtboardAuxGeometry(ab){
   ab.bleed.set({ left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:ab.w+2*GUIDES.bleed, height:ab.h+2*GUIDES.bleed });
   ab.safe.set({ left:left+GUIDES.safe, top:top+GUIDES.safe, width:ab.w-2*GUIDES.safe, height:ab.h-2*GUIDES.safe });
   const labelPadX = 2;
-  const labelTop = top - 34;
+  const labelTop = top - 42;
   if (ab.labelText) {
-    ab.labelText.set({ left:left + labelPadX, top:top - 30, text: ab.board?.dataName || 'Artboard' });
+    ab.labelText.set({ left:left + labelPadX, top:top - 10, originY:'bottom', text: ab.board?.dataName || 'Artboard' });
   }
   if (ab.labelBg) {
     const textW = ab.labelText ? Math.max(56, (ab.labelText.width || 0) + 16) : 110;
@@ -2278,10 +2278,11 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
 
   const labelText = new fabric.Text(board.dataName, {
     left:left + 8,
-    top:top - 20,
+    top:top - 10,
     fontFamily:'Outfit',
     fontSize:14,
     fontWeight:500,
+    originY:'bottom',
     fill:'#ffffff',
     selectable:false,
     evented:false,
@@ -2439,16 +2440,23 @@ function updateArtboardLabelScale(){
 }
 
 function orderArtboard() {
-  artboards.forEach(a =&gt; {
+  const orderedBoards = artboards.slice().sort((a,b) =&gt; (b.w*b.h) - (a.w*a.h));
+  orderedBoards.forEach(a =&gt; {
     if (a.shadow) canvas.sendToBack(a.shadow);
     if (a.board) canvas.sendToBack(a.board);
+  });
+  orderedBoards.forEach(a =&gt; {
+    if (a.shadow) canvas.bringToFront(a.shadow);
+    if (a.board) canvas.bringToFront(a.board);
+  });
+  canvas.getObjects().forEach(o =&gt; {
+    if (!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay) canvas.bringToFront(o);
+  });
+  artboards.forEach(a =&gt; {
     if (a.labelBg) canvas.bringToFront(a.labelBg);
     if (a.labelText) canvas.bringToFront(a.labelText);
     if (a.bleed) canvas.bringToFront(a.bleed);
     if (a.safe) canvas.bringToFront(a.safe);
-  });
-  canvas.getObjects().forEach(o =&gt; {
-    if (!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay) canvas.bringToFront(o);
   });
 }
 
@@ -2655,7 +2663,7 @@ canvas.on('mouse:down', opt =&gt; {
   if (!artboardMode) {
     const clickedOutsideAllArtboards = !pointInAnyArtboard(pointer);
     if (clickedOutsideAllArtboards) {
-      setArtboardsEditable(true);
+      setArtboardsEditable(false);
       if (target &amp;&amp; !isArtboardGuideTarget(target)) {
         canvas.discardActiveObject();
         canvas.requestRenderAll();
@@ -2879,21 +2887,22 @@ canvas.on('mouse:up', opt =&gt; {
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   if (!target) return;
-  const ab = artboards.find(a =&gt; a.board === target || a.shadow === target || a.bleed === target || a.safe === target || a.labelBg === target || a.labelText === target);
+  const ab = artboards.find(a =&gt; a.labelText === target);
   if (!ab) return;
   activeArtboardId = ab.id;
   syncActiveArtboardRefs();
   updateArtboardPlusUI();
-  if (target === ab.labelText) {
-    startCanvasArtboardRename(ab);
-    return;
-  }
-  const boardEditable = !!ab.board?.selectable;
-  if (!boardEditable &amp;&amp; !artboardMode) {
-    setStatus('Clique fora do artboard para editar o papel e redimensionar.');
-    return;
-  }
-  setStatus('Prancheta ativa selecionada');
+  canvas.setActiveObject(ab.board);
+  canvas.requestRenderAll();
+  setStatus('Prancheta ativa selecionada pelo rótulo.');
+});
+
+canvas.on('mouse:dblclick', opt =&gt; {
+  const target = opt.target;
+  if (!target) return;
+  const ab = artboards.find(a =&gt; a.labelBg === target || a.labelText === target);
+  if (!ab) return;
+  startCanvasArtboardRename(ab);
 });
 
 canvas.on('mouse:dblclick', opt =&gt; {
@@ -5616,6 +5625,7 @@ canvas.on('object:moving', opt =&gt; {
       });
     }
     syncArtboardAuxGeometry(ab);
+    orderArtboard();
     updateArtboardPlusUI();
     canvas.requestRenderAll();
     return;
@@ -5643,6 +5653,7 @@ canvas.on('object:modified', e =&gt; {
     const ab = getArtboardByBoard(obj);
     if (!ab) return;
     syncArtboardAuxGeometry(ab);
+    orderArtboard();
     refreshArtboardChildrenClipping(ab);
     ab.__lastPos = { left:obj.left, top:obj.top };
     syncActiveArtboardRefs();
