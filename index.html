@@ -2905,6 +2905,14 @@ canvas.on('mouse:dblclick', opt =&gt; {
   startCanvasArtboardRename(ab);
 });
 
+canvas.on('mouse:dblclick', opt =&gt; {
+  const target = opt.target;
+  if (!target) return;
+  const ab = artboards.find(a =&gt; a.labelBg === target || a.labelText === target);
+  if (!ab) return;
+  startCanvasArtboardRename(ab);
+});
+
 
 canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
