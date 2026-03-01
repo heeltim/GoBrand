@@ -1107,6 +1107,12 @@ textarea.modal-textarea{
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class="canvas-area" id="canvasStage"&gt;
     &lt;div id="fabricCanvas"&gt;&lt;/div&gt;
+    &lt;div id="frameSystemHost" style="position:absolute;inset:0;display:none;z-index:20"&gt;
+      &lt;div style="position:absolute;top:14px;right:14px;z-index:2;display:flex;gap:8px"&gt;
+        &lt;button class="tbtn" id="btnCloseFrameSystem" title="Voltar para editor antigo" style="height:30px"&gt;Voltar ao antigo&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;iframe id="frameSystemFrame" title="Novo sistema de Frames" src="about:blank" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent"&gt;&lt;/iframe&gt;
+    &lt;/div&gt;
     &lt;div class="artboard-plus-ui" id="artboardPlusUI"&gt;
       &lt;button class="ab-plus top" id="btnAddArtTop" title="Adicionar acima"&gt;+&lt;/button&gt;
       &lt;button class="ab-plus right" id="btnAddArtRight" title="Adicionar à direita"&gt;+&lt;/button&gt;
@@ -2929,6 +2935,31 @@ window.addEventListener('keyup', e =&gt; {
 // ─── Status text ─────────────────────────────────────────
 function setStatus(txt) {
   const el = $('statusText'); if (el) el.textContent = txt;
+}
+
+function openFrameSystemInApp() {
+  const host = $('frameSystemHost');
+  const frame = $('frameSystemFrame');
+  if (!host || !frame) {
+    window.location.href = 'docs/frame-engine-demo.html';
+    return;
+  }
+  frame.src = 'docs/frame-engine-demo.html';
+  host.style.display = 'block';
+  if (fabricHost) fabricHost.style.visibility = 'hidden';
+  $('artboardPlusUI')?.style.setProperty('display', 'none');
+  setStatus('Novo sistema de Frames aberto dentro do editor.');
+}
+
+function closeFrameSystemInApp() {
+  const host = $('frameSystemHost');
+  const frame = $('frameSystemFrame');
+  if (!host || !frame) return;
+  host.style.display = 'none';
+  frame.src = 'about:blank';
+  if (fabricHost) fabricHost.style.visibility = 'visible';
+  updateArtboardPlusUI();
+  setStatus('Editor antigo reaberto.');
 }
 
 // ─── Add objects ─────────────────────────────────────────
@@ -5849,15 +5880,11 @@ $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { if (ENABLE_BEZIER_V2) addBezierV2(); else { setActiveTool('select'); addLine(); } });
 $('btnBezier')?.addEventListener('click', () =&gt; addBezier());
 $('btnArtboardTool')?.addEventListener('click', () =&gt; {
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
-  setStatus('Ferramenta Artboard legada desativada. Use o novo sistema de Frames.');
+  openFrameSystemInApp();
 });
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; {
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
-  setStatus('Novo sistema de Frames aberto em nova aba.');
+  openFrameSystemInApp();
 });
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
@@ -5900,9 +5927,7 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
   artboardMode = false;
   $('btnArtboardMode').classList.remove('accent');
-  setStatus('Modo Artboard antigo desativado. Abra o novo sistema de Frames.');
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
+  openFrameSystemInApp();
   updateArtboardPlusUI();
   canvas.requestRenderAll();
 });
@@ -5910,6 +5935,7 @@ $('btnAddArtTop')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click
 $('btnAddArtRight')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
 $('btnAddArtBottom')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
 $('btnAddArtLeft')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnCloseFrameSystem')?.addEventListener('click', closeFrameSystemInApp);
 
 const applyArtboardInspectorChanges = () =&gt; {
   const ab = getActiveArtboard();
