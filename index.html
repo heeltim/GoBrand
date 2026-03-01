@@ -2336,6 +2336,108 @@ function addAdjacentArtboard(dir) {
   updateArtboardPlusUI();
 }
 
+function getParentArtboardId(inner){
+  if (!inner) return null;
+  const parents = artboards.filter(outer =&gt; artboardContainsArtboard(outer, inner));
+  if (!parents.length) return null;
+  parents.sort((a,b) =&gt; (a.w*a.h) - (b.w*b.h));
+  return parents[0].id;
+}
+
+function duplicateArtboardBundle(source, dx = 28, dy = 28){
+  if (!source?.board) return null;
+  const next = createArtboard((source.board.left || 0) + dx, (source.board.top || 0) + dy, source.w, source.h);
+  next.clipContent = !!source.clipContent;
+  next.exportEnabled = !!source.exportEnabled;
+  next.background = { ...(source.background || {}) };
+  next.board.dataName = `${source.board.dataName || 'Artboard'} copy`;
+  syncArtboardAuxGeometry(next);
+  applyArtboardVisualState(next);
+  (source.children || []).forEach(id =&gt; {
+    const child = canvas.getObjects().find(o =&gt; o.id === id);
+    if (!child || isGuide(child) || child.isBezierEditorControl || child.isBezierOverlay) return;
+    child.clone(cl =&gt; {
+      cl.id = null;
+      cl.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
+      canvas.add(cl);
+      syncObjectArtboardMembership(cl);
+      canvas.requestRenderAll();
+      refreshLayers();
+    });
+  });
+  activeArtboardId = next.id;
+  syncActiveArtboardRefs();
+  canvas.setActiveObject(next.board);
+  canvas.requestRenderAll();
+  refreshArtboardInspector();
+  refreshLayers();
+  return next;
+}
+
+function deleteArtboardBundle(ab){
+  if (!ab) return;
+  const idx = artboards.findIndex(x =&gt; x.id === ab.id);
+  if (idx &lt; 0) return;
+  [ab.labelText, ab.labelBg, ab.safe, ab.bleed, ab.board, ab.shadow].forEach(o =&gt; {
+    if (o &amp;&amp; canvas.getObjects().includes(o)) canvas.remove(o);
+  });
+  artboards.splice(idx, 1);
+  if (!artboards.length) {
+    createArtboard();
+  }
+  activeArtboardId = artboards[Math.max(0, idx - 1)]?.id || artboards[0]?.id || null;
+  syncActiveArtboardRefs();
+  updateArtboardPlusUI();
+  canvas.requestRenderAll();
+  refreshArtboardInspector();
+  refreshLayers();
+}
+
+function startCanvasArtboardRename(ab){
+  if (!ab?.labelBg || !$('canvasStage')) return;
+  const host = $('canvasStage');
+  host.querySelectorAll('.canvas-artboard-name-input').forEach(el =&gt; el.remove());
+  const vpt = canvas.viewportTransform || [1,0,0,1,0,0];
+  const x = ab.labelBg.left * vpt[0] + vpt[4];
+  const y = ab.labelBg.top * vpt[3] + vpt[5];
+  const inp = document.createElement('input');
+  inp.className = 'artboard-name-input canvas-artboard-name-input';
+  inp.value = ab.board?.dataName || 'Artboard';
+  inp.style.position = 'absolute';
+  inp.style.left = `${Math.max(8, x)}px`;
+  inp.style.top = `${Math.max(8, y)}px`;
+  inp.style.width = `${Math.max(120, (ab.labelBg.width || 110) * Math.max(1, vpt[0]))}px`;
+  inp.style.zIndex = '15';
+  const finish = (save=true) =&gt; {
+    const txt = (inp.value || '').trim();
+    if (save &amp;&amp; txt) {
+      ab.board.dataName = txt;
+      if (ab.labelText) ab.labelText.set({ text:txt });
+      syncArtboardAuxGeometry(ab);
+      canvas.requestRenderAll();
+      refreshArtboardInspector();
+      refreshLayers();
+    }
+    inp.remove();
+  };
+  inp.addEventListener('keydown', e =&gt; {
+    if (e.key === 'Enter') finish(true);
+    if (e.key === 'Escape') finish(false);
+  });
+  inp.addEventListener('blur', () =&gt; finish(true));
+  host.appendChild(inp);
+  inp.focus();
+  inp.select();
+}
+
+function updateArtboardLabelScale(){
+  const labelScale = clamp(1 / Math.max(zoom, 0.05), 1, 3);
+  artboards.forEach(ab =&gt; {
+    if (ab.labelBg) ab.labelBg.set({ scaleX:labelScale, scaleY:labelScale });
+    if (ab.labelText) ab.labelText.set({ scaleX:labelScale, scaleY:labelScale });
+  });
+}
+
 function orderArtboard() {
   artboards.forEach(a =&gt; {
     if (a.shadow) canvas.sendToBack(a.shadow);
@@ -2414,6 +2516,7 @@ function updateArtboardPlusUI() {
 }
 
 let draggingArtboardId = null;
+let artboardClipboard = null;
 
 function refreshArtboardList(){
   const list = $('artboardList');
@@ -2533,6 +2636,7 @@ function updateZoomLabel() {
   if (el) el.textContent = pct;
   const top = $('zoomTopLabel');
   if (top) top.textContent = 'ZOOM ' + pct;
+  updateArtboardLabelScale();
 }
 
 // ─── Pan / Zoom ──────────────────────────────────────────
@@ -2788,6 +2892,14 @@ canvas.on('mouse:down', opt =&gt; {
   setStatus('Prancheta ativa selecionada');
 });
 
+canvas.on('mouse:dblclick', opt =&gt; {
+  const target = opt.target;
+  if (!target) return;
+  const ab = artboards.find(a =&gt; a.labelBg === target || a.labelText === target);
+  if (!ab) return;
+  startCanvasArtboardRename(ab);
+});
+
 
 canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
@@ -3027,6 +3139,22 @@ window.addEventListener('keydown', e =&gt; {
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'c') {
+    const ao = activeObj();
+    if (ao?.isArtboardBoard) {
+      const ab = getArtboardByBoard(ao);
+      if (ab) { artboardClipboard = { id:ab.id }; setStatus('Artboard copiado'); e.preventDefault(); }
+    }
+  }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'v' &amp;&amp; artboardClipboard?.id) {
+    const src = getArtboardById(artboardClipboard.id);
+    if (src) {
+      duplicateArtboardBundle(src, 42, 42);
+      snapshot();
+      setStatus('Artboard colado');
+      e.preventDefault();
+    }
+  }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; !e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); groupSelection(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); ungroupSelection(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key === ']') { e.preventDefault(); bringForwardSelection(); }
@@ -4365,6 +4493,13 @@ function del() {
     clearBezierPreview();
   }
 
+  const active = activeObj();
+  if (active?.isArtboardBoard) {
+    const ab = getArtboardByBoard(active);
+    if (ab) { deleteArtboardBundle(ab); snapshot(); setStatus('Artboard removido'); }
+    return;
+  }
+
   const objs = selectedObjects();
   if(!objs.length) return;
 
@@ -4381,7 +4516,16 @@ function del() {
 function duplicate() {
   const o = activeObj(); if(!o) return;
   clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
+  if (o.isArtboardBoard) {
+    const ab = getArtboardByBoard(o);
+    if (!ab) return;
+    duplicateArtboardBundle(ab, 28, 28);
+    snapshot();
+    setStatus('Artboard duplicado');
+    return;
+  }
   o.clone(cl =&gt; {
+    cl.id = null;
     cl.set({ left:(o.left||0)+18, top:(o.top||0)+18 });
     canvas.add(cl); canvas.setActiveObject(cl);
     canvas.requestRenderAll(); refreshProps(); refreshLayers();
@@ -4944,51 +5088,98 @@ function refreshLayers() {
   const list = $('layersList');
   const cnt = $('layerCount');
   if (!list) return;
-  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay).slice().reverse();
+
+  const active = canvas.getActiveObject();
+  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay);
   ensureFoldersForObjects(objs);
   renderFolderChips();
-  if (cnt) cnt.textContent = objs.length;
-  const active = canvas.getActiveObject();
+
+  const objectById = new Map(objs.filter(o =&gt; o.id).map(o =&gt; [o.id, o]));
+  const objectsByArtboard = new Map();
+  artboards.forEach(ab =&gt; objectsByArtboard.set(ab.id, []));
+  const rootObjects = [];
+  objs.forEach(obj =&gt; {
+    const abId = obj.dataArtboardId;
+    if (abId &amp;&amp; objectsByArtboard.has(abId)) objectsByArtboard.get(abId).push(obj);
+    else rootObjects.push(obj);
+  });
+
+  const artChildren = new Map();
+  artboards.forEach(ab =&gt; artChildren.set(ab.id, []));
+  const rootArtboards = [];
+  artboards.forEach(ab =&gt; {
+    const p = getParentArtboardId(ab);
+    if (p &amp;&amp; artChildren.has(p)) artChildren.get(p).push(ab);
+    else rootArtboards.push(ab);
+  });
+
+  const rows = [];
+  const walkArtboard = (ab, depth = 0) =&gt; {
+    rows.push({ type:'artboard', ref:ab, depth });
+    (objectsByArtboard.get(ab.id) || []).forEach(o =&gt; rows.push({ type:'object', ref:o, depth:depth+1 }));
+    (artChildren.get(ab.id) || []).forEach(child =&gt; walkArtboard(child, depth+1));
+  };
+  rootArtboards.forEach(ab =&gt; walkArtboard(ab, 0));
+  rootObjects.forEach(o =&gt; rows.push({ type:'object', ref:o, depth:0 }));
+
+  if (cnt) cnt.textContent = rows.length;
   list.innerHTML = '';
-  if (!objs.length) {
+  if (!rows.length) {
     list.innerHTML = '&lt;div class="layer-empty"&gt;Sem objetos ainda&lt;/div&gt;';
     return;
   }
 
-  objs.forEach((obj, i) =&gt; {
-    const isAct = obj === active;
-    const isVisible = obj.visible !== false;
-    const name = String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
-    const opacity = Math.round((obj.opacity??1)*100);
-    const folder = String(obj.dataFolder || 'Geral');
+  const findRowIndexByUid = uid =&gt; rows.findIndex(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid || (r.ref.__uid='ly_'+Math.random().toString(36).slice(2,9)))===uid);
+
+  rows.forEach((row, i) =&gt; {
+    const obj = row.ref;
+    const isArtboardRow = row.type === 'artboard';
+    const isAct = (isArtboardRow &amp;&amp; active === obj.board) || (!isArtboardRow &amp;&amp; active === obj);
+    const isVisible = isArtboardRow ? true : obj.visible !== false;
+    const name = isArtboardRow
+      ? String(obj.board?.dataName || 'Artboard')
+      : String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
+    const metaL = isArtboardRow ? `${Math.round(obj.w)}×${Math.round(obj.h)}` : `${Math.round((obj.opacity??1)*100)}%`;
+    const metaR = isArtboardRow ? 'Artboard' : String(obj.dataFolder || 'Geral');
     const visIcon = isVisible ? 'eye' : 'eye-off';
+    const leftPad = 8 + row.depth * 14;
 
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '') + (isVisible ? '' : ' is-hidden');
+    div.style.paddingLeft = `${leftPad}px`;
     div.draggable = true;
-    div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
+    div.dataset.layerType = row.type;
+    div.dataset.layerId = isArtboardRow ? obj.id : (obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9)));
     div.innerHTML = `
       &lt;span class="layer-marker"&gt;&lt;/span&gt;
       &lt;div class="layer-main"&gt;
-        &lt;div class="layer-name" title="${name}"&gt;${name}&lt;/div&gt;
+        &lt;div class="layer-name" title="${name}"&gt;${isArtboardRow ? '▣ ' : ''}${name}&lt;/div&gt;
       &lt;/div&gt;
       &lt;div class="layer-row-meta"&gt;
-        &lt;div class="layer-meta"&gt;${opacity}%&lt;/div&gt;
-        &lt;div class="layer-meta"&gt;${folder}&lt;/div&gt;
-        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}"&gt;
+        &lt;div class="layer-meta"&gt;${metaL}&lt;/div&gt;
+        &lt;div class="layer-meta"&gt;${metaR}&lt;/div&gt;
+        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}" ${isArtboardRow ? 'disabled' : ''}&gt;
           &lt;i data-lucide="${visIcon}" data-size="12"&gt;&lt;/i&gt;
         &lt;/button&gt;
       &lt;/div&gt;`;
 
     const visBtn = div.querySelector('.layer-vis-btn');
-    visBtn?.addEventListener('click', e =&gt; {
-      e.stopPropagation();
-      toggleLayerVisibility(obj);
-    });
+    if (!isArtboardRow) {
+      visBtn?.addEventListener('click', e =&gt; {
+        e.stopPropagation();
+        toggleLayerVisibility(obj);
+      });
+    }
 
     div.addEventListener('click', () =&gt; {
-      if (obj.visible === false) return;
-      canvas.setActiveObject(obj);
+      if (isArtboardRow) {
+        activeArtboardId = obj.id;
+        syncActiveArtboardRefs();
+        canvas.setActiveObject(obj.board);
+      } else {
+        if (obj.visible === false) return;
+        canvas.setActiveObject(obj);
+      }
       canvas.requestRenderAll();
       refreshProps();
       refreshLayers();
@@ -4997,20 +5188,51 @@ function refreshLayers() {
     div.addEventListener('dblclick', e =&gt; {
       e.preventDefault();
       e.stopPropagation();
-      renameLayerObject(obj);
+      if (isArtboardRow) startCanvasArtboardRename(obj);
+      else renameLayerObject(obj);
     });
 
-    div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
+    div.addEventListener('dragstart', () =&gt; { draggingLayerId = `${row.type}:${div.dataset.layerId}`; });
     div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
     div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
     div.addEventListener('drop', e =&gt; {
       e.preventDefault();
       div.classList.remove('drag-over');
-      if(!draggingLayerId || draggingLayerId===div.dataset.layerId) return;
-      const draggedObj = objs.find(o =&gt; o.__uid===draggingLayerId);
-      if(!draggedObj) return;
-      moveLayerByDisplayIndex(draggedObj, i);
-      refreshLayers();
+      if(!draggingLayerId) return;
+      const [dragType, dragId] = String(draggingLayerId).split(':');
+      if (!dragType || !dragId) return;
+
+      if (isArtboardRow) {
+        if (dragType === 'artboard' &amp;&amp; dragId !== obj.id) {
+          const dragged = getArtboardById(dragId);
+          if (!dragged) return;
+          dragged.board.set({ left:obj.board.left + 24, top:obj.board.top + 24 });
+          syncArtboardAuxGeometry(dragged);
+          updateArtboardLabelVisibility();
+          orderArtboard();
+          canvas.requestRenderAll();
+          refreshLayers();
+          snapshot();
+          return;
+        }
+        if (dragType === 'object') {
+          const draggedObj = rows.find(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid===dragId))?.ref;
+          if (!draggedObj) return;
+          assignObjectToArtboard(draggedObj, obj);
+          canvas.requestRenderAll();
+          refreshLayers();
+          snapshot();
+          return;
+        }
+      }
+
+      if (dragType === 'object' &amp;&amp; !isArtboardRow) {
+        const draggedObj = rows.find(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid===dragId))?.ref;
+        if(!draggedObj || draggedObj===obj) return;
+        const to = findRowIndexByUid(obj.__uid);
+        if (to &gt;= 0) moveLayerByDisplayIndex(draggedObj, to);
+        refreshLayers();
+      }
     });
 
     list.appendChild(div);
