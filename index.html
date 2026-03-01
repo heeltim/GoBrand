@@ -1991,6 +1991,8 @@ function applySmartSnap(target){
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
 const artboards = [];
 let activeArtboardId = null;
+let focusedArtboardId = null;
+let lastArtboardBoardClick = { id:null, at:0 };
 const ART_GAP = 120;
 const GUIDES = { bleed: 0, safe: 24 };
 
@@ -2091,9 +2093,11 @@ function artboardContainsArtboard(outer, inner){
 
 function updateArtboardLabelVisibility(){
   artboards.forEach(inner =&gt; {
-    const hidden = artboards.some(outer =&gt; artboardContainsArtboard(outer, inner));
-    inner.labelBg?.set({ visible: !hidden });
-    inner.labelText?.set({ visible: !hidden });
+    const hiddenByParent = artboards.some(outer =&gt; artboardContainsArtboard(outer, inner));
+    const forceVisible = inner.id === activeArtboardId || inner.id === focusedArtboardId;
+    const visible = forceVisible || !hiddenByParent;
+    inner.labelBg?.set({ visible: false });
+    inner.labelText?.set({ visible });
   });
 }
 
@@ -2663,6 +2667,8 @@ canvas.on('mouse:down', opt =&gt; {
   if (!artboardMode) {
     const clickedOutsideAllArtboards = !pointInAnyArtboard(pointer);
     if (clickedOutsideAllArtboards) {
+      focusedArtboardId = null;
+      updateArtboardLabelVisibility();
       setArtboardsEditable(false);
       if (target &amp;&amp; !isArtboardGuideTarget(target)) {
         canvas.discardActiveObject();
@@ -2886,23 +2892,30 @@ canvas.on('mouse:up', opt =&gt; {
 });
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
-  if (!target) return;
-  const ab = artboards.find(a =&gt; a.labelText === target);
+  const pointer = canvas.getPointer(opt.e);
+  let ab = target ? artboards.find(a =&gt; a.labelText === target) : null;
+
+  if (!ab && !artboardMode) {
+    const pointed = pickArtboardForPoint(pointer);
+    if (pointed && getParentArtboardId(pointed)) {
+      const now = performance.now();
+      const isSecondClick = lastArtboardBoardClick.id === pointed.id && (now - Number(lastArtboardBoardClick.at || 0)) <= 360;
+      if (opt.e?.altKey || isSecondClick) ab = pointed;
+      lastArtboardBoardClick = { id:pointed.id, at:now };
+    } else {
+      lastArtboardBoardClick = { id:null, at:0 };
+    }
+  }
+
   if (!ab) return;
   activeArtboardId = ab.id;
+  focusedArtboardId = ab.id;
   syncActiveArtboardRefs();
+  updateArtboardLabelVisibility();
   updateArtboardPlusUI();
   canvas.setActiveObject(ab.board);
   canvas.requestRenderAll();
-  setStatus('Prancheta ativa selecionada pelo rótulo.');
-});
-
-canvas.on('mouse:dblclick', opt =&gt; {
-  const target = opt.target;
-  if (!target) return;
-  const ab = artboards.find(a =&gt; a.labelBg === target || a.labelText === target);
-  if (!ab) return;
-  startCanvasArtboardRename(ab);
+  setStatus('Prancheta ativa selecionada.');
 });
 
 canvas.on('mouse:dblclick', opt =&gt; {
@@ -3145,6 +3158,11 @@ window.addEventListener('keydown', e =&gt; {
     finalizeBezierEditor();
     setActiveTool('select');
     return;
+  }
+  if (e.key === 'Escape' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; focusedArtboardId) {
+    focusedArtboardId = null;
+    updateArtboardLabelVisibility();
+    canvas.requestRenderAll();
   }
   if (e.code === 'Space' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; !isSpaceDown) {
     isSpaceDown = true; canvas.setCursor('grab'); e.preventDefault();
@@ -4988,6 +5006,15 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
   else clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
   const active = canvas.getActiveObject();
   if (!artboardMode &amp;&amp; active &amp;&amp; !isGuide(active)) setArtboardsEditable(false);
+  if (ev === 'selection:cleared') {
+    focusedArtboardId = null;
+  } else if (active?.isArtboardBoard) {
+    const activeAb = getArtboardByBoard(active);
+    focusedArtboardId = activeAb?.id || focusedArtboardId;
+  } else if (active &amp;&amp; !isGuide(active)) {
+    focusedArtboardId = active.dataArtboardId || null;
+  }
+  updateArtboardLabelVisibility();
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
   if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'direct-select') {
@@ -5187,10 +5214,14 @@ function refreshLayers() {
     div.addEventListener('click', () =&gt; {
       if (isArtboardRow) {
         activeArtboardId = obj.id;
+        focusedArtboardId = obj.id;
         syncActiveArtboardRefs();
+        updateArtboardLabelVisibility();
         canvas.setActiveObject(obj.board);
       } else {
         if (obj.visible === false) return;
+        focusedArtboardId = obj.dataArtboardId || null;
+        updateArtboardLabelVisibility();
         canvas.setActiveObject(obj);
       }
       canvas.requestRenderAll();
