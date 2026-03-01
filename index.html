@@ -2536,11 +2536,21 @@ canvas.on('mouse:move', opt =&gt; {
     return;
   }
 
-  if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
-    const t = opt.target;
-    if (t?.isBezierEditorControl &amp;&amp; String(t.bziRole || '').startsWith('anchor-')) canvas.defaultCursor = 'not-allowed';
-    else if (t === bezierEditor.path) canvas.defaultCursor = 'copy';
-    else canvas.defaultCursor = 'crosshair';
+  if (vectorToolState.pathDrag &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path) {
+    const pointer = canvas.getPointer(opt.e);
+    const drag = vectorToolState.pathDrag;
+    const dx = pointer.x - drag.last.x;
+    const dy = pointer.y - drag.last.y;
+    drag.last = pointer;
+    const m = ensurePathVectorModel(bezierEditor.path);
+    if (!m) return;
+    m.points.forEach(pt =&gt; {
+      pt.x += dx; pt.y += dy;
+      pt.inX += dx; pt.inY += dy;
+      pt.outX += dx; pt.outY += dy;
+    });
+    applyVectorModelToPath(bezierEditor.path, bezierEditor.modelKey);
+    refreshBezierEditorControls();
     return;
   }
 
@@ -2577,6 +2587,14 @@ canvas.on('mouse:move', opt =&gt; {
     p1.inX += dx; p1.inY += dy;
     applyVectorModelToPath(bezierEditor.path, bezierEditor.modelKey);
     refreshBezierEditorControls();
+    return;
+  }
+
+  if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
+    const t = opt.target;
+    if (t?.isBezierEditorControl &amp;&amp; String(t.bziRole || '').startsWith('anchor-')) canvas.defaultCursor = 'not-allowed';
+    else if (t === bezierEditor.path) canvas.defaultCursor = 'copy';
+    else canvas.defaultCursor = 'crosshair';
     return;
   }
 
@@ -4158,6 +4176,8 @@ function snapshot() {
 }
 function restore(idx) {
   if (idx &lt; 0 || idx &gt;= history.stack.length) return;
+  clearBezierPreview();
+  clearBezierEditor();
   history.lock = true;
   canvas.loadFromJSON(history.stack[idx], () =&gt; {
     refreshObjectCoords();
@@ -4181,11 +4201,17 @@ function undo() {
 function redo() { if (history.idx &lt; history.stack.length-1) restore(history.idx+1); }
 
 canvas.on('object:added', e =&gt; {
-  if(history.lock || !e.target || isGuide(e.target) || e.target === artboardCreateState.ghost) return;
+  if (history.lock || !e.target || e.target === artboardCreateState.ghost || isEditorAuxObject(e.target)) return;
   snapshot();
 });
-canvas.on('object:modified', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
-canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); removeObjectFromArtboard(e.target || null); });
+canvas.on('object:modified', e =&gt; {
+  if (history.lock || !e.target || isEditorAuxObject(e.target)) return;
+  snapshot();
+});
+canvas.on('object:removed', e =&gt; {
+  if (!history.lock &amp;&amp; e.target &amp;&amp; !isEditorAuxObject(e.target)) snapshot();
+  removeObjectFromArtboard(e.target || null);
+});
 canvas.on('object:added', e =&gt; {
   const obj = e.target;
   if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
