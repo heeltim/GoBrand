@@ -835,7 +835,9 @@ input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 .artboard-list{display:grid;gap:6px;max-height:170px;overflow:auto;padding-right:2px}
 .artboard-item{display:flex;align-items:center;gap:8px;border:1px solid var(--border2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,.02);cursor:pointer}
 .artboard-item.active{border-color:rgba(127,90,240,.45);background:rgba(127,90,240,.12)}
-.artboard-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11px}
+.artboard-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11px;padding:2px 4px;border-radius:6px}
+.artboard-name:hover{background:rgba(255,255,255,.06)}
+.artboard-name-input{width:100%;min-width:0;font-family:var(--mono);font-size:11px;color:var(--ink);background:rgba(255,255,255,.08);border:1px solid rgba(127,90,240,.45);border-radius:6px;padding:3px 5px;outline:none}
 .artboard-size{font-size:10px;color:var(--ink3);font-family:var(--mono)}
 .lib-item{
   display:flex;align-items:center;gap:8px;
@@ -2038,7 +2040,7 @@ function setDeskTheme(theme) {
 const artboardCreateState = { active:false, start:null, ghost:null };
 
 function isGuide(o) {
-  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe || o===a.labelBg || o===a.labelText);
 }
 
 function getArtboardById(id){
@@ -2073,13 +2075,35 @@ function pointInArtboard(ab, point){
   return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
 }
 
+function artboardContainsArtboard(outer, inner){
+  if (!outer || !inner || outer.id === inner.id) return false;
+  const pad = 0.5;
+  const L = outer.board.left;
+  const T = outer.board.top;
+  const R = L + outer.w;
+  const B = T + outer.h;
+  const iL = inner.board.left;
+  const iT = inner.board.top;
+  const iR = iL + inner.w;
+  const iB = iT + inner.h;
+  return iL &gt;= L + pad &amp;&amp; iT &gt;= T + pad &amp;&amp; iR &lt;= R - pad &amp;&amp; iB &lt;= B - pad;
+}
+
+function updateArtboardLabelVisibility(){
+  artboards.forEach(inner =&gt; {
+    const hidden = artboards.some(outer =&gt; artboardContainsArtboard(outer, inner));
+    inner.labelBg?.set({ visible: !hidden });
+    inner.labelText?.set({ visible: !hidden });
+  });
+}
+
 
 function pointInAnyArtboard(point){
   return artboards.some(ab =&gt; pointInArtboard(ab, point));
 }
 
 function isArtboardGuideTarget(target){
-  return !!(target &amp;&amp; (target.isArtboardBoard || target.isArtboardShadow || target.isArtboardBleed || target.isArtboardSafe));
+  return !!(target &amp;&amp; (target.isArtboardBoard || target.isArtboardShadow || target.isArtboardBleed || target.isArtboardSafe || target.isArtboardLabel));
 }
 
 function setArtboardsEditable(enabled){
@@ -2170,7 +2194,17 @@ function syncArtboardAuxGeometry(ab){
   ab.shadow.set({ left:left+6, top:top+8, width:ab.w, height:ab.h });
   ab.bleed.set({ left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:ab.w+2*GUIDES.bleed, height:ab.h+2*GUIDES.bleed });
   ab.safe.set({ left:left+GUIDES.safe, top:top+GUIDES.safe, width:ab.w-2*GUIDES.safe, height:ab.h-2*GUIDES.safe });
-  [ab.board, ab.shadow, ab.bleed, ab.safe].forEach(o =&gt; o.setCoords());
+  const labelPadX = 8;
+  const labelTop = top - 26;
+  if (ab.labelText) {
+    ab.labelText.set({ left:left + labelPadX, top:top - 20, text: ab.board?.dataName || 'Artboard' });
+  }
+  if (ab.labelBg) {
+    const textW = ab.labelText ? Math.max(56, (ab.labelText.width || 0) + 16) : 110;
+    ab.labelBg.set({ left, top:labelTop, width:textW, height:24 });
+  }
+  [ab.board, ab.shadow, ab.bleed, ab.safe, ab.labelBg, ab.labelText].forEach(o =&gt; o &amp;&amp; o.setCoords());
+  updateArtboardLabelVisibility();
 }
 
 function applyArtboardVisualState(ab){
@@ -2191,7 +2225,10 @@ function applyArtboardVisualState(ab){
   });
   ab.bleed.set({ visible: !!artboardMode });
   ab.safe.set({ visible: !!artboardMode });
+  if (ab.labelBg) ab.labelBg.set({ opacity: artboardMode ? 1 : .95 });
+  if (ab.labelText) ab.labelText.set({ opacity: artboardMode ? 1 : .95 });
   refreshArtboardChildrenClipping(ab);
+  updateArtboardLabelVisibility();
 }
 
 function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
@@ -2225,6 +2262,33 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
   });
   bleed.isArtboardBleed = true;
   safe.isArtboardSafe = true;
+  const labelBg = new fabric.Rect({
+    left:left,
+    top:top-26,
+    width:110,
+    height:24,
+    rx:4,
+    ry:4,
+    fill:'rgba(28,28,31,.92)',
+    selectable:false,
+    evented:false,
+    excludeFromExport:true
+  });
+  labelBg.isArtboardLabel = true;
+
+  const labelText = new fabric.Text(board.dataName, {
+    left:left + 8,
+    top:top - 20,
+    fontFamily:'Outfit',
+    fontSize:14,
+    fontWeight:500,
+    fill:'#cfd0d6',
+    selectable:false,
+    evented:false,
+    excludeFromExport:true
+  });
+  labelText.isArtboardLabel = true;
+
   const bundle = {
     id,
     w,
@@ -2233,13 +2297,15 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     shadow,
     bleed,
     safe,
+    labelBg,
+    labelText,
     clipContent:false,
     exportEnabled:true,
     background:{ enabled:true, color:'#FFFFFF', locked:true, includeInExport:true },
     children:[]
   };
   artboards.push(bundle);
-  canvas.add(shadow, board, bleed, safe);
+  canvas.add(shadow, board, bleed, safe, labelBg, labelText);
   activeArtboardId = id;
   syncActiveArtboardRefs();
   syncArtboardAuxGeometry(bundle);
@@ -2274,6 +2340,8 @@ function orderArtboard() {
   artboards.forEach(a =&gt; {
     if (a.shadow) canvas.sendToBack(a.shadow);
     if (a.board) canvas.sendToBack(a.board);
+    if (a.labelBg) canvas.bringToFront(a.labelBg);
+    if (a.labelText) canvas.bringToFront(a.labelText);
     if (a.bleed) canvas.bringToFront(a.bleed);
     if (a.safe) canvas.bringToFront(a.safe);
   });
@@ -2362,13 +2430,61 @@ function refreshArtboardList(){
     item.className = 'artboard-item' + (ab.id === activeArtboardId ? ' active' : '');
     item.draggable = true;
     item.dataset.abid = ab.id;
-    item.innerHTML = `<span class="artboard-name">${ab.board?.dataName || `Artboard ${i+1}`}</span><span class="artboard-size">${Math.round(ab.w)}×${Math.round(ab.h)}</span>`;
-    item.addEventListener('click', () => {
+
+    const name = document.createElement('span');
+    name.className = 'artboard-name';
+    name.textContent = ab.board?.dataName || `Artboard ${i+1}`;
+
+    const size = document.createElement('span');
+    size.className = 'artboard-size';
+    size.textContent = `${Math.round(ab.w)}×${Math.round(ab.h)}`;
+
+    const selectArtboard = () => {
       activeArtboardId = ab.id;
       syncActiveArtboardRefs();
       canvas.setActiveObject(ab.board);
       canvas.requestRenderAll();
       refreshArtboardList();
+    };
+
+    const beginRename = () => {
+      if (item.dataset.renaming === '1') return;
+      item.dataset.renaming = '1';
+      const inp = document.createElement('input');
+      inp.className = 'artboard-name-input';
+      inp.type = 'text';
+      inp.value = ab.board?.dataName || `Artboard ${i+1}`;
+      name.replaceWith(inp);
+      inp.focus();
+      inp.select();
+      const finish = (save=true) => {
+        if (item.dataset.renaming !== '1') return;
+        item.dataset.renaming = '0';
+        const nextName = (inp.value || '').trim();
+        if (save && nextName) {
+          ab.board.dataName = nextName;
+          if (ab.labelText) ab.labelText.set({ text:nextName });
+          syncArtboardAuxGeometry(ab);
+          canvas.requestRenderAll();
+        }
+        refreshArtboardList();
+      };
+      inp.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') finish(true);
+        if (ev.key === 'Escape') finish(false);
+      });
+      inp.addEventListener('blur', () => finish(true));
+      inp.addEventListener('click', ev => ev.stopPropagation());
+    };
+
+    name.addEventListener('click', ev => {
+      ev.stopPropagation();
+      beginRename();
+    });
+
+    item.addEventListener('click', () => {
+      if (item.dataset.renaming === '1') return;
+      selectArtboard();
     });
     item.addEventListener('dragstart', () => { draggingArtboardId = ab.id; });
     item.addEventListener('dragover', e => e.preventDefault());
@@ -2384,6 +2500,7 @@ function refreshArtboardList(){
       refreshArtboardList();
       canvas.requestRenderAll();
     });
+    item.append(name, size);
     list.appendChild(item);
   });
 }
@@ -2432,8 +2549,14 @@ canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   const pointer = canvas.getPointer(e);
   if (!artboardMode) {
-    if (!pointInAnyArtboard(pointer)) setArtboardsEditable(true);
-    else if (!target || isArtboardGuideTarget(target)) {
+    const clickedOutsideAllArtboards = !pointInAnyArtboard(pointer);
+    if (clickedOutsideAllArtboards) {
+      setArtboardsEditable(true);
+      if (target &amp;&amp; !isArtboardGuideTarget(target)) {
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+      }
+    } else if (!target || (!isArtboardGuideTarget(target) &amp;&amp; !target.isArtboardBoard)) {
       setArtboardsEditable(false);
       if (canvas.getActiveObject() &amp;&amp; isArtboardGuideTarget(canvas.getActiveObject())) {
         canvas.discardActiveObject();
@@ -2652,11 +2775,16 @@ canvas.on('mouse:up', opt =&gt; {
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   if (!target) return;
-  const ab = artboards.find(a =&gt; a.board === target || a.shadow === target || a.bleed === target || a.safe === target);
+  const ab = artboards.find(a =&gt; a.board === target || a.shadow === target || a.bleed === target || a.safe === target || a.labelBg === target || a.labelText === target);
   if (!ab) return;
   activeArtboardId = ab.id;
   syncActiveArtboardRefs();
   updateArtboardPlusUI();
+  const boardEditable = !!ab.board?.selectable;
+  if (!boardEditable &amp;&amp; !artboardMode) {
+    setStatus('Clique fora do artboard para editar o papel e redimensionar.');
+    return;
+  }
   setStatus('Prancheta ativa selecionada');
 });
 
