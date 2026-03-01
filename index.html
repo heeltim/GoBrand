@@ -2683,6 +2683,8 @@ canvas.on('mouse:down', opt =&gt; {
     vectorToolState.pendingStateTarget = null;
     vectorToolState.pendingStateCount = 0;
     vectorToolState.pendingStateMode = '';
+    vectorToolState.outsideClickPendingAt = 0;
+    vectorToolState.outsideClickPendingCount = 0;
     vectorToolState.clickPending = { target:null, at:0, count:0 };
     canvas.discardActiveObject();
     if (activeTool !== 'select') setActiveTool('select');
@@ -2739,10 +2741,24 @@ canvas.on('mouse:up', opt =&gt; {
     vectorToolState.pendingStateTarget = null;
     vectorToolState.pendingStateCount = 0;
     vectorToolState.pendingStateMode = '';
+    vectorToolState.outsideClickPendingAt = 0;
+    vectorToolState.outsideClickPendingCount = 0;
     vectorToolState.clickPending = { target:null, at:0, count:0 };
   };
 
   if (!target) {
+    if (bezierEditor.enabled && bezierEditor.handlesActive) {
+      const elapsed = now - Number(vectorToolState.outsideClickPendingAt || 0);
+      vectorToolState.outsideClickPendingCount = elapsed <= vectorToolState.doubleClickMs
+        ? (Number(vectorToolState.outsideClickPendingCount || 0) + 1)
+        : 1;
+      vectorToolState.outsideClickPendingAt = now;
+      if (vectorToolState.outsideClickPendingCount < 2) {
+        setStatus('Dê 2 cliques fora da forma para sair da edição com alças.');
+        setInteractionState('edit-handles');
+        return;
+      }
+    }
     if (bezierEditor.enabled) finalizeBezierEditor();
     resetPending();
     canvas.discardActiveObject();
@@ -2753,9 +2769,14 @@ canvas.on('mouse:up', opt =&gt; {
 
   if (!pathIsBezierEditable(target)) {
     vectorToolState.clickPending = { target:null, at:0, count:0 };
+    vectorToolState.outsideClickPendingAt = 0;
+    vectorToolState.outsideClickPendingCount = 0;
     if (bezierEditor.enabled) finalizeBezierEditor();
     return;
   }
+
+  vectorToolState.outsideClickPendingAt = 0;
+  vectorToolState.outsideClickPendingCount = 0;
 
   const pending = vectorToolState.clickPending || { target:null, at:0, count:0 };
   const isSameTarget = pending.target === target;
@@ -3015,6 +3036,8 @@ const vectorToolState = {
   pendingStateTarget: null,
   pendingStateCount: 0,
   pendingStateMode: '',
+  outsideClickPendingAt: 0,
+  outsideClickPendingCount: 0,
   pathDrag: null,
   clickPending: { target:null, at:0, count:0 },
   clickProbe: null,
@@ -3747,7 +3770,8 @@ function clearBezierEditor(){
   bezierEditor.selectedAnchors = [];
   vectorToolState.segmentDrag = null;
   vectorToolState.pathDrag = null;
-  removeBezierSelectionFrame();
+  vectorToolState.outsideClickPendingAt = 0;
+  vectorToolState.outsideClickPendingCount = 0;
   vectorToolState.clickProbe = null;
   vectorToolState.clickPending = { target:null, at:0, count:0 };
   ensureBezierNodePanel();
