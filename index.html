@@ -1992,7 +1992,6 @@ let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
 const artboards = [];
 let activeArtboardId = null;
 let focusedArtboardId = null;
-let lastArtboardBoardClick = { id:null, at:0 };
 const ART_GAP = 120;
 const GUIDES = { bleed: 0, safe: 24 };
 
@@ -2111,12 +2110,20 @@ function isArtboardGuideTarget(target){
 }
 
 function setArtboardsEditable(enabled){
-  artboards.forEach(ab =&gt; {
+  artboards.forEach(ab => {
     if (!ab?.board) return;
     ab.board.set({ selectable:!!enabled, evented:!!enabled });
     ab.board.hoverCursor = enabled ? 'move' : 'default';
     ab.board.setCoords();
   });
+}
+
+function enableArtboardDrag(ab){
+  if (!ab?.board) return;
+  setArtboardsEditable(false);
+  ab.board.set({ selectable:true, evented:true });
+  ab.board.hoverCursor = 'move';
+  ab.board.setCoords();
 }
 
 function pickArtboardForPoint(point){
@@ -2893,18 +2900,12 @@ canvas.on('mouse:up', opt =&gt; {
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   const pointer = canvas.getPointer(opt.e);
-  let ab = target ? artboards.find(a =&gt; a.labelText === target) : null;
+  if (!artboardMode && target && !isGuide(target)) return;
 
+  let ab = target ? artboards.find(a =&gt; a.labelText === target) : null;
   if (!ab && !artboardMode) {
     const pointed = pickArtboardForPoint(pointer);
-    if (pointed && getParentArtboardId(pointed)) {
-      const now = performance.now();
-      const isSecondClick = lastArtboardBoardClick.id === pointed.id && (now - Number(lastArtboardBoardClick.at || 0)) <= 360;
-      if (opt.e?.altKey || isSecondClick) ab = pointed;
-      lastArtboardBoardClick = { id:pointed.id, at:now };
-    } else {
-      lastArtboardBoardClick = { id:null, at:0 };
-    }
+    if (pointed && getParentArtboardId(pointed)) ab = pointed;
   }
 
   if (!ab) return;
@@ -2913,9 +2914,10 @@ canvas.on('mouse:down', opt =&gt; {
   syncActiveArtboardRefs();
   updateArtboardLabelVisibility();
   updateArtboardPlusUI();
+  enableArtboardDrag(ab);
   canvas.setActiveObject(ab.board);
   canvas.requestRenderAll();
-  setStatus('Prancheta ativa selecionada.');
+  setStatus(getParentArtboardId(ab) ? 'Frame filho selecionado.' : 'Frame pai selecionado pelo rótulo.');
 });
 
 canvas.on('mouse:dblclick', opt =&gt; {
@@ -5217,6 +5219,7 @@ function refreshLayers() {
         focusedArtboardId = obj.id;
         syncActiveArtboardRefs();
         updateArtboardLabelVisibility();
+        enableArtboardDrag(obj);
         canvas.setActiveObject(obj.board);
       } else {
         if (obj.visible === false) return;
