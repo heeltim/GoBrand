@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GoBrand • Novo Sistema de Frames</title>
+  <title>Frame Engine Demo</title>
   <style>
     body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f5f9;color:#1e1f2a;display:grid;grid-template-columns:280px 1fr;min-height:100vh}
     aside{padding:16px;border-right:1px solid #d8dced;background:#fff;display:grid;gap:10px;align-content:start}
@@ -18,7 +18,7 @@
 </head>
 <body>
   <aside>
-    <h3 style="margin:0">GoBrand • Novo Sistema de Frames</h3>
+    <h3 style="margin:0">Demo Frame/Artboard</h3>
     <div class="row">
       <label>Scroll X</label>
       <input id="scrollX" type="range" min="0" max="300" value="0" />
@@ -36,10 +36,10 @@
   </main>
 
   <script type="module">
-    import { createScene, initSceneRoot, createFrameNode, createNode, addNode, NODE_TYPE, serializeScene, deserializeScene } from './core/frame/sceneGraph.js';
-    import { renderScene } from './core/frame/render.js';
-    import { hitTest } from './core/frame/hitTest.js';
-    import { applyConstraintsOnFrameResize, computeFrameContentBounds, clampFrameScroll } from './core/frame/layout.js';
+    import { createScene, initSceneRoot, createFrameNode, createNode, addNode, NODE_TYPE, serializeScene, deserializeScene } from '../core/frame/sceneGraph.js';
+    import { renderScene } from '../core/frame/render.js';
+    import { hitTest } from '../core/frame/hitTest.js';
+    import { applyConstraintsOnFrameResize, computeFrameContentBounds, clampFrameScroll } from '../core/frame/layout.js';
 
     const canvas = document.getElementById('cv');
     const ctx = canvas.getContext('2d');
