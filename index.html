@@ -1053,9 +1053,9 @@ textarea.modal-textarea{
 
       &lt;div class="panel-section" style="max-height:220px;display:flex;flex-direction:column"&gt;
         &lt;div class="panel-section-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px"&gt;
-          &lt;span&gt;Frames (novo)&lt;/span&gt;
+          &lt;span&gt;Artboards&lt;/span&gt;
           &lt;div style=&quot;display:flex;align-items:center;gap:8px&quot;&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnNewArtboard&quot; title=&quot;Abrir novo sistema de frame&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;Abrir novo&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnNewArtboard&quot; title=&quot;Criar novo artboard&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;Novo&lt;/button&gt;
             &lt;span id=&quot;artboardCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
           &lt;/div&gt;
         &lt;/div&gt;
@@ -5849,15 +5849,24 @@ $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { if (ENABLE_BEZIER_V2) addBezierV2(); else { setActiveTool('select'); addLine(); } });
 $('btnBezier')?.addEventListener('click', () =&gt; addBezier());
 $('btnArtboardTool')?.addEventListener('click', () =&gt; {
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
-  setStatus('Ferramenta Artboard legada desativada. Use o novo sistema de Frames.');
+  artboardMode = !artboardMode;
+  $('btnArtboardTool')?.classList.toggle('accent', artboardMode);
+  setArtboardsEditable(artboardMode);
+  updateArtboardPlusUI();
+  canvas.requestRenderAll();
+  setStatus(artboardMode ? 'Modo Artboard ativo: arraste para criar.' : 'Modo Artboard desativado.');
 });
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; {
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
-  setStatus('Novo sistema de Frames aberto em nova aba.');
+  const current = getActiveArtboard();
+  if (!current) {
+    createArtboard();
+    fitToArtboard();
+    setStatus('Artboard criado.');
+    return;
+  }
+  addAdjacentArtboard('right');
+  setStatus('Novo artboard criado à direita.');
 });
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
@@ -5898,18 +5907,17 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   setDeskTheme($('deskTheme')?.value || 'nebula');
 });
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
-  artboardMode = false;
-  $('btnArtboardMode').classList.remove('accent');
-  setStatus('Modo Artboard antigo desativado. Abra o novo sistema de Frames.');
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
+  artboardMode = !artboardMode;
+  $('btnArtboardMode').classList.toggle('accent', artboardMode);
+  setArtboardsEditable(artboardMode);
+  setStatus(artboardMode ? 'Modo Artboard ativo: arraste para criar.' : 'Modo Artboard desativado.');
   updateArtboardPlusUI();
   canvas.requestRenderAll();
 });
-$('btnAddArtTop')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
-$('btnAddArtRight')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
-$('btnAddArtBottom')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
-$('btnAddArtLeft')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
+$('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
+$('btnAddArtBottom')?.addEventListener('click', () =&gt; addAdjacentArtboard('bottom'));
+$('btnAddArtLeft')?.addEventListener('click', () =&gt; addAdjacentArtboard('left'));
 
 const applyArtboardInspectorChanges = () =&gt; {
   const ab = getActiveArtboard();
