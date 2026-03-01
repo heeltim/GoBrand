@@ -1290,7 +1290,7 @@ textarea.modal-textarea{
 
       &lt;!-- Style --&gt;
       &lt;div class="panel-section" id="propStyle"&gt;
-        &lt;div class="panel-section-label"&gt;Estilo&lt;/div&gt;
+        &lt;div class="panel-section-label" style="display:flex;align-items:center;justify-content:space-between"&gt;Estilo &lt;button class="tbtn" id="btnAppearanceGear" title="Abrir painel de aparência" style="height:24px;padding:0 8px"&gt;⚙&lt;/button&gt;&lt;/div&gt;
         &lt;div class="prop-grid2 prop-row"&gt;
           &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Fill&lt;/div&gt;&lt;input class="field-input" id="pFill" type="color"&gt;&lt;/div&gt;
           &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Stroke&lt;/div&gt;&lt;input class="field-input" id="pStroke" type="color"&gt;&lt;/div&gt;
@@ -1298,6 +1298,28 @@ textarea.modal-textarea{
         &lt;div class="prop-grid2 prop-row"&gt;
           &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Espessura&lt;/div&gt;&lt;input class="field-input" id="pStrokeW" type="number" step="1" min="0"&gt;&lt;/div&gt;
           &lt;div class="field-item"&gt;&lt;div class="field-label"&gt;Raio&lt;/div&gt;&lt;input class="field-input" id="pRx" type="number" step="1" min="0"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Tipo Fill&lt;/div&gt;
+            &lt;select class="field-input" id="pFillPaint" style="height:32px"&gt;
+              &lt;option value="solid"&gt;Sólido&lt;/option&gt;
+              &lt;option value="gradient"&gt;Gradiente&lt;/option&gt;
+              &lt;option value="pattern"&gt;Padrão&lt;/option&gt;
+              &lt;option value="filter"&gt;Filtro&lt;/option&gt;
+              &lt;option value="none"&gt;(nenhum)&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+          &lt;div class="field-item"&gt;
+            &lt;div class="field-label"&gt;Tipo Stroke&lt;/div&gt;
+            &lt;select class="field-input" id="pStrokePaint" style="height:32px"&gt;
+              &lt;option value="solid"&gt;Sólido&lt;/option&gt;
+              &lt;option value="gradient"&gt;Gradiente&lt;/option&gt;
+              &lt;option value="pattern"&gt;Padrão&lt;/option&gt;
+              &lt;option value="filter"&gt;Filtro&lt;/option&gt;
+              &lt;option value="none"&gt;(nenhum)&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
@@ -1399,20 +1421,20 @@ textarea.modal-textarea{
               &lt;input class="field-input" id="pOpacity2" type="number" min="0" max="100" step="1" value="100"&gt;
             &lt;/div&gt;
           &lt;/div&gt;
-          &lt;div class="rp-row"&gt;
-            &lt;input class="rp-stroke-range rp-grow" id="pOpacityRange2" type="range" min="0" max="100" step="1" value="100"&gt;
-          &lt;/div&gt;
+          &lt;div class="rp-row"&gt;&lt;input class="rp-stroke-range rp-grow" id="pOpacityRange2" type="range" min="0" max="100" step="1" value="100"&gt;&lt;/div&gt;
+          &lt;div class="sep"&gt;&lt;/div&gt;
+          &lt;div class="panel-section-label"&gt;Pilhas de preenchimento&lt;/div&gt;
+          &lt;div class="rp-row"&gt;&lt;button class="tbtn" id="btnAddFillLayer" style="height:30px;justify-content:center"&gt;+ Fill&lt;/button&gt;&lt;/div&gt;
+          &lt;div id="appearanceFillList" class="appearance-list"&gt;&lt;/div&gt;
+          &lt;div class="sep"&gt;&lt;/div&gt;
+          &lt;div class="panel-section-label"&gt;Pilhas de traçado&lt;/div&gt;
+          &lt;div class="rp-row"&gt;&lt;button class="tbtn" id="btnAddStrokeLayer" style="height:30px;justify-content:center"&gt;+ Traço&lt;/button&gt;&lt;/div&gt;
+          &lt;div id="appearanceStrokeList" class="appearance-list"&gt;&lt;/div&gt;
           &lt;div class="sep"&gt;&lt;/div&gt;
           &lt;div class="panel-section-label"&gt;Clip mask&lt;/div&gt;
           &lt;div class="prop-grid2 prop-row"&gt;
             &lt;button class="tbtn" id="btnClipMask" style="justify-content:center;height:30px"&gt;Aplicar clip&lt;/button&gt;
             &lt;button class="tbtn" id="btnReleaseClip" style="justify-content:center;height:30px"&gt;Soltar clip&lt;/button&gt;
-          &lt;/div&gt;
-          &lt;div class="rp-row"&gt;
-            &lt;button class="rp-icon-btn" title="Iniciar"&gt;Início&lt;/button&gt;
-            &lt;button class="rp-icon-btn" title="Fim"&gt;Fim&lt;/button&gt;
-            &lt;button class="rp-icon-btn" title="Inverter"&gt;↕&lt;/button&gt;
-            &lt;button class="rp-icon-btn" title="Limpar estilo"&gt;🗑&lt;/button&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -2651,8 +2673,9 @@ canvas.on('mouse:down', opt =&gt; {
 
   if (!bezierEditor.enabled || bezierEditor.path !== target) {
     if (bezierEditor.enabled &amp;&amp; bezierEditor.path !== target) finalizeBezierEditor();
-    canvas.setActiveObject(target);
-    attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
+    const editableTarget = convertVectorShapeToBezierPath(target, resolveBezierModelKey(target));
+    canvas.setActiveObject(editableTarget);
+    attachBezierEditor(editableTarget, { handlesActive:true, modelKey:resolveBezierModelKey(editableTarget) });
     return;
   }
 
@@ -2712,14 +2735,15 @@ canvas.on('mouse:up', opt =&gt; {
 
   if (!bezierEditor.enabled || bezierEditor.path !== target) {
     if (bezierEditor.enabled &amp;&amp; bezierEditor.path !== target) finalizeBezierEditor();
-    canvas.setActiveObject(target);
-    vectorToolState.pendingEditTarget = target;
+    const editableTarget = convertVectorShapeToBezierPath(target, resolveBezierModelKey(target));
+    canvas.setActiveObject(editableTarget);
+    vectorToolState.pendingEditTarget = editableTarget;
     vectorToolState.pendingEditAt = now;
-    vectorToolState.pendingStateTarget = target;
+    vectorToolState.pendingStateTarget = editableTarget;
     vectorToolState.pendingStateCount = 0;
     vectorToolState.pendingStateMode = 'to-edit';
     if (isDoubleClick) {
-      attachBezierEditor(target, { handlesActive:false, modelKey:resolveBezierModelKey(target) });
+      attachBezierEditor(editableTarget, { handlesActive:false, modelKey:resolveBezierModelKey(editableTarget) });
       vectorToolState.pendingStateMode = 'to-handles';
     } else {
       setInteractionState('selection');
@@ -2775,7 +2799,10 @@ canvas.on('mouse:dblclick', opt =&gt; {
   }
   if (pathIsBezierEditable(target)) {
     if (!bezierEditor.enabled || bezierEditor.path !== target) {
-      if (activeTool === 'direct-select') attachBezierEditor(target, { handlesActive:true, modelKey:resolveBezierModelKey(target) });
+      if (activeTool === 'direct-select') {
+        const editableTarget = convertVectorShapeToBezierPath(target, resolveBezierModelKey(target));
+        attachBezierEditor(editableTarget, { handlesActive:true, modelKey:resolveBezierModelKey(editableTarget) });
+      }
       return;
     }
     if (activeTool === 'bezier' || activeTool === 'bezier-v2') {
@@ -2892,6 +2919,7 @@ function addRect() {
     width: 260, height: 160, rx:16, ry:16,
     fill: 'rgba(59,109,243,.15)', stroke: 'rgba(0,0,0,.1)', strokeWidth: 1
   });
+  r.vectorModel = { points:[{x:r.left,y:r.top,inX:r.left,inY:r.top,outX:r.left,outY:r.top,kind:'corner'},{x:r.left+r.width,y:r.top,inX:r.left+r.width,inY:r.top,outX:r.left+r.width,outY:r.top,kind:'corner'},{x:r.left+r.width,y:r.top+r.height,inX:r.left+r.width,inY:r.top+r.height,outX:r.left+r.width,outY:r.top+r.height,kind:'corner'},{x:r.left,y:r.top+r.height,inX:r.left,inY:r.top+r.height,outX:r.left,outY:r.top+r.height,kind:'corner'}], closed:true };
   canvas.add(r); canvas.setActiveObject(r); canvas.requestRenderAll();
 }
 
@@ -2901,6 +2929,8 @@ function addCircle() {
     left: artboard.left + 420, top: artboard.top + 160,
     radius: 80, fill:'rgba(127,90,240,.22)', stroke:'rgba(0,0,0,.1)', strokeWidth:1
   });
+  const k=.5522847498, cx=c.left+c.radius, cy=c.top+c.radius, rr=c.radius;
+  c.vectorModel = { points:[{x:cx+rr,y:cy,inX:cx+rr,inY:cy-k*rr,outX:cx+rr,outY:cy+k*rr,kind:'smooth'},{x:cx,y:cy+rr,inX:cx+k*rr,inY:cy+rr,outX:cx-k*rr,outY:cy+rr,kind:'smooth'},{x:cx-rr,y:cy,inX:cx-rr,inY:cy+k*rr,outX:cx-rr,outY:cy-k*rr,kind:'smooth'},{x:cx,y:cy-rr,inX:cx-k*rr,inY:cy-rr,outX:cx+k*rr,outY:cy-rr,kind:'smooth'}], closed:true };
   canvas.add(c); canvas.setActiveObject(c); canvas.requestRenderAll();
 }
 
@@ -3304,7 +3334,38 @@ function updateBezierCreationPreview(pointer=null){
 }
 
 function pathIsBezierEditable(pathObj){
-  return !!pathObj &amp;&amp; pathObj.type === 'path' &amp;&amp; (Array.isArray(pathObj.vectorModel?.points) || Array.isArray(pathObj.vectorModelV2?.points) || Array.isArray(pathObj.path));
+  return !!pathObj &amp;&amp; (pathObj.type === 'path' || Array.isArray(pathObj.vectorModel?.points) || Array.isArray(pathObj.vectorModelV2?.points)) &amp;&amp; (Array.isArray(pathObj.vectorModel?.points) || Array.isArray(pathObj.vectorModelV2?.points) || Array.isArray(pathObj.path));
+}
+
+function convertVectorShapeToBezierPath(obj, modelKey='vectorModel'){
+  if (!obj || obj.type === 'path') return obj;
+  const m = obj[modelKey] || obj.vectorModel || obj.vectorModelV2;
+  if (!m?.points?.length || m.points.length &lt; 2) return obj;
+  const d = bezierPointsToPathData(m.points, !!m.closed);
+  const path = new fabric.Path(d, {
+    left: obj.left,
+    top: obj.top,
+    angle: obj.angle || 0,
+    opacity: obj.opacity ?? 1,
+    fill: obj.fill,
+    stroke: obj.stroke,
+    strokeWidth: obj.strokeWidth || 0,
+    strokeLineCap: obj.strokeLineCap || 'round',
+    strokeLineJoin: obj.strokeLineJoin || 'round',
+    selectable: true,
+    evented: true,
+    hasControls: true,
+    hasBorders: true
+  });
+  path.dataName = obj.dataName || obj.type;
+  path[modelKey] = { points: cloneBezierPoints(m.points), closed: !!m.closed };
+  if (obj.appearance) path.appearance = JSON.parse(JSON.stringify(obj.appearance));
+  canvas.remove(obj);
+  canvas.add(path);
+  trackPathPosition(path);
+  canvas.setActiveObject(path);
+  canvas.requestRenderAll();
+  return path;
 }
 
 function parseSimpleBezierModel(pathObj){
@@ -3476,6 +3537,17 @@ function maybeCloseBezierPath(pointer){
 
 function addBezierPoint(pointer, e){
   if (maybeCloseBezierPath(pointer)) return;
+  const pts = vectorToolState.points;
+  if (pts.length) {
+    const last = pts[pts.length-1];
+    const hit = distance(pointer, last) <= (BEZIER_CREATE_HIT / Math.max(zoom, .1));
+    if (hit) {
+      resetCreatePointToCorner(last);
+      last.kind = 'corner';
+      updateBezierCreationPreview();
+      return;
+    }
+  }
   const now = performance.now();
   const lastPos = vectorToolState.lastPointAddedPos;
   const isV2 = (vectorToolState.modelKey === 'vectorModelV2' || activeTool === 'bezier-v2');
@@ -3487,7 +3559,6 @@ function addBezierPoint(pointer, e){
   if ((tooFast &amp;&amp; tooClose) || (isV2 &amp;&amp; repeatedClick)) return;
 
   const p = makeBezierPoint(pointer.x, pointer.y);
-  const pts = vectorToolState.points;
   pts.push(p);
   vectorToolState.lastPointAddedAt = now;
   vectorToolState.lastPointAddedPos = { x:pointer.x, y:pointer.y };
@@ -4264,9 +4335,70 @@ const UI = {
   x:$('pX'), y:$('pY'), w:$('pW'), h:$('pH'),
   r:$('pR'), o:$('pO'), blend:$('pBlend'),
   fill:$('pFill'), stroke:$('pStroke'), strokeW:$('pStrokeW'), rx:$('pRx'),
+  fillPaint:$('pFillPaint'), strokePaint:$('pStrokePaint'),
   font:$('pFont'), fontSize:$('pFontSize'),
   textColor:$('pTextColor'), align:null
 };
+
+function ensureAppearanceData(obj){
+  if (!obj) return null;
+  if (!obj.appearance || typeof obj.appearance !== 'object') {
+    obj.appearance = {
+      fills: [{ type:'solid', color: normalizeHex(typeof obj.fill === 'string' ? obj.fill : '#111111') || '#111111' }],
+      strokes: [{ type:'solid', color: normalizeHex(typeof obj.stroke === 'string' ? obj.stroke : '#000000') || '#000000', width: Number(obj.strokeWidth || 0) }]
+    };
+  }
+  if (!Array.isArray(obj.appearance.fills) || !obj.appearance.fills.length) obj.appearance.fills = [{ type:'none', color:'#111111' }];
+  if (!Array.isArray(obj.appearance.strokes) || !obj.appearance.strokes.length) obj.appearance.strokes = [{ type:'none', color:'#000000', width:0 }];
+  return obj.appearance;
+}
+
+function makeHatchPattern(fg='#00000022'){
+  const pc = document.createElement('canvas');
+  pc.width = 12; pc.height = 12;
+  const ctx = pc.getContext('2d');
+  ctx.clearRect(0,0,12,12);
+  ctx.strokeStyle = fg;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0,12); ctx.lineTo(12,0);
+  ctx.stroke();
+  return new fabric.Pattern({ source: pc, repeat:'repeat' });
+}
+
+function paintValueByType(kind, type, color, obj){
+  const base = normalizeHex(color) || (kind === 'fill' ? '#111111' : '#000000');
+  const b = obj?.getBoundingRect?.(true, true) || { width:200, height:120, left:0, top:0 };
+  if (type === 'none') return kind === 'fill' ? '' : null;
+  if (type === 'solid') return base;
+  if (type === 'gradient') {
+    return new fabric.Gradient({
+      type: 'linear', gradientUnits: 'pixels',
+      coords: { x1:b.left, y1:b.top, x2:b.left + Math.max(b.width, 32), y2:b.top + Math.max(b.height, 32) },
+      colorStops: [{ offset:0, color:base }, { offset:1, color:'#ffffff' }]
+    });
+  }
+  if (type === 'pattern') return makeHatchPattern(base + '99');
+  if (type === 'filter') return base + 'cc';
+  return base;
+}
+
+function applyAppearanceStack(obj){
+  if (!obj) return;
+  const ap = ensureAppearanceData(obj);
+  const fillLayer = ap.fills[ap.fills.length - 1] || { type:'none', color:'#111111' };
+  const strokeLayer = ap.strokes[ap.strokes.length - 1] || { type:'none', color:'#000000', width:0 };
+  const fillValue = paintValueByType('fill', fillLayer.type, fillLayer.color, obj);
+  const strokeValue = paintValueByType('stroke', strokeLayer.type, strokeLayer.color, obj);
+  obj.set({
+    fill: fillValue,
+    stroke: strokeValue,
+    strokeWidth: Number.isFinite(Number(strokeLayer.width)) ? Number(strokeLayer.width) : Number(obj.strokeWidth || 0),
+    shadow: (fillLayer.type === 'filter' || strokeLayer.type === 'filter')
+      ? new fabric.Shadow({ color:'rgba(0,0,0,.35)', blur:14, offsetX:2, offsetY:3 })
+      : null
+  });
+}
 
 function activeObj() {
   const o = canvas.getActiveObject();
@@ -4311,6 +4443,18 @@ function syncFloatingTextPanel(){
   document.querySelectorAll('#tfAlignSeg .seg-opt').forEach(btn=&gt;btn.classList.toggle('on', btn.dataset.val===align));
 }
 
+
+function renderAppearancePanel(){
+  const obj = activeObj();
+  const fillList = $('appearanceFillList');
+  const strokeList = $('appearanceStrokeList');
+  if (!fillList || !strokeList) return;
+  if (!obj) { fillList.innerHTML = ''; strokeList.innerHTML = ''; return; }
+  const ap = ensureAppearanceData(obj);
+  fillList.innerHTML = ap.fills.map((f, i) => `&lt;div class="rp-row" style="margin:4px 0"&gt;&lt;span class="rp-chip"&gt;#${i+1} ${f.type}&lt;/span&gt;&lt;input class="field-input appearance-fill-color" data-idx="${i}" type="color" value="${normalizeHex(f.color)||'#111111'}" style="height:26px"&gt;&lt;button class="rp-icon-btn appearance-fill-del" data-idx="${i}" title="Remover"&gt;🗑&lt;/button&gt;&lt;/div&gt;`).join('');
+  strokeList.innerHTML = ap.strokes.map((st, i) => `&lt;div class="rp-row" style="margin:4px 0"&gt;&lt;span class="rp-chip"&gt;#${i+1} ${st.type}&lt;/span&gt;&lt;input class="field-input appearance-stroke-color" data-idx="${i}" type="color" value="${normalizeHex(st.color)||'#000000'}" style="height:26px"&gt;&lt;input class="field-input appearance-stroke-width" data-idx="${i}" type="number" min="0" step="1" value="${Number(st.width||0)}" style="width:64px;height:26px"&gt;&lt;button class="rp-icon-btn appearance-stroke-del" data-idx="${i}" title="Remover"&gt;🗑&lt;/button&gt;&lt;/div&gt;`).join('');
+}
+
 function refreshProps() {
   const obj = activeObj();
   const info = $('selInfo');
@@ -4352,6 +4496,11 @@ function refreshProps() {
   if(UI.strokeW) UI.strokeW.value = obj.strokeWidth??0;
   if(UI.rx) UI.rx.value = Math.round(obj.rx??obj.ry??0);
 
+  const ap = ensureAppearanceData(obj);
+  if (UI.fillPaint) UI.fillPaint.value = ap?.fills?.[ap.fills.length-1]?.type || 'solid';
+  if (UI.strokePaint) UI.strokePaint.value = ap?.strokes?.[ap.strokes.length-1]?.type || 'solid';
+  renderAppearancePanel();
+
   if (obj.type==='textbox'||obj.type==='text'||obj.type==='i-text') {
     focusTextPanel(true);
     if(UI.font &amp;&amp; obj.fontFamily) UI.font.value = obj.fontFamily;
@@ -4384,9 +4533,21 @@ function applyProps(key) {
     }
   }
 
-  if(key==='fill'||!key) obj.set({ fill: UI.fill?.value || obj.fill });
-  if(key==='stroke'||!key) obj.set({ stroke: UI.stroke?.value || obj.stroke });
-  if(key==='strokeW'||!key) obj.set({ strokeWidth: num(UI.strokeW?.value, obj.strokeWidth||0) });
+  const ap = ensureAppearanceData(obj);
+  if(key==='fill'||!key){
+    if (ap?.fills?.length) ap.fills[ap.fills.length-1].color = UI.fill?.value || ap.fills[ap.fills.length-1].color;
+  }
+  if(key==='stroke'||!key){
+    if (ap?.strokes?.length) ap.strokes[ap.strokes.length-1].color = UI.stroke?.value || ap.strokes[ap.strokes.length-1].color;
+  }
+  if(key==='strokeW'||!key){
+    const w = num(UI.strokeW?.value, obj.strokeWidth||0);
+    if (ap?.strokes?.length) ap.strokes[ap.strokes.length-1].width = w;
+    obj.set({ strokeWidth: w });
+  }
+  if(key==='fillPaint' && UI.fillPaint && ap?.fills?.length) ap.fills[ap.fills.length-1].type = UI.fillPaint.value;
+  if(key==='strokePaint' && UI.strokePaint && ap?.strokes?.length) ap.strokes[ap.strokes.length-1].type = UI.strokePaint.value;
+  applyAppearanceStack(obj);
   if(UI.rx &amp;&amp; (obj.type==='rect'||obj.rx!=null)) {
     const rv = clamp(num(UI.rx.value, obj.rx||0), 0, 2000);
     obj.set({ rx:rv, ry:rv });
@@ -4410,6 +4571,7 @@ function bindInput(el, k) {
 bindInput(UI.x,'pos'); bindInput(UI.y,'pos'); bindInput(UI.w,'size'); bindInput(UI.h,'size');
 bindInput(UI.r,'rot'); bindInput(UI.o,'op'); bindInput(UI.blend,'blend');
 bindInput(UI.fill,'fill'); bindInput(UI.stroke,'stroke'); bindInput(UI.strokeW,'strokeW'); bindInput(UI.rx,'rx');
+bindInput(UI.fillPaint,'fillPaint'); bindInput(UI.strokePaint,'strokePaint');
 bindInput(UI.font,'font'); bindInput(UI.fontSize,'fontSize');
 bindInput(UI.textColor,'textColor');
 
@@ -5428,6 +5590,72 @@ function setActiveTool(tool){
   ensureBezierNodePanel();
   canvas.requestRenderAll();
 }
+
+
+(function initAppearanceGear(){
+  const btn = $('btnAppearanceGear');
+  const tabs = $('propTabs');
+  btn?.addEventListener('click', e => {
+    e.stopPropagation();
+    const tab = tabs?.querySelector('[data-tab="aparencia"]');
+    tab?.click();
+    renderAppearancePanel();
+  });
+
+  $('btnAddFillLayer')?.addEventListener('click', () => {
+    const obj = activeObj(); if(!obj) return;
+    const ap = ensureAppearanceData(obj);
+    const current = ap.fills[ap.fills.length-1] || { type:'solid', color:'#111111' };
+    ap.fills.push({ ...current });
+    applyAppearanceStack(obj);
+    renderAppearancePanel();
+    canvas.requestRenderAll(); snapshot();
+  });
+
+  $('btnAddStrokeLayer')?.addEventListener('click', () => {
+    const obj = activeObj(); if(!obj) return;
+    const ap = ensureAppearanceData(obj);
+    const current = ap.strokes[ap.strokes.length-1] || { type:'solid', color:'#000000', width:Number(obj.strokeWidth||1) };
+    ap.strokes.push({ ...current });
+    applyAppearanceStack(obj);
+    renderAppearancePanel();
+    canvas.requestRenderAll(); snapshot();
+  });
+
+  document.addEventListener('input', (e) => {
+    const obj = activeObj(); if(!obj) return;
+    const ap = ensureAppearanceData(obj);
+    const t = e.target;
+    if (t.matches('.appearance-fill-color')) {
+      const i = Number(t.dataset.idx); if (ap.fills[i]) ap.fills[i].color = t.value;
+      applyAppearanceStack(obj); canvas.requestRenderAll();
+    }
+    if (t.matches('.appearance-stroke-color')) {
+      const i = Number(t.dataset.idx); if (ap.strokes[i]) ap.strokes[i].color = t.value;
+      applyAppearanceStack(obj); canvas.requestRenderAll();
+    }
+    if (t.matches('.appearance-stroke-width')) {
+      const i = Number(t.dataset.idx); if (ap.strokes[i]) ap.strokes[i].width = Number(t.value||0);
+      applyAppearanceStack(obj); canvas.requestRenderAll();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const obj = activeObj(); if(!obj) return;
+    const ap = ensureAppearanceData(obj);
+    const t = e.target;
+    if (t.matches('.appearance-fill-del')) {
+      const i = Number(t.dataset.idx);
+      if (ap.fills.length > 1) ap.fills.splice(i, 1);
+      applyAppearanceStack(obj); renderAppearancePanel(); canvas.requestRenderAll(); snapshot();
+    }
+    if (t.matches('.appearance-stroke-del')) {
+      const i = Number(t.dataset.idx);
+      if (ap.strokes.length > 1) ap.strokes.splice(i, 1);
+      applyAppearanceStack(obj); renderAppearancePanel(); canvas.requestRenderAll(); snapshot();
+    }
+  });
+})();
 
 // ─── Floating typography panel ──────────────────────────
 (function initTextFloatPanel(){
