@@ -3083,7 +3083,8 @@ const bezierEditor = {
   enabled: false,
   handlesActive: false,
   modelKey: 'vectorModel',
-  selectedAnchors: []
+  selectedAnchors: [],
+  selectionFrame: null
 };
 
 const BEZIER_CREATE_HIT = 12;
@@ -3184,6 +3185,7 @@ function selectBezierAnchorIndices(indices=[]){
     }
   });
   ensureBezierNodePanel();
+  refreshBezierSelectionFrame(activeObj());
   canvas.requestRenderAll();
 }
 
@@ -3742,6 +3744,49 @@ function createBezierControl(x, y, role){
   return c;
 }
 
+function removeBezierSelectionFrame(){
+  const frame = bezierEditor.selectionFrame;
+  if (frame && canvas.getObjects().includes(frame)) canvas.remove(frame);
+  bezierEditor.selectionFrame = null;
+}
+
+function refreshBezierSelectionFrame(target = activeObj()){
+  const canShow = activeTool === 'select' && !bezierEditor.enabled && !!target && pathIsBezierEditable(target);
+  if (!canShow) {
+    removeBezierSelectionFrame();
+    return;
+  }
+  const model = ensurePathVectorModel(target, resolveBezierModelKey(target));
+  if (!model?.closed || (model.points?.length || 0) < 3) {
+    removeBezierSelectionFrame();
+    return;
+  }
+
+  const bb = target.getBoundingRect(true, true);
+  const side = Math.max(bb.width, bb.height);
+  const left = bb.left + (bb.width - side) / 2;
+  const top = bb.top + (bb.height - side) / 2;
+
+  if (!bezierEditor.selectionFrame) {
+    bezierEditor.selectionFrame = new fabric.Rect({
+      left, top, width:Math.max(1, side), height:Math.max(1, side),
+      fill:'',
+      stroke:'rgba(47,155,255,.9)',
+      strokeWidth:1,
+      strokeDashArray:[5,4],
+      selectable:false,
+      evented:false,
+      excludeFromExport:true
+    });
+    bezierEditor.selectionFrame.isBezierOverlay = true;
+    canvas.add(bezierEditor.selectionFrame);
+  } else {
+    bezierEditor.selectionFrame.set({ left, top, width:Math.max(1, side), height:Math.max(1, side) });
+  }
+  bezierEditor.selectionFrame.setCoords();
+  canvas.bringToFront(bezierEditor.selectionFrame);
+}
+
 function clearBezierEditor(){
   [...bezierEditor.links, ...bezierEditor.controls].forEach(o =&gt; {
     if (canvas.getObjects().includes(o)) canvas.remove(o);
@@ -3809,6 +3854,7 @@ function attachBezierEditor(pathObj, { handlesActive=false, modelKey=getActiveBe
   const model = ensurePathVectorModel(pathObj, modelKey);
   if (!model || model.points.length &lt; 2) return setStatus('Curva incompatível para edição.');
   clearBezierEditor();
+  removeBezierSelectionFrame();
 
   pathObj.set({ selectable:false, evented:true, hasControls:false, hasBorders:false, lockMovementX:true, lockMovementY:true });
   bezierEditor.path = pathObj;
@@ -4695,6 +4741,7 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
     if (pathIsBezierEditable(obj)) attachBezierEditor(obj, { handlesActive:true, modelKey:resolveBezierModelKey(obj) });
   }
   ensureBezierNodePanel();
+  refreshBezierSelectionFrame(activeObj());
   refreshAlignmentAssist();
 }));
 
