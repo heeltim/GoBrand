@@ -1052,9 +1052,12 @@ textarea.modal-textarea{
 
 
       &lt;div class="panel-section" style="max-height:220px;display:flex;flex-direction:column"&gt;
-        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between"&gt;
-          Artboards
-          &lt;span id="artboardCount" style="color:var(--ink3)"&gt;0&lt;/span&gt;
+        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px"&gt;
+          &lt;span&gt;Frames (novo)&lt;/span&gt;
+          &lt;div style=&quot;display:flex;align-items:center;gap:8px&quot;&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnNewArtboard&quot; title=&quot;Abrir novo sistema de frame&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;Abrir novo&lt;/button&gt;
+            &lt;span id=&quot;artboardCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
+          &lt;/div&gt;
         &lt;/div&gt;
         &lt;div id=&quot;artboardList&quot; class=&quot;artboard-list&quot; style=&quot;flex:1;max-height:none&quot;&gt;&lt;/div&gt;
       &lt;/div&gt;
@@ -1104,6 +1107,12 @@ textarea.modal-textarea{
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class="canvas-area" id="canvasStage"&gt;
     &lt;div id="fabricCanvas"&gt;&lt;/div&gt;
+    &lt;div id="frameSystemHost" style="position:absolute;inset:0;display:none;z-index:20"&gt;
+      &lt;div style="position:absolute;top:14px;right:14px;z-index:2;display:flex;gap:8px"&gt;
+        &lt;button class="tbtn" id="btnCloseFrameSystem" title="Voltar para editor antigo" style="height:30px"&gt;Voltar ao antigo&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;iframe id="frameSystemFrame" title="Novo sistema de Frames" src="about:blank" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent"&gt;&lt;/iframe&gt;
+    &lt;/div&gt;
     &lt;div class="artboard-plus-ui" id="artboardPlusUI"&gt;
       &lt;button class="ab-plus top" id="btnAddArtTop" title="Adicionar acima"&gt;+&lt;/button&gt;
       &lt;button class="ab-plus right" id="btnAddArtRight" title="Adicionar à direita"&gt;+&lt;/button&gt;
@@ -2533,11 +2542,21 @@ canvas.on('mouse:move', opt =&gt; {
     return;
   }
 
-  if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
-    const t = opt.target;
-    if (t?.isBezierEditorControl &amp;&amp; String(t.bziRole || '').startsWith('anchor-')) canvas.defaultCursor = 'not-allowed';
-    else if (t === bezierEditor.path) canvas.defaultCursor = 'copy';
-    else canvas.defaultCursor = 'crosshair';
+  if (vectorToolState.pathDrag &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path) {
+    const pointer = canvas.getPointer(opt.e);
+    const drag = vectorToolState.pathDrag;
+    const dx = pointer.x - drag.last.x;
+    const dy = pointer.y - drag.last.y;
+    drag.last = pointer;
+    const m = ensurePathVectorModel(bezierEditor.path);
+    if (!m) return;
+    m.points.forEach(pt =&gt; {
+      pt.x += dx; pt.y += dy;
+      pt.inX += dx; pt.inY += dy;
+      pt.outX += dx; pt.outY += dy;
+    });
+    applyVectorModelToPath(bezierEditor.path, bezierEditor.modelKey);
+    refreshBezierEditorControls();
     return;
   }
 
@@ -2556,6 +2575,14 @@ canvas.on('mouse:move', opt =&gt; {
     p1.inX += dx; p1.inY += dy;
     applyVectorModelToPath(bezierEditor.path, bezierEditor.modelKey);
     refreshBezierEditorControls();
+    return;
+  }
+
+  if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; bezierEditor.enabled &amp;&amp; bezierEditor.path &amp;&amp; vectorToolState.mode !== 'creating') {
+    const t = opt.target;
+    if (t?.isBezierEditorControl &amp;&amp; String(t.bziRole || '').startsWith('anchor-')) canvas.defaultCursor = 'not-allowed';
+    else if (t === bezierEditor.path) canvas.defaultCursor = 'copy';
+    else canvas.defaultCursor = 'crosshair';
     return;
   }
 
@@ -2602,6 +2629,11 @@ canvas.on('mouse:up', opt =&gt; {
     vectorToolState.dragStarted = false;
     updateBezierCreationPreview();
     finalizeBezierPendingClose();
+  }
+
+  if (vectorToolState.pathDrag) {
+    vectorToolState.pathDrag = null;
+    snapshot();
   }
 
   if (vectorToolState.segmentDrag) {
@@ -2657,6 +2689,8 @@ canvas.on('mouse:down', opt =&gt; {
     vectorToolState.pendingStateTarget = null;
     vectorToolState.pendingStateCount = 0;
     vectorToolState.pendingStateMode = '';
+    vectorToolState.outsideClickPendingAt = 0;
+    vectorToolState.outsideClickPendingCount = 0;
     vectorToolState.clickPending = { target:null, at:0, count:0 };
     canvas.discardActiveObject();
     if (activeTool !== 'select') setActiveTool('select');
@@ -2676,6 +2710,12 @@ canvas.on('mouse:down', opt =&gt; {
     const editableTarget = convertVectorShapeToBezierPath(target, resolveBezierModelKey(target));
     canvas.setActiveObject(editableTarget);
     attachBezierEditor(editableTarget, { handlesActive:true, modelKey:resolveBezierModelKey(editableTarget) });
+    return;
+  }
+
+  if (bezierEditor.handlesActive) {
+    vectorToolState.pathDrag = { last:pointer };
+    vectorToolState.mode = 'transforming';
     return;
   }
 
@@ -2707,10 +2747,24 @@ canvas.on('mouse:up', opt =&gt; {
     vectorToolState.pendingStateTarget = null;
     vectorToolState.pendingStateCount = 0;
     vectorToolState.pendingStateMode = '';
+    vectorToolState.outsideClickPendingAt = 0;
+    vectorToolState.outsideClickPendingCount = 0;
     vectorToolState.clickPending = { target:null, at:0, count:0 };
   };
 
   if (!target) {
+    if (bezierEditor.enabled && bezierEditor.handlesActive) {
+      const elapsed = now - Number(vectorToolState.outsideClickPendingAt || 0);
+      vectorToolState.outsideClickPendingCount = elapsed <= vectorToolState.doubleClickMs
+        ? (Number(vectorToolState.outsideClickPendingCount || 0) + 1)
+        : 1;
+      vectorToolState.outsideClickPendingAt = now;
+      if (vectorToolState.outsideClickPendingCount < 2) {
+        setStatus('Dê 2 cliques fora da forma para sair da edição com alças.');
+        setInteractionState('edit-handles');
+        return;
+      }
+    }
     if (bezierEditor.enabled) finalizeBezierEditor();
     resetPending();
     canvas.discardActiveObject();
@@ -2721,9 +2775,14 @@ canvas.on('mouse:up', opt =&gt; {
 
   if (!pathIsBezierEditable(target)) {
     vectorToolState.clickPending = { target:null, at:0, count:0 };
+    vectorToolState.outsideClickPendingAt = 0;
+    vectorToolState.outsideClickPendingCount = 0;
     if (bezierEditor.enabled) finalizeBezierEditor();
     return;
   }
+
+  vectorToolState.outsideClickPendingAt = 0;
+  vectorToolState.outsideClickPendingCount = 0;
 
   const pending = vectorToolState.clickPending || { target:null, at:0, count:0 };
   const isSameTarget = pending.target === target;
@@ -2878,6 +2937,31 @@ function setStatus(txt) {
   const el = $('statusText'); if (el) el.textContent = txt;
 }
 
+function openFrameSystemInApp() {
+  const host = $('frameSystemHost');
+  const frame = $('frameSystemFrame');
+  if (!host || !frame) {
+    window.location.href = 'docs/frame-engine-demo.html';
+    return;
+  }
+  frame.src = 'docs/frame-engine-demo.html';
+  host.style.display = 'block';
+  if (fabricHost) fabricHost.style.visibility = 'hidden';
+  $('artboardPlusUI')?.style.setProperty('display', 'none');
+  setStatus('Novo sistema de Frames aberto dentro do editor.');
+}
+
+function closeFrameSystemInApp() {
+  const host = $('frameSystemHost');
+  const frame = $('frameSystemFrame');
+  if (!host || !frame) return;
+  host.style.display = 'none';
+  frame.src = 'about:blank';
+  if (fabricHost) fabricHost.style.visibility = 'visible';
+  updateArtboardPlusUI();
+  setStatus('Editor antigo reaberto.');
+}
+
 // ─── Add objects ─────────────────────────────────────────
 function addArtTextAt(left, top) {
   const t = new fabric.IText('Texto artístico', {
@@ -2983,6 +3067,9 @@ const vectorToolState = {
   pendingStateTarget: null,
   pendingStateCount: 0,
   pendingStateMode: '',
+  outsideClickPendingAt: 0,
+  outsideClickPendingCount: 0,
+  pathDrag: null,
   clickPending: { target:null, at:0, count:0 },
   clickProbe: null,
   doubleClickMs: 350,
@@ -3643,7 +3730,8 @@ function createBezierControl(x, y, role){
     originX:'center', originY:'center',
     fill:'#ffffff',
     stroke:'#2f9bff', strokeWidth:isAnchor ? 2 : 1.6,
-    selectable:false, evented:true, hasControls:false, hasBorders:false,
+    selectable:true, evented:true, hasControls:false, hasBorders:false,
+    lockMovementX:false, lockMovementY:false,
     excludeFromExport:true, hoverCursor:'move',
     opacity:isAnchor ? 1 : .95
   });
@@ -3667,6 +3755,9 @@ function clearBezierEditor(){
   setInteractionState('idle');
   bezierEditor.selectedAnchors = [];
   vectorToolState.segmentDrag = null;
+  vectorToolState.pathDrag = null;
+  vectorToolState.outsideClickPendingAt = 0;
+  vectorToolState.outsideClickPendingCount = 0;
   vectorToolState.clickProbe = null;
   vectorToolState.clickPending = { target:null, at:0, count:0 };
   ensureBezierNodePanel();
@@ -4052,6 +4143,8 @@ function snapshot() {
 }
 function restore(idx) {
   if (idx &lt; 0 || idx &gt;= history.stack.length) return;
+  clearBezierPreview();
+  clearBezierEditor();
   history.lock = true;
   canvas.loadFromJSON(history.stack[idx], () =&gt; {
     refreshObjectCoords();
@@ -4075,11 +4168,17 @@ function undo() {
 function redo() { if (history.idx &lt; history.stack.length-1) restore(history.idx+1); }
 
 canvas.on('object:added', e =&gt; {
-  if(history.lock || !e.target || isGuide(e.target) || e.target === artboardCreateState.ghost) return;
+  if (history.lock || !e.target || e.target === artboardCreateState.ghost || isEditorAuxObject(e.target)) return;
   snapshot();
 });
-canvas.on('object:modified', e =&gt; { if(!history.lock &amp;&amp; e.target &amp;&amp; !isGuide(e.target)) snapshot(); });
-canvas.on('object:removed', e =&gt; { if(!history.lock) snapshot(); removeObjectFromArtboard(e.target || null); });
+canvas.on('object:modified', e =&gt; {
+  if (history.lock || !e.target || isEditorAuxObject(e.target)) return;
+  snapshot();
+});
+canvas.on('object:removed', e =&gt; {
+  if (!history.lock &amp;&amp; e.target &amp;&amp; !isEditorAuxObject(e.target)) snapshot();
+  removeObjectFromArtboard(e.target || null);
+});
 canvas.on('object:added', e =&gt; {
   const obj = e.target;
   if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
@@ -5435,7 +5534,7 @@ function executeMenuCommand(cmdId){
     'create.star': () =&gt; notifyTodo('Estrela'),
     'create.line': addLine,
     'create.pen': addBezier,
-    'create.artboard': () =&gt; addAdjacentArtboard('right'),
+    'create.artboard': () =&gt; $('btnNewArtboard')?.click(),
     'create.pencil': () =&gt; notifyTodo('Lápis'),
     'create.brush': () =&gt; notifyTodo('Pincel vetorial'),
     'create.artText': () =&gt; setActiveTool('text'),
@@ -5733,9 +5832,13 @@ $('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); ad
 $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { if (ENABLE_BEZIER_V2) addBezierV2(); else { setActiveTool('select'); addLine(); } });
 $('btnBezier')?.addEventListener('click', () =&gt; addBezier());
-$('btnArtboardTool')?.addEventListener('click', () =&gt; { if (!artboardMode) $('btnArtboardMode')?.click(); setStatus('Ferramenta Artboard: clique e arraste no canvas para criar.'); });
+$('btnArtboardTool')?.addEventListener('click', () =&gt; {
+  openFrameSystemInApp();
+});
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
-$('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
+$('btnNewArtboard')?.addEventListener('click', () =&gt; {
+  openFrameSystemInApp();
+});
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
 $('btnToolCurve')?.addEventListener('click', () =&gt; { setActiveTool('direct-select'); setStatus('Curvar/PCE ativo: selecione uma curva e um nó.'); ensureBezierNodePanel(); });
@@ -5775,17 +5878,17 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   setDeskTheme($('deskTheme')?.value || 'nebula');
 });
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
-  artboardMode = !artboardMode;
-  $('btnArtboardMode').classList.toggle('accent', artboardMode);
-  artboards.forEach(ab =&gt; applyArtboardVisualState(ab));
-  setStatus(artboardMode ? 'Modo artboard ativo: clique e arraste para criar novos frames.' : 'Modo artboard desativado');
+  artboardMode = false;
+  $('btnArtboardMode').classList.remove('accent');
+  openFrameSystemInApp();
   updateArtboardPlusUI();
   canvas.requestRenderAll();
 });
-$('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
-$('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
-$('btnAddArtBottom')?.addEventListener('click', () =&gt; addAdjacentArtboard('bottom'));
-$('btnAddArtLeft')?.addEventListener('click', () =&gt; addAdjacentArtboard('left'));
+$('btnAddArtTop')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtRight')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtBottom')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtLeft')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnCloseFrameSystem')?.addEventListener('click', closeFrameSystemInApp);
 
 const applyArtboardInspectorChanges = () =&gt; {
   const ab = getActiveArtboard();
