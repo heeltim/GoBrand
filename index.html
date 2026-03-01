@@ -2194,14 +2194,14 @@ function syncArtboardAuxGeometry(ab){
   ab.shadow.set({ left:left+6, top:top+8, width:ab.w, height:ab.h });
   ab.bleed.set({ left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:ab.w+2*GUIDES.bleed, height:ab.h+2*GUIDES.bleed });
   ab.safe.set({ left:left+GUIDES.safe, top:top+GUIDES.safe, width:ab.w-2*GUIDES.safe, height:ab.h-2*GUIDES.safe });
-  const labelPadX = 8;
-  const labelTop = top - 26;
+  const labelPadX = 2;
+  const labelTop = top - 34;
   if (ab.labelText) {
-    ab.labelText.set({ left:left + labelPadX, top:top - 20, text: ab.board?.dataName || 'Artboard' });
+    ab.labelText.set({ left:left + labelPadX, top:top - 30, text: ab.board?.dataName || 'Artboard' });
   }
   if (ab.labelBg) {
     const textW = ab.labelText ? Math.max(56, (ab.labelText.width || 0) + 16) : 110;
-    ab.labelBg.set({ left, top:labelTop, width:textW, height:24 });
+    ab.labelBg.set({ left, top:labelTop, width:textW, height:24, opacity:0 });
   }
   [ab.board, ab.shadow, ab.bleed, ab.safe, ab.labelBg, ab.labelText].forEach(o =&gt; o &amp;&amp; o.setCoords());
   updateArtboardLabelVisibility();
@@ -2225,8 +2225,8 @@ function applyArtboardVisualState(ab){
   });
   ab.bleed.set({ visible: !!artboardMode });
   ab.safe.set({ visible: !!artboardMode });
-  if (ab.labelBg) ab.labelBg.set({ opacity: artboardMode ? 1 : .95 });
-  if (ab.labelText) ab.labelText.set({ opacity: artboardMode ? 1 : .95 });
+  if (ab.labelBg) ab.labelBg.set({ opacity:0, visible:false, evented:false, selectable:false });
+  if (ab.labelText) ab.labelText.set({ opacity:1, visible:true });
   refreshArtboardChildrenClipping(ab);
   updateArtboardLabelVisibility();
 }
@@ -2269,7 +2269,7 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     height:24,
     rx:4,
     ry:4,
-    fill:'rgba(28,28,31,.92)',
+    fill:'rgba(0,0,0,0)',
     selectable:false,
     evented:false,
     excludeFromExport:true
@@ -2282,7 +2282,7 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     fontFamily:'Outfit',
     fontSize:14,
     fontWeight:500,
-    fill:'#cfd0d6',
+    fill:'#ffffff',
     selectable:false,
     evented:false,
     excludeFromExport:true
@@ -2301,7 +2301,7 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     labelText,
     clipContent:false,
     exportEnabled:true,
-    background:{ enabled:true, color:'#FFFFFF', locked:true, includeInExport:true },
+    background:{ enabled:true, color:'#FFFFFF', locked:false, includeInExport:true },
     children:[]
   };
   artboards.push(bundle);
@@ -2626,7 +2626,7 @@ function refreshArtboardInspector(){
   bgColor.value = current.background?.color || '#FFFFFF';
   bgLock.checked = !!current.background?.locked;
   bgExp.checked = !!current.background?.includeInExport;
-  bgColor.disabled = !!current.background?.locked;
+  bgColor.disabled = false;
   if (abW) abW.value = String(Math.round(current.w));
   if (abH) abH.value = String(Math.round(current.h));
 }
@@ -2884,6 +2884,10 @@ canvas.on('mouse:down', opt =&gt; {
   activeArtboardId = ab.id;
   syncActiveArtboardRefs();
   updateArtboardPlusUI();
+  if (target === ab.labelText) {
+    startCanvasArtboardRename(ab);
+    return;
+  }
   const boardEditable = !!ab.board?.selectable;
   if (!boardEditable &amp;&amp; !artboardMode) {
     setStatus('Clique fora do artboard para editar o papel e redimensionar.');
@@ -5586,15 +5590,32 @@ canvas.on('object:moving', opt =&gt; {
     const dy = (obj.top || 0) - (last.top || 0);
     ab.__lastPos = { left:obj.left, top:obj.top };
     if (dx || dy) {
-      (ab.children || []).forEach(id =&gt; {
-        const child = canvas.getObjects().find(o =&gt; o.id === id);
-        if (!child) return;
-        child.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
-        child.setCoords();
+      const subtree = [];
+      const walk = parent =&gt; {
+        artboards.forEach(candidate =&gt; {
+          if (candidate.id === parent.id) return;
+          if (getParentArtboardId(candidate) !== parent.id) return;
+          subtree.push(candidate);
+          walk(candidate);
+        });
+      };
+      walk(ab);
+      subtree.forEach(childAb =&gt; {
+        childAb.board.set({ left:(childAb.board.left || 0) + dx, top:(childAb.board.top || 0) + dy });
+        childAb.__lastPos = { left:childAb.board.left, top:childAb.board.top };
+        syncArtboardAuxGeometry(childAb);
+      });
+      [ab, ...subtree].forEach(scopeAb =&gt; {
+        (scopeAb.children || []).forEach(id =&gt; {
+          const child = canvas.getObjects().find(o =&gt; o.id === id);
+          if (!child || child.isArtboardBoard) return;
+          child.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
+          child.setCoords();
+        });
+        refreshArtboardChildrenClipping(scopeAb);
       });
     }
     syncArtboardAuxGeometry(ab);
-    refreshArtboardChildrenClipping(ab);
     updateArtboardPlusUI();
     canvas.requestRenderAll();
     return;
@@ -5626,6 +5647,7 @@ canvas.on('object:modified', e =&gt; {
     ab.__lastPos = { left:obj.left, top:obj.top };
     syncActiveArtboardRefs();
     updateArtboardPlusUI();
+    refreshLayers();
     return;
   }
   if (!isGuide(obj)) syncObjectArtboardMembership(obj);
@@ -6277,7 +6299,7 @@ const applyArtboardInspectorChanges = () =&gt; {
   ab.background.enabled = !!$('abBgEnabled')?.checked;
   ab.background.locked = !!$('abBgLock')?.checked;
   ab.background.includeInExport = !!$('abBgExport')?.checked;
-  if (!ab.background.locked &amp;&amp; $('abBgColor')?.value) ab.background.color = $('abBgColor').value;
+  if ($('abBgColor')?.value) ab.background.color = $('abBgColor').value;
   applyArtboardVisualState(ab);
   canvas.requestRenderAll();
 };
