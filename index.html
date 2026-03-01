@@ -1053,10 +1053,9 @@ textarea.modal-textarea{
 
       &lt;div class="panel-section" style="max-height:220px;display:flex;flex-direction:column"&gt;
         &lt;div class="panel-section-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px"&gt;
-          &lt;span&gt;Artboards&lt;/span&gt;
+          &lt;span&gt;Frames (novo)&lt;/span&gt;
           &lt;div style=&quot;display:flex;align-items:center;gap:8px&quot;&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnNewArtboard&quot; title=&quot;Criar nova prancheta&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;+ Nova&lt;/button&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnOpenFrameDemo&quot; title=&quot;Testar novo artboard (beta)&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;Beta&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnNewArtboard&quot; title=&quot;Abrir novo sistema de frame&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;Abrir novo&lt;/button&gt;
             &lt;span id=&quot;artboardCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
           &lt;/div&gt;
         &lt;/div&gt;
@@ -5551,7 +5550,7 @@ function executeMenuCommand(cmdId){
     'create.star': () =&gt; notifyTodo('Estrela'),
     'create.line': addLine,
     'create.pen': addBezier,
-    'create.artboard': () =&gt; addAdjacentArtboard('right'),
+    'create.artboard': () =&gt; $('btnNewArtboard')?.click(),
     'create.pencil': () =&gt; notifyTodo('Lápis'),
     'create.brush': () =&gt; notifyTodo('Pincel vetorial'),
     'create.artText': () =&gt; setActiveTool('text'),
@@ -5849,13 +5848,16 @@ $('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); ad
 $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { if (ENABLE_BEZIER_V2) addBezierV2(); else { setActiveTool('select'); addLine(); } });
 $('btnBezier')?.addEventListener('click', () =&gt; addBezier());
-$('btnArtboardTool')?.addEventListener('click', () =&gt; { if (!artboardMode) $('btnArtboardMode')?.click(); setStatus('Ferramenta Artboard: clique e arraste no canvas para criar.'); });
-$('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
-$('btnNewArtboard')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
-$('btnOpenFrameDemo')?.addEventListener('click', () =&gt; {
+$('btnArtboardTool')?.addEventListener('click', () =&gt; {
   const url = 'docs/frame-engine-demo.html';
   window.open(url, '_blank', 'noopener');
-  setStatus('Demo do novo Artboard aberta em nova aba (beta).');
+  setStatus('Ferramenta Artboard legada desativada. Use o novo sistema de Frames.');
+});
+$('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
+$('btnNewArtboard')?.addEventListener('click', () =&gt; {
+  const url = 'docs/frame-engine-demo.html';
+  window.open(url, '_blank', 'noopener');
+  setStatus('Novo sistema de Frames aberto em nova aba.');
 });
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
@@ -5896,17 +5898,18 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   setDeskTheme($('deskTheme')?.value || 'nebula');
 });
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
-  artboardMode = !artboardMode;
-  $('btnArtboardMode').classList.toggle('accent', artboardMode);
-  artboards.forEach(ab =&gt; applyArtboardVisualState(ab));
-  setStatus(artboardMode ? 'Modo artboard ativo: clique e arraste para criar novos frames.' : 'Modo artboard desativado');
+  artboardMode = false;
+  $('btnArtboardMode').classList.remove('accent');
+  setStatus('Modo Artboard antigo desativado. Abra o novo sistema de Frames.');
+  const url = 'docs/frame-engine-demo.html';
+  window.open(url, '_blank', 'noopener');
   updateArtboardPlusUI();
   canvas.requestRenderAll();
 });
-$('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
-$('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
-$('btnAddArtBottom')?.addEventListener('click', () =&gt; addAdjacentArtboard('bottom'));
-$('btnAddArtLeft')?.addEventListener('click', () =&gt; addAdjacentArtboard('left'));
+$('btnAddArtTop')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtRight')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtBottom')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtLeft')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
 
 const applyArtboardInspectorChanges = () =&gt; {
   const ab = getActiveArtboard();
