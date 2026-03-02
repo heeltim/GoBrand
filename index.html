@@ -1550,6 +1550,7 @@ let zoom = 1;
 let isPanning = false, isSpaceDown = false;
 let lastX = 0, lastY = 0;
 let artboardMode = false;
+let artboardOneShot = false;
 let activeTool = 'select';
 const ENABLE_BEZIER_V2 = true;
 let textDragStart = null;
@@ -2212,6 +2213,18 @@ function setArtboardsEditable(enabled){
     ab.board.hoverCursor = enabled ? 'move' : 'default';
     ab.board.setCoords();
   });
+}
+
+function setArtboardDrawMode(next, {oneShot=false, statusOn='Modo Artboard ativo: arraste para criar.', statusOff='Modo Artboard desativado.'} = {}){
+  artboardMode = !!next;
+  artboardOneShot = artboardMode ? !!oneShot : false;
+  $('btnRect')?.classList.toggle('accent', artboardMode);
+  $('btnArtboardTool')?.classList.toggle('accent', artboardMode);
+  $('btnArtboardMode')?.classList.toggle('accent', artboardMode);
+  setArtboardsEditable(artboardMode);
+  updateArtboardPlusUI();
+  canvas.requestRenderAll();
+  setStatus(artboardMode ? statusOn : statusOff);
 }
 
 function enableArtboardDrag(ab){
@@ -2969,6 +2982,9 @@ canvas.on('mouse:up', opt =&gt; {
     if (width &gt;= 24 &amp;&amp; height &gt;= 24) {
       createArtboard(left, top, width, height);
       setStatus('Artboard criado por arrasto.');
+      if (artboardOneShot) setArtboardDrawMode(false, { statusOff:'Frame desativado.' });
+    } else if (artboardOneShot) {
+      setArtboardDrawMode(false, { statusOff:'Frame desativado.' });
     }
     canvas.requestRenderAll();
     return;
@@ -6377,14 +6393,11 @@ $('btnToolVector')?.addEventListener('click', () =&gt; {
 $('btnToolMove')?.addEventListener('click', () =&gt; setActiveTool('move'));
 $('btnTextTool')?.addEventListener('click', () =&gt; setActiveTool('text'));
 $('btnRect')?.addEventListener('click', () =&gt; {
-  artboardMode = !artboardMode;
-  $('btnRect')?.classList.toggle('accent', artboardMode);
-  $('btnArtboardTool')?.classList.toggle('accent', artboardMode);
-  $('btnArtboardMode')?.classList.toggle('accent', artboardMode);
-  setArtboardsEditable(artboardMode);
-  updateArtboardPlusUI();
-  canvas.requestRenderAll();
-  setStatus(artboardMode ? 'Frame ativo: clique e arraste para criar.' : 'Frame desativado.');
+  setArtboardDrawMode(!artboardMode, {
+    oneShot:true,
+    statusOn:'Frame ativo: clique e arraste para criar.',
+    statusOff:'Frame desativado.'
+  });
 });
 $('btnShape')?.addEventListener('click', (e) =&gt; { e.stopPropagation(); $('shapeToolSubmenu')?.classList.toggle('open'); });
 $('btnShapeRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addRect(); $('shapeToolSubmenu')?.classList.remove('open'); });
@@ -6393,13 +6406,7 @@ $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { if (ENABLE_BEZIER_V2) addBezierV2(); else { setActiveTool('select'); addLine(); } });
 $('btnBezier')?.addEventListener('click', () =&gt; addBezier());
 $('btnArtboardTool')?.addEventListener('click', () =&gt; {
-  artboardMode = !artboardMode;
-  $('btnArtboardTool')?.classList.toggle('accent', artboardMode);
-  $('btnRect')?.classList.toggle('accent', artboardMode);
-  setArtboardsEditable(artboardMode);
-  updateArtboardPlusUI();
-  canvas.requestRenderAll();
-  setStatus(artboardMode ? 'Modo Artboard ativo: arraste para criar.' : 'Modo Artboard desativado.');
+  setArtboardDrawMode(!artboardMode, { oneShot:false });
 });
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; {
@@ -6455,13 +6462,7 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   setDeskTheme($('deskTheme')?.value || 'nebula');
 });
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
-  artboardMode = !artboardMode;
-  $('btnArtboardMode').classList.toggle('accent', artboardMode);
-  $('btnRect')?.classList.toggle('accent', artboardMode);
-  setArtboardsEditable(artboardMode);
-  setStatus(artboardMode ? 'Modo Artboard ativo: arraste para criar.' : 'Modo Artboard desativado.');
-  updateArtboardPlusUI();
-  canvas.requestRenderAll();
+  setArtboardDrawMode(!artboardMode, { oneShot:false });
 });
 $('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
 $('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
