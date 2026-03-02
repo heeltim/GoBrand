@@ -5848,10 +5848,31 @@ function loadSVGFromParent(svgText) {
     const currentAb = getActiveArtboard();
     const anchorX = currentAb?.board?.left || 0;
     const anchorY = currentAb?.board?.top || 0;
+    const artW = currentAb?.w || docW;
+    const artH = currentAb?.h || docH;
 
+    const isLikelyArtboardBg = (obj, lx, ly) =&gt; {
+      if (!obj || obj.type !== 'rect') return false;
+      const w = Math.abs((obj.width || 0) * (obj.scaleX || 1));
+      const h = Math.abs((obj.height || 0) * (obj.scaleY || 1));
+      const near = (a,b,t=1.5) =&gt; Math.abs((a||0) - (b||0)) &lt;= t;
+      const fill = String(obj.fill || '').toLowerCase().replace(/\s+/g,'');
+      const noStroke = !obj.stroke || obj.strokeWidth === 0;
+      const whiteish = !fill || fill === '#fff' || fill === '#ffffff' || fill === 'white' || fill === 'rgb(255,255,255)';
+      return near(lx, 0) &amp;&amp; near(ly, 0) &amp;&amp; near(w, artW) &amp;&amp; near(h, artH) &amp;&amp; noStroke &amp;&amp; whiteish;
+    };
+
+    let skippedArtboardBg = false;
     objects.forEach(o =&gt; {
       const localX = (o.left||0) - vbX;
       const localY = (o.top||0) - vbY;
+
+      // Evita duplicar o papel/artboard ao reabrir SVG exportado do editor.
+      if (!skippedArtboardBg &amp;&amp; isLikelyArtboardBg(o, localX, localY)) {
+        skippedArtboardBg = true;
+        return;
+      }
+
       o.set({
         left: anchorX + localX,
         top: anchorY + localY,
