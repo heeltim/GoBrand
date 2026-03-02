@@ -835,7 +835,9 @@ input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 .artboard-list{display:grid;gap:6px;max-height:170px;overflow:auto;padding-right:2px}
 .artboard-item{display:flex;align-items:center;gap:8px;border:1px solid var(--border2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,.02);cursor:pointer}
 .artboard-item.active{border-color:rgba(127,90,240,.45);background:rgba(127,90,240,.12)}
-.artboard-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11px}
+.artboard-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:11px;padding:2px 4px;border-radius:6px}
+.artboard-name:hover{background:rgba(255,255,255,.06)}
+.artboard-name-input{width:100%;min-width:0;font-family:var(--mono);font-size:11px;color:var(--ink);background:rgba(255,255,255,.08);border:1px solid rgba(127,90,240,.45);border-radius:6px;padding:3px 5px;outline:none}
 .artboard-size{font-size:10px;color:var(--ink3);font-family:var(--mono)}
 .lib-item{
   display:flex;align-items:center;gap:8px;
@@ -904,6 +906,18 @@ input[type="color"].field-input{padding:2px 4px;cursor:pointer}
 #fabricCanvas{position:absolute;inset:0;z-index:1}
 #fabricCanvas canvas{display:block}
 .artboard-plus-ui{position:absolute;inset:0;pointer-events:none;z-index:6;display:none}
+
+.canvas-ruler{position:absolute;pointer-events:none;z-index:7;display:none;background:rgba(20,22,30,.92);color:rgba(220,226,255,.78);font:10px/1 'JetBrains Mono', ui-monospace, monospace;overflow:hidden}
+.canvas-ruler.show{display:block}
+.canvas-ruler-top{left:18px;right:0;top:0;height:18px;border-bottom:1px solid rgba(255,255,255,.12)}
+.canvas-ruler-left{left:0;top:18px;bottom:0;width:18px;border-right:1px solid rgba(255,255,255,.12)}
+.canvas-ruler-corner{position:absolute;left:0;top:0;width:18px;height:18px;z-index:8;background:rgba(20,22,30,.96);border-right:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12);display:none}
+.canvas-ruler-corner.show{display:block}
+.ruler-tick{position:absolute;background:rgba(225,231,255,.44)}
+.ruler-label{position:absolute;color:rgba(225,231,255,.78);font-size:9px;white-space:nowrap}
+.artboard-size-preview{position:absolute;display:none;z-index:16;pointer-events:none;background:rgba(15,16,22,.92);border:1px solid rgba(255,255,255,.24);color:#fff;border-radius:8px;padding:2px 8px;font:11px/1.3 'JetBrains Mono', ui-monospace, monospace;box-shadow:0 6px 14px rgba(0,0,0,.35)}
+.tool-submenu-anchor{position:relative;display:inline-flex}
+
 .ab-plus{
   position:absolute;width:28px;height:28px;border-radius:999px;
   border:1px solid var(--border2);background:rgba(14,14,17,.9);color:#fff;
@@ -1053,9 +1067,9 @@ textarea.modal-textarea{
 
       &lt;div class="panel-section" style="max-height:220px;display:flex;flex-direction:column"&gt;
         &lt;div class="panel-section-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px"&gt;
-          &lt;span&gt;Frames (novo)&lt;/span&gt;
+          &lt;span&gt;Artboards&lt;/span&gt;
           &lt;div style=&quot;display:flex;align-items:center;gap:8px&quot;&gt;
-            &lt;button class=&quot;tbtn&quot; id=&quot;btnNewArtboard&quot; title=&quot;Abrir novo sistema de frame&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;Abrir novo&lt;/button&gt;
+            &lt;button class=&quot;tbtn&quot; id=&quot;btnNewArtboard&quot; title=&quot;Criar novo artboard&quot; style=&quot;height:24px;padding:0 8px&quot;&gt;Novo&lt;/button&gt;
             &lt;span id=&quot;artboardCount&quot; style=&quot;color:var(--ink3)&quot;&gt;0&lt;/span&gt;
           &lt;/div&gt;
         &lt;/div&gt;
@@ -1107,6 +1121,10 @@ textarea.modal-textarea{
   &lt;!-- ═══ CANVAS AREA ════════════════════════════════════ --&gt;
   &lt;main class="canvas-area" id="canvasStage"&gt;
     &lt;div id="fabricCanvas"&gt;&lt;/div&gt;
+    &lt;div id="rulerCorner" class="canvas-ruler-corner"&gt;&lt;/div&gt;
+    &lt;div id="rulerTop" class="canvas-ruler canvas-ruler-top"&gt;&lt;/div&gt;
+    &lt;div id="rulerLeft" class="canvas-ruler canvas-ruler-left"&gt;&lt;/div&gt;
+    &lt;div id="artboardSizePreview" class="artboard-size-preview"&gt;&lt;/div&gt;
     &lt;div class="artboard-plus-ui" id="artboardPlusUI"&gt;
       &lt;button class="ab-plus top" id="btnAddArtTop" title="Adicionar acima"&gt;+&lt;/button&gt;
       &lt;button class="ab-plus right" id="btnAddArtRight" title="Adicionar à direita"&gt;+&lt;/button&gt;
@@ -1123,6 +1141,7 @@ textarea.modal-textarea{
         &lt;button class="float-tool-btn" id="btnToolCurve"&gt;Curvar&lt;/button&gt;
         &lt;button class="float-tool-btn" id="btnToolCut"&gt;Cortar&lt;/button&gt;
         &lt;button class="float-tool-btn" id="btnToolMore"&gt;Mais ▾&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnRulerToggle"&gt;Régua&lt;/button&gt;
       &lt;/div&gt;
       &lt;div class="floating-toolbar-row fixed-tools"&gt;
         &lt;button class="float-tool-btn icon active" id="btnSelect" data-tool="select" title="Selecionar / mover"&gt;↖&lt;/button&gt;
@@ -1130,8 +1149,14 @@ textarea.modal-textarea{
           &lt;button class="tool-submenu-btn active" id="btnSelectNormal" data-tool="select"&gt;&lt;span&gt;Seleção&lt;/span&gt;&lt;span&gt;V&lt;/span&gt;&lt;/button&gt;
           &lt;button class="tool-submenu-btn" id="btnSelectDirect" data-tool="direct-select"&gt;&lt;span&gt;Seleção direta&lt;/span&gt;&lt;span&gt;A&lt;/span&gt;&lt;/button&gt;
         &lt;/div&gt;
-        &lt;button class="float-tool-btn icon" id="btnRect" title="Retângulo"&gt;▭&lt;/button&gt;
-        &lt;button class="float-tool-btn icon" id="btnCircle" title="Círculo"&gt;◯&lt;/button&gt;
+        &lt;button class="float-tool-btn icon" id="btnRect" title="Frame / Artboard"&gt;▣&lt;/button&gt;
+        &lt;div class="tool-submenu-anchor"&gt;
+          &lt;button class="float-tool-btn icon" id="btnShape" title="Formas"&gt;◻&lt;/button&gt;
+          &lt;div class="tool-submenu" id="shapeToolSubmenu" style="left:auto;right:0"&gt;
+            &lt;button class="tool-submenu-btn" id="btnShapeRect"&gt;&lt;span&gt;Quadrado&lt;/span&gt;&lt;span&gt;▭&lt;/span&gt;&lt;/button&gt;
+            &lt;button class="tool-submenu-btn" id="btnShapeCircle"&gt;&lt;span&gt;Círculo&lt;/span&gt;&lt;span&gt;◯&lt;/span&gt;&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
         &lt;button class="float-tool-btn icon" id="btnLine" title="Linha"&gt;／&lt;/button&gt;
         &lt;button class="float-tool-btn icon" id="btnBezier" title="Bezier"&gt;∿&lt;/button&gt;
         &lt;button class="float-tool-btn icon" id="btnTextTool" data-tool="text" title="Texto: clique (artístico) / arraste (caixa)"&gt;T&lt;/button&gt;
@@ -1525,6 +1550,7 @@ let zoom = 1;
 let isPanning = false, isSpaceDown = false;
 let lastX = 0, lastY = 0;
 let artboardMode = false;
+let artboardOneShot = false;
 let activeTool = 'select';
 const ENABLE_BEZIER_V2 = true;
 let textDragStart = null;
@@ -1989,6 +2015,7 @@ function applySmartSnap(target){
 let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
 const artboards = [];
 let activeArtboardId = null;
+let focusedArtboardId = null;
 const ART_GAP = 120;
 const GUIDES = { bleed: 0, safe: 24 };
 
@@ -2003,6 +2030,7 @@ function resizeCanvasToViewport() {
     canvas.setWidth(w);
     canvas.setHeight(h);
     canvas.requestRenderAll();
+    renderRulers();
   }
 }
 
@@ -2034,11 +2062,83 @@ function setDeskTheme(theme) {
   stageEl.style.setProperty('--desk-dot', t.dot);
 }
 
+
+const rulerState = { visible:false, unit:'px' };
+const RULER_UNIT_TO_PX = { px:1, cm:(96/2.54), pt:(96/72) };
+function formatRulerValue(pxVal){
+  const unitPx = RULER_UNIT_TO_PX[rulerState.unit] || 1;
+  const val = pxVal / unitPx;
+  const abs = Math.abs(val);
+  return abs >= 100 ? String(Math.round(val)) : String(Number(val.toFixed(abs >= 10 ? 1 : 2)));
+}
+function renderRulers(){
+  const topEl = $('rulerTop');
+  const leftEl = $('rulerLeft');
+  const corner = $('rulerCorner');
+  if (!topEl || !leftEl || !corner) return;
+  const show = !!rulerState.visible;
+  topEl.classList.toggle('show', show);
+  leftEl.classList.toggle('show', show);
+  corner.classList.toggle('show', show);
+  if (!show) return;
+  const vpt = canvas.viewportTransform || [1,0,0,1,0,0];
+  const z = Math.max(0.0001, vpt[0] || 1);
+  const ox = vpt[4] || 0;
+  const oy = vpt[5] || 0;
+  const w = canvas.getWidth();
+  const h = canvas.getHeight();
+  const majorWorld = 100;
+  const minorWorld = 20;
+  let htmlTop = '';
+  let htmlLeft = '';
+  const worldStartX = (0 - ox) / z;
+  const worldEndX = (w - ox) / z;
+  const worldStartY = (0 - oy) / z;
+  const worldEndY = (h - oy) / z;
+  const firstMajorX = Math.floor(worldStartX / majorWorld) * majorWorld;
+  for (let x = firstMajorX; x <= worldEndX + majorWorld; x += majorWorld) {
+    const sx = x * z + ox;
+    htmlTop += `<div class="ruler-tick" style="left:${sx}px;top:7px;width:1px;height:10px"></div>`;
+    htmlTop += `<div class="ruler-label" style="left:${sx + 2}px;top:2px">${formatRulerValue(x)} ${rulerState.unit}</div>`;
+  }
+  const firstMinorX = Math.floor(worldStartX / minorWorld) * minorWorld;
+  for (let x = firstMinorX; x <= worldEndX + minorWorld; x += minorWorld) {
+    if (Math.round(x) % majorWorld === 0) continue;
+    const sx = x * z + ox;
+    htmlTop += `<div class="ruler-tick" style="left:${sx}px;top:11px;width:1px;height:6px"></div>`;
+  }
+  const firstMajorY = Math.floor(worldStartY / majorWorld) * majorWorld;
+  for (let y = firstMajorY; y <= worldEndY + majorWorld; y += majorWorld) {
+    const sy = y * z + oy;
+    htmlLeft += `<div class="ruler-tick" style="left:7px;top:${sy}px;width:10px;height:1px"></div>`;
+    htmlLeft += `<div class="ruler-label" style="left:1px;top:${sy + 2}px;transform:rotate(-90deg);transform-origin:left top">${formatRulerValue(y)}</div>`;
+  }
+  const firstMinorY = Math.floor(worldStartY / minorWorld) * minorWorld;
+  for (let y = firstMinorY; y <= worldEndY + minorWorld; y += minorWorld) {
+    if (Math.round(y) % majorWorld === 0) continue;
+    const sy = y * z + oy;
+    htmlLeft += `<div class="ruler-tick" style="left:11px;top:${sy}px;width:6px;height:1px"></div>`;
+  }
+  topEl.innerHTML = htmlTop;
+  leftEl.innerHTML = htmlLeft;
+}
+function toggleRulers(){
+  rulerState.visible = !rulerState.visible;
+  renderRulers();
+  setStatus(`Régua ${rulerState.visible ? 'exibida' : 'oculta'} (${rulerState.unit}).`);
+}
+function cycleRulerUnit(){
+  const units = ['px','cm','pt'];
+  const idx = units.indexOf(rulerState.unit);
+  rulerState.unit = units[(idx + 1) % units.length];
+  renderRulers();
+  setStatus(`Unidade da régua: ${rulerState.unit}.`);
+}
 // ─── Artboard ────────────────────────────────────────────
 const artboardCreateState = { active:false, start:null, ghost:null };
 
 function isGuide(o) {
-  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe);
+  return artboards.some(a =&gt; o===a.board || o===a.shadow || o===a.bleed || o===a.safe || o===a.labelBg || o===a.labelText);
 }
 
 function getArtboardById(id){
@@ -2073,22 +2173,66 @@ function pointInArtboard(ab, point){
   return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
 }
 
+function artboardContainsArtboard(outer, inner){
+  if (!outer || !inner || outer.id === inner.id) return false;
+  const pad = 0.5;
+  const L = outer.board.left;
+  const T = outer.board.top;
+  const R = L + outer.w;
+  const B = T + outer.h;
+  const iL = inner.board.left;
+  const iT = inner.board.top;
+  const iR = iL + inner.w;
+  const iB = iT + inner.h;
+  return iL &gt;= L + pad &amp;&amp; iT &gt;= T + pad &amp;&amp; iR &lt;= R - pad &amp;&amp; iB &lt;= B - pad;
+}
+
+function updateArtboardLabelVisibility(){
+  artboards.forEach(inner =&gt; {
+    const hiddenByParent = artboards.some(outer =&gt; artboardContainsArtboard(outer, inner));
+    const forceVisible = inner.id === activeArtboardId || inner.id === focusedArtboardId;
+    const visible = forceVisible || !hiddenByParent;
+    inner.labelBg?.set({ visible: false });
+    inner.labelText?.set({ visible });
+  });
+}
+
 
 function pointInAnyArtboard(point){
   return artboards.some(ab =&gt; pointInArtboard(ab, point));
 }
 
 function isArtboardGuideTarget(target){
-  return !!(target &amp;&amp; (target.isArtboardBoard || target.isArtboardShadow || target.isArtboardBleed || target.isArtboardSafe));
+  return !!(target &amp;&amp; (target.isArtboardBoard || target.isArtboardShadow || target.isArtboardBleed || target.isArtboardSafe || target.isArtboardLabel));
 }
 
 function setArtboardsEditable(enabled){
-  artboards.forEach(ab =&gt; {
+  artboards.forEach(ab => {
     if (!ab?.board) return;
     ab.board.set({ selectable:!!enabled, evented:!!enabled });
     ab.board.hoverCursor = enabled ? 'move' : 'default';
     ab.board.setCoords();
   });
+}
+
+function setArtboardDrawMode(next, {oneShot=false, statusOn='Modo Artboard ativo: arraste para criar.', statusOff='Modo Artboard desativado.'} = {}){
+  artboardMode = !!next;
+  artboardOneShot = artboardMode ? !!oneShot : false;
+  $('btnRect')?.classList.toggle('accent', artboardMode);
+  $('btnArtboardTool')?.classList.toggle('accent', artboardMode);
+  $('btnArtboardMode')?.classList.toggle('accent', artboardMode);
+  setArtboardsEditable(artboardMode);
+  updateArtboardPlusUI();
+  canvas.requestRenderAll();
+  setStatus(artboardMode ? statusOn : statusOff);
+}
+
+function enableArtboardDrag(ab){
+  if (!ab?.board) return;
+  setArtboardsEditable(false);
+  ab.board.set({ selectable:true, evented:true });
+  ab.board.hoverCursor = 'move';
+  ab.board.setCoords();
 }
 
 function pickArtboardForPoint(point){
@@ -2170,7 +2314,17 @@ function syncArtboardAuxGeometry(ab){
   ab.shadow.set({ left:left+6, top:top+8, width:ab.w, height:ab.h });
   ab.bleed.set({ left:left-GUIDES.bleed, top:top-GUIDES.bleed, width:ab.w+2*GUIDES.bleed, height:ab.h+2*GUIDES.bleed });
   ab.safe.set({ left:left+GUIDES.safe, top:top+GUIDES.safe, width:ab.w-2*GUIDES.safe, height:ab.h-2*GUIDES.safe });
-  [ab.board, ab.shadow, ab.bleed, ab.safe].forEach(o =&gt; o.setCoords());
+  const labelPadX = 2;
+  const labelTop = top - 42;
+  if (ab.labelText) {
+    ab.labelText.set({ left:left + labelPadX, top:top - 10, originY:'bottom', text: ab.board?.dataName || 'Artboard' });
+  }
+  if (ab.labelBg) {
+    const textW = ab.labelText ? Math.max(56, (ab.labelText.width || 0) + 16) : 110;
+    ab.labelBg.set({ left, top:labelTop, width:textW, height:24, opacity:0 });
+  }
+  [ab.board, ab.shadow, ab.bleed, ab.safe, ab.labelBg, ab.labelText].forEach(o =&gt; o &amp;&amp; o.setCoords());
+  updateArtboardLabelVisibility();
 }
 
 function applyArtboardVisualState(ab){
@@ -2191,7 +2345,10 @@ function applyArtboardVisualState(ab){
   });
   ab.bleed.set({ visible: !!artboardMode });
   ab.safe.set({ visible: !!artboardMode });
+  if (ab.labelBg) ab.labelBg.set({ opacity:0, visible:false, evented:false, selectable:false });
+  if (ab.labelText) ab.labelText.set({ opacity:1, visible:true });
   refreshArtboardChildrenClipping(ab);
+  updateArtboardLabelVisibility();
 }
 
 function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
@@ -2225,6 +2382,34 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
   });
   bleed.isArtboardBleed = true;
   safe.isArtboardSafe = true;
+  const labelBg = new fabric.Rect({
+    left:left,
+    top:top-26,
+    width:110,
+    height:24,
+    rx:4,
+    ry:4,
+    fill:'rgba(0,0,0,0)',
+    selectable:false,
+    evented:false,
+    excludeFromExport:true
+  });
+  labelBg.isArtboardLabel = true;
+
+  const labelText = new fabric.Text(board.dataName, {
+    left:left + 8,
+    top:top - 10,
+    fontFamily:'Outfit',
+    fontSize:14,
+    fontWeight:500,
+    originY:'bottom',
+    fill:'#ffffff',
+    selectable:false,
+    evented:false,
+    excludeFromExport:true
+  });
+  labelText.isArtboardLabel = true;
+
   const bundle = {
     id,
     w,
@@ -2233,13 +2418,15 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     shadow,
     bleed,
     safe,
+    labelBg,
+    labelText,
     clipContent:false,
     exportEnabled:true,
-    background:{ enabled:true, color:'#FFFFFF', locked:true, includeInExport:true },
+    background:{ enabled:true, color:'#FFFFFF', locked:false, includeInExport:true },
     children:[]
   };
   artboards.push(bundle);
-  canvas.add(shadow, board, bleed, safe);
+  canvas.add(shadow, board, bleed, safe, labelBg, labelText);
   activeArtboardId = id;
   syncActiveArtboardRefs();
   syncArtboardAuxGeometry(bundle);
@@ -2270,15 +2457,126 @@ function addAdjacentArtboard(dir) {
   updateArtboardPlusUI();
 }
 
+function getParentArtboardId(inner){
+  if (!inner) return null;
+  const parents = artboards.filter(outer =&gt; artboardContainsArtboard(outer, inner));
+  if (!parents.length) return null;
+  parents.sort((a,b) =&gt; (a.w*a.h) - (b.w*b.h));
+  return parents[0].id;
+}
+
+function duplicateArtboardBundle(source, dx = 28, dy = 28){
+  if (!source?.board) return null;
+  const next = createArtboard((source.board.left || 0) + dx, (source.board.top || 0) + dy, source.w, source.h);
+  next.clipContent = !!source.clipContent;
+  next.exportEnabled = !!source.exportEnabled;
+  next.background = { ...(source.background || {}) };
+  next.board.dataName = `${source.board.dataName || 'Artboard'} copy`;
+  syncArtboardAuxGeometry(next);
+  applyArtboardVisualState(next);
+  (source.children || []).forEach(id =&gt; {
+    const child = canvas.getObjects().find(o =&gt; o.id === id);
+    if (!child || isGuide(child) || child.isBezierEditorControl || child.isBezierOverlay) return;
+    child.clone(cl =&gt; {
+      cl.id = null;
+      cl.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
+      canvas.add(cl);
+      syncObjectArtboardMembership(cl);
+      canvas.requestRenderAll();
+      refreshLayers();
+    });
+  });
+  activeArtboardId = next.id;
+  syncActiveArtboardRefs();
+  canvas.setActiveObject(next.board);
+  canvas.requestRenderAll();
+  refreshArtboardInspector();
+  refreshLayers();
+  return next;
+}
+
+function deleteArtboardBundle(ab){
+  if (!ab) return;
+  const idx = artboards.findIndex(x =&gt; x.id === ab.id);
+  if (idx &lt; 0) return;
+  [ab.labelText, ab.labelBg, ab.safe, ab.bleed, ab.board, ab.shadow].forEach(o =&gt; {
+    if (o &amp;&amp; canvas.getObjects().includes(o)) canvas.remove(o);
+  });
+  artboards.splice(idx, 1);
+  if (!artboards.length) {
+    createArtboard();
+  }
+  activeArtboardId = artboards[Math.max(0, idx - 1)]?.id || artboards[0]?.id || null;
+  syncActiveArtboardRefs();
+  updateArtboardPlusUI();
+  canvas.requestRenderAll();
+  refreshArtboardInspector();
+  refreshLayers();
+}
+
+function startCanvasArtboardRename(ab){
+  if (!ab?.labelBg || !$('canvasStage')) return;
+  const host = $('canvasStage');
+  host.querySelectorAll('.canvas-artboard-name-input').forEach(el =&gt; el.remove());
+  const vpt = canvas.viewportTransform || [1,0,0,1,0,0];
+  const x = ab.labelBg.left * vpt[0] + vpt[4];
+  const y = ab.labelBg.top * vpt[3] + vpt[5];
+  const inp = document.createElement('input');
+  inp.className = 'artboard-name-input canvas-artboard-name-input';
+  inp.value = ab.board?.dataName || 'Artboard';
+  inp.style.position = 'absolute';
+  inp.style.left = `${Math.max(8, x)}px`;
+  inp.style.top = `${Math.max(8, y)}px`;
+  inp.style.width = `${Math.max(120, (ab.labelBg.width || 110) * Math.max(1, vpt[0]))}px`;
+  inp.style.zIndex = '15';
+  const finish = (save=true) =&gt; {
+    const txt = (inp.value || '').trim();
+    if (save &amp;&amp; txt) {
+      ab.board.dataName = txt;
+      if (ab.labelText) ab.labelText.set({ text:txt });
+      syncArtboardAuxGeometry(ab);
+      canvas.requestRenderAll();
+      refreshArtboardInspector();
+      refreshLayers();
+    }
+    inp.remove();
+  };
+  inp.addEventListener('keydown', e =&gt; {
+    if (e.key === 'Enter') finish(true);
+    if (e.key === 'Escape') finish(false);
+  });
+  inp.addEventListener('blur', () =&gt; finish(true));
+  host.appendChild(inp);
+  inp.focus();
+  inp.select();
+}
+
+function updateArtboardLabelScale(){
+  const labelScale = clamp(1 / Math.max(zoom, 0.05), 1, 3);
+  artboards.forEach(ab =&gt; {
+    if (ab.labelBg) ab.labelBg.set({ scaleX:labelScale, scaleY:labelScale });
+    if (ab.labelText) ab.labelText.set({ scaleX:labelScale, scaleY:labelScale });
+  });
+}
+
 function orderArtboard() {
-  artboards.forEach(a =&gt; {
+  const orderedBoards = artboards.slice().sort((a,b) =&gt; (b.w*b.h) - (a.w*a.h));
+  orderedBoards.forEach(a =&gt; {
     if (a.shadow) canvas.sendToBack(a.shadow);
     if (a.board) canvas.sendToBack(a.board);
-    if (a.bleed) canvas.bringToFront(a.bleed);
-    if (a.safe) canvas.bringToFront(a.safe);
+  });
+  orderedBoards.forEach(a =&gt; {
+    if (a.shadow) canvas.bringToFront(a.shadow);
+    if (a.board) canvas.bringToFront(a.board);
   });
   canvas.getObjects().forEach(o =&gt; {
     if (!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay) canvas.bringToFront(o);
+  });
+  artboards.forEach(a =&gt; {
+    if (a.labelBg) canvas.bringToFront(a.labelBg);
+    if (a.labelText) canvas.bringToFront(a.labelText);
+    if (a.bleed) canvas.bringToFront(a.bleed);
+    if (a.safe) canvas.bringToFront(a.safe);
   });
 }
 
@@ -2308,6 +2606,7 @@ function fitToArtboard() {
   zoom = newZoom;
   updateZoomLabel();
   updateArtboardPlusUI();
+  renderRulers();
 }
 
 function setArtboardSize(w, h) {
@@ -2318,6 +2617,7 @@ function setArtboardSize(w, h) {
   if (!artboard) ensureArtboard();
   positionArtboard();
   fitToArtboard();
+  renderRulers();
 }
 
 function updateArtboardPlusUI() {
@@ -2346,6 +2646,7 @@ function updateArtboardPlusUI() {
 }
 
 let draggingArtboardId = null;
+let artboardClipboard = null;
 
 function refreshArtboardList(){
   const list = $('artboardList');
@@ -2362,13 +2663,61 @@ function refreshArtboardList(){
     item.className = 'artboard-item' + (ab.id === activeArtboardId ? ' active' : '');
     item.draggable = true;
     item.dataset.abid = ab.id;
-    item.innerHTML = `<span class="artboard-name">${ab.board?.dataName || `Artboard ${i+1}`}</span><span class="artboard-size">${Math.round(ab.w)}×${Math.round(ab.h)}</span>`;
-    item.addEventListener('click', () => {
+
+    const name = document.createElement('span');
+    name.className = 'artboard-name';
+    name.textContent = ab.board?.dataName || `Artboard ${i+1}`;
+
+    const size = document.createElement('span');
+    size.className = 'artboard-size';
+    size.textContent = `${Math.round(ab.w)}×${Math.round(ab.h)}`;
+
+    const selectArtboard = () => {
       activeArtboardId = ab.id;
       syncActiveArtboardRefs();
       canvas.setActiveObject(ab.board);
       canvas.requestRenderAll();
       refreshArtboardList();
+    };
+
+    const beginRename = () => {
+      if (item.dataset.renaming === '1') return;
+      item.dataset.renaming = '1';
+      const inp = document.createElement('input');
+      inp.className = 'artboard-name-input';
+      inp.type = 'text';
+      inp.value = ab.board?.dataName || `Artboard ${i+1}`;
+      name.replaceWith(inp);
+      inp.focus();
+      inp.select();
+      const finish = (save=true) => {
+        if (item.dataset.renaming !== '1') return;
+        item.dataset.renaming = '0';
+        const nextName = (inp.value || '').trim();
+        if (save && nextName) {
+          ab.board.dataName = nextName;
+          if (ab.labelText) ab.labelText.set({ text:nextName });
+          syncArtboardAuxGeometry(ab);
+          canvas.requestRenderAll();
+        }
+        refreshArtboardList();
+      };
+      inp.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') finish(true);
+        if (ev.key === 'Escape') finish(false);
+      });
+      inp.addEventListener('blur', () => finish(true));
+      inp.addEventListener('click', ev => ev.stopPropagation());
+    };
+
+    name.addEventListener('click', ev => {
+      ev.stopPropagation();
+      beginRename();
+    });
+
+    item.addEventListener('click', () => {
+      if (item.dataset.renaming === '1') return;
+      selectArtboard();
     });
     item.addEventListener('dragstart', () => { draggingArtboardId = ab.id; });
     item.addEventListener('dragover', e => e.preventDefault());
@@ -2384,6 +2733,7 @@ function refreshArtboardList(){
       refreshArtboardList();
       canvas.requestRenderAll();
     });
+    item.append(name, size);
     list.appendChild(item);
   });
 }
@@ -2406,7 +2756,7 @@ function refreshArtboardInspector(){
   bgColor.value = current.background?.color || '#FFFFFF';
   bgLock.checked = !!current.background?.locked;
   bgExp.checked = !!current.background?.includeInExport;
-  bgColor.disabled = !!current.background?.locked;
+  bgColor.disabled = false;
   if (abW) abW.value = String(Math.round(current.w));
   if (abH) abH.value = String(Math.round(current.h));
 }
@@ -2416,6 +2766,7 @@ function updateZoomLabel() {
   if (el) el.textContent = pct;
   const top = $('zoomTopLabel');
   if (top) top.textContent = 'ZOOM ' + pct;
+  updateArtboardLabelScale();
 }
 
 // ─── Pan / Zoom ──────────────────────────────────────────
@@ -2425,6 +2776,7 @@ canvas.on('mouse:wheel', opt =&gt; {
   canvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), newZoom);
   zoom = newZoom; updateZoomLabel();
   updateArtboardPlusUI();
+  renderRulers();
 });
 
 canvas.on('mouse:down', opt =&gt; {
@@ -2432,8 +2784,16 @@ canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
   const pointer = canvas.getPointer(e);
   if (!artboardMode) {
-    if (!pointInAnyArtboard(pointer)) setArtboardsEditable(true);
-    else if (!target || isArtboardGuideTarget(target)) {
+    const clickedOutsideAllArtboards = !pointInAnyArtboard(pointer);
+    if (clickedOutsideAllArtboards) {
+      focusedArtboardId = null;
+      updateArtboardLabelVisibility();
+      setArtboardsEditable(false);
+      if (target &amp;&amp; !isArtboardGuideTarget(target)) {
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+      }
+    } else if (!target || (!isArtboardGuideTarget(target) &amp;&amp; !target.isArtboardBoard)) {
       setArtboardsEditable(false);
       if (canvas.getActiveObject() &amp;&amp; isArtboardGuideTarget(canvas.getActiveObject())) {
         canvas.discardActiveObject();
@@ -2448,7 +2808,7 @@ canvas.on('mouse:down', opt =&gt; {
     return;
   }
 
-  if (artboardMode &amp;&amp; e.button === 0 &amp;&amp; !target) {
+  if (artboardMode &amp;&amp; e.button === 0) {
     const pointer = canvas.getPointer(e);
     artboardCreateState.active = true;
     artboardCreateState.start = { x:pointer.x, y:pointer.y };
@@ -2509,6 +2869,7 @@ canvas.on('mouse:move', opt =&gt; {
     canvas.setViewportTransform(vpt);
     lastX = e.clientX; lastY = e.clientY;
     updateArtboardPlusUI();
+    renderRulers();
     return;
   }
 
@@ -2522,6 +2883,16 @@ canvas.on('mouse:move', opt =&gt; {
     const height = Math.max(1, Math.abs(pointer.y - sy));
     artboardCreateState.ghost.set({ left, top, width, height });
     artboardCreateState.ghost.setCoords();
+    const preview = $('artboardSizePreview');
+    if (preview) {
+      const vpt = canvas.viewportTransform || [1,0,0,1,0,0];
+      const px = left * vpt[0] + vpt[4];
+      const py = (top + height) * vpt[3] + vpt[5];
+      preview.style.display = 'block';
+      preview.style.left = `${Math.max(8, px + 8)}px`;
+      preview.style.top = `${Math.max(8, py + 8)}px`;
+      preview.textContent = `${Math.round(width)} × ${Math.round(height)} px`;
+    }
     canvas.requestRenderAll();
     return;
   }
@@ -2604,12 +2975,16 @@ canvas.on('mouse:up', opt =&gt; {
     const width = Math.abs(pointer.x - (start?.x || pointer.x));
     const height = Math.abs(pointer.y - (start?.y || pointer.y));
     if (ghost &amp;&amp; canvas.getObjects().includes(ghost)) canvas.remove(ghost);
+    if ($('artboardSizePreview')) $('artboardSizePreview').style.display = 'none';
     artboardCreateState.active = false;
     artboardCreateState.start = null;
     artboardCreateState.ghost = null;
     if (width &gt;= 24 &amp;&amp; height &gt;= 24) {
       createArtboard(left, top, width, height);
       setStatus('Artboard criado por arrasto.');
+      if (artboardOneShot) setArtboardDrawMode(false, { statusOff:'Frame desativado.' });
+    } else if (artboardOneShot) {
+      setArtboardDrawMode(false, { statusOff:'Frame desativado.' });
     }
     canvas.requestRenderAll();
     return;
@@ -2651,13 +3026,33 @@ canvas.on('mouse:up', opt =&gt; {
 });
 canvas.on('mouse:down', opt =&gt; {
   const target = opt.target;
-  if (!target) return;
-  const ab = artboards.find(a =&gt; a.board === target || a.shadow === target || a.bleed === target || a.safe === target);
+  const pointer = canvas.getPointer(opt.e);
+  if (!artboardMode && target && !isGuide(target)) return;
+
+  let ab = target ? artboards.find(a =&gt; a.labelText === target) : null;
+  if (!ab && !artboardMode) {
+    const pointed = pickArtboardForPoint(pointer);
+    if (pointed && getParentArtboardId(pointed)) ab = pointed;
+  }
+
   if (!ab) return;
   activeArtboardId = ab.id;
+  focusedArtboardId = ab.id;
   syncActiveArtboardRefs();
+  updateArtboardLabelVisibility();
   updateArtboardPlusUI();
-  setStatus('Prancheta ativa selecionada');
+  enableArtboardDrag(ab);
+  canvas.setActiveObject(ab.board);
+  canvas.requestRenderAll();
+  setStatus(getParentArtboardId(ab) ? 'Frame filho selecionado.' : 'Frame pai selecionado pelo rótulo.');
+});
+
+canvas.on('mouse:dblclick', opt =&gt; {
+  const target = opt.target;
+  if (!target) return;
+  const ab = artboards.find(a =&gt; a.labelBg === target || a.labelText === target);
+  if (!ab) return;
+  startCanvasArtboardRename(ab);
 });
 
 
@@ -2893,12 +3288,33 @@ window.addEventListener('keydown', e =&gt; {
     setActiveTool('select');
     return;
   }
+  if (e.key === 'Escape' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; focusedArtboardId) {
+    focusedArtboardId = null;
+    updateArtboardLabelVisibility();
+    canvas.requestRenderAll();
+  }
   if (e.code === 'Space' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; !isSpaceDown) {
     isSpaceDown = true; canvas.setCursor('grab'); e.preventDefault();
   }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'c') {
+    const ao = activeObj();
+    if (ao?.isArtboardBoard) {
+      const ab = getArtboardByBoard(ao);
+      if (ab) { artboardClipboard = { id:ab.id }; setStatus('Artboard copiado'); e.preventDefault(); }
+    }
+  }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'v' &amp;&amp; artboardClipboard?.id) {
+    const src = getArtboardById(artboardClipboard.id);
+    if (src) {
+      duplicateArtboardBundle(src, 42, 42);
+      snapshot();
+      setStatus('Artboard colado');
+      e.preventDefault();
+    }
+  }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; !e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); groupSelection(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase()==='g') { e.preventDefault(); ungroupSelection(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key === ']') { e.preventDefault(); bringForwardSelection(); }
@@ -4237,6 +4653,13 @@ function del() {
     clearBezierPreview();
   }
 
+  const active = activeObj();
+  if (active?.isArtboardBoard) {
+    const ab = getArtboardByBoard(active);
+    if (ab) { deleteArtboardBundle(ab); snapshot(); setStatus('Artboard removido'); }
+    return;
+  }
+
   const objs = selectedObjects();
   if(!objs.length) return;
 
@@ -4253,7 +4676,16 @@ function del() {
 function duplicate() {
   const o = activeObj(); if(!o) return;
   clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
+  if (o.isArtboardBoard) {
+    const ab = getArtboardByBoard(o);
+    if (!ab) return;
+    duplicateArtboardBundle(ab, 28, 28);
+    snapshot();
+    setStatus('Artboard duplicado');
+    return;
+  }
   o.clone(cl =&gt; {
+    cl.id = null;
     cl.set({ left:(o.left||0)+18, top:(o.top||0)+18 });
     canvas.add(cl); canvas.setActiveObject(cl);
     canvas.requestRenderAll(); refreshProps(); refreshLayers();
@@ -4703,6 +5135,15 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
   else clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
   const active = canvas.getActiveObject();
   if (!artboardMode &amp;&amp; active &amp;&amp; !isGuide(active)) setArtboardsEditable(false);
+  if (ev === 'selection:cleared') {
+    focusedArtboardId = null;
+  } else if (active?.isArtboardBoard) {
+    const activeAb = getArtboardByBoard(active);
+    focusedArtboardId = activeAb?.id || focusedArtboardId;
+  } else if (active &amp;&amp; !isGuide(active)) {
+    focusedArtboardId = active.dataArtboardId || null;
+  }
+  updateArtboardLabelVisibility();
   refreshProps(); refreshLayers();
   if (ev === 'selection:cleared' &amp;&amp; bezierEditor.enabled) finalizeBezierEditor();
   if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; activeTool === 'direct-select') {
@@ -4816,51 +5257,103 @@ function refreshLayers() {
   const list = $('layersList');
   const cnt = $('layerCount');
   if (!list) return;
-  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay).slice().reverse();
+
+  const active = canvas.getActiveObject();
+  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay);
   ensureFoldersForObjects(objs);
   renderFolderChips();
-  if (cnt) cnt.textContent = objs.length;
-  const active = canvas.getActiveObject();
+
+  const objectById = new Map(objs.filter(o =&gt; o.id).map(o =&gt; [o.id, o]));
+  const objectsByArtboard = new Map();
+  artboards.forEach(ab =&gt; objectsByArtboard.set(ab.id, []));
+  const rootObjects = [];
+  objs.forEach(obj =&gt; {
+    const abId = obj.dataArtboardId;
+    if (abId &amp;&amp; objectsByArtboard.has(abId)) objectsByArtboard.get(abId).push(obj);
+    else rootObjects.push(obj);
+  });
+
+  const artChildren = new Map();
+  artboards.forEach(ab =&gt; artChildren.set(ab.id, []));
+  const rootArtboards = [];
+  artboards.forEach(ab =&gt; {
+    const p = getParentArtboardId(ab);
+    if (p &amp;&amp; artChildren.has(p)) artChildren.get(p).push(ab);
+    else rootArtboards.push(ab);
+  });
+
+  const rows = [];
+  const walkArtboard = (ab, depth = 0) =&gt; {
+    rows.push({ type:'artboard', ref:ab, depth });
+    (objectsByArtboard.get(ab.id) || []).forEach(o =&gt; rows.push({ type:'object', ref:o, depth:depth+1 }));
+    (artChildren.get(ab.id) || []).forEach(child =&gt; walkArtboard(child, depth+1));
+  };
+  rootArtboards.forEach(ab =&gt; walkArtboard(ab, 0));
+  rootObjects.forEach(o =&gt; rows.push({ type:'object', ref:o, depth:0 }));
+
+  if (cnt) cnt.textContent = rows.length;
   list.innerHTML = '';
-  if (!objs.length) {
+  if (!rows.length) {
     list.innerHTML = '&lt;div class="layer-empty"&gt;Sem objetos ainda&lt;/div&gt;';
     return;
   }
 
-  objs.forEach((obj, i) =&gt; {
-    const isAct = obj === active;
-    const isVisible = obj.visible !== false;
-    const name = String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
-    const opacity = Math.round((obj.opacity??1)*100);
-    const folder = String(obj.dataFolder || 'Geral');
+  const findRowIndexByUid = uid =&gt; rows.findIndex(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid || (r.ref.__uid='ly_'+Math.random().toString(36).slice(2,9)))===uid);
+
+  rows.forEach((row, i) =&gt; {
+    const obj = row.ref;
+    const isArtboardRow = row.type === 'artboard';
+    const isAct = (isArtboardRow &amp;&amp; active === obj.board) || (!isArtboardRow &amp;&amp; active === obj);
+    const isVisible = isArtboardRow ? true : obj.visible !== false;
+    const name = isArtboardRow
+      ? String(obj.board?.dataName || 'Artboard')
+      : String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
+    const metaL = isArtboardRow ? `${Math.round(obj.w)}×${Math.round(obj.h)}` : `${Math.round((obj.opacity??1)*100)}%`;
+    const metaR = isArtboardRow ? 'Artboard' : String(obj.dataFolder || 'Geral');
     const visIcon = isVisible ? 'eye' : 'eye-off';
+    const leftPad = 8 + row.depth * 14;
 
     const div = document.createElement('div');
     div.className = 'layer-item' + (isAct ? ' active' : '') + (isVisible ? '' : ' is-hidden');
+    div.style.paddingLeft = `${leftPad}px`;
     div.draggable = true;
-    div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
+    div.dataset.layerType = row.type;
+    div.dataset.layerId = isArtboardRow ? obj.id : (obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9)));
     div.innerHTML = `
       &lt;span class="layer-marker"&gt;&lt;/span&gt;
       &lt;div class="layer-main"&gt;
-        &lt;div class="layer-name" title="${name}"&gt;${name}&lt;/div&gt;
+        &lt;div class="layer-name" title="${name}"&gt;${isArtboardRow ? '▣ ' : ''}${name}&lt;/div&gt;
       &lt;/div&gt;
       &lt;div class="layer-row-meta"&gt;
-        &lt;div class="layer-meta"&gt;${opacity}%&lt;/div&gt;
-        &lt;div class="layer-meta"&gt;${folder}&lt;/div&gt;
-        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}"&gt;
+        &lt;div class="layer-meta"&gt;${metaL}&lt;/div&gt;
+        &lt;div class="layer-meta"&gt;${metaR}&lt;/div&gt;
+        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}" ${isArtboardRow ? 'disabled' : ''}&gt;
           &lt;i data-lucide="${visIcon}" data-size="12"&gt;&lt;/i&gt;
         &lt;/button&gt;
       &lt;/div&gt;`;
 
     const visBtn = div.querySelector('.layer-vis-btn');
-    visBtn?.addEventListener('click', e =&gt; {
-      e.stopPropagation();
-      toggleLayerVisibility(obj);
-    });
+    if (!isArtboardRow) {
+      visBtn?.addEventListener('click', e =&gt; {
+        e.stopPropagation();
+        toggleLayerVisibility(obj);
+      });
+    }
 
     div.addEventListener('click', () =&gt; {
-      if (obj.visible === false) return;
-      canvas.setActiveObject(obj);
+      if (isArtboardRow) {
+        activeArtboardId = obj.id;
+        focusedArtboardId = obj.id;
+        syncActiveArtboardRefs();
+        updateArtboardLabelVisibility();
+        enableArtboardDrag(obj);
+        canvas.setActiveObject(obj.board);
+      } else {
+        if (obj.visible === false) return;
+        focusedArtboardId = obj.dataArtboardId || null;
+        updateArtboardLabelVisibility();
+        canvas.setActiveObject(obj);
+      }
       canvas.requestRenderAll();
       refreshProps();
       refreshLayers();
@@ -4869,20 +5362,51 @@ function refreshLayers() {
     div.addEventListener('dblclick', e =&gt; {
       e.preventDefault();
       e.stopPropagation();
-      renameLayerObject(obj);
+      if (isArtboardRow) startCanvasArtboardRename(obj);
+      else renameLayerObject(obj);
     });
 
-    div.addEventListener('dragstart', () =&gt; { draggingLayerId = div.dataset.layerId; });
+    div.addEventListener('dragstart', () =&gt; { draggingLayerId = `${row.type}:${div.dataset.layerId}`; });
     div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
     div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
     div.addEventListener('drop', e =&gt; {
       e.preventDefault();
       div.classList.remove('drag-over');
-      if(!draggingLayerId || draggingLayerId===div.dataset.layerId) return;
-      const draggedObj = objs.find(o =&gt; o.__uid===draggingLayerId);
-      if(!draggedObj) return;
-      moveLayerByDisplayIndex(draggedObj, i);
-      refreshLayers();
+      if(!draggingLayerId) return;
+      const [dragType, dragId] = String(draggingLayerId).split(':');
+      if (!dragType || !dragId) return;
+
+      if (isArtboardRow) {
+        if (dragType === 'artboard' &amp;&amp; dragId !== obj.id) {
+          const dragged = getArtboardById(dragId);
+          if (!dragged) return;
+          dragged.board.set({ left:obj.board.left + 24, top:obj.board.top + 24 });
+          syncArtboardAuxGeometry(dragged);
+          updateArtboardLabelVisibility();
+          orderArtboard();
+          canvas.requestRenderAll();
+          refreshLayers();
+          snapshot();
+          return;
+        }
+        if (dragType === 'object') {
+          const draggedObj = rows.find(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid===dragId))?.ref;
+          if (!draggedObj) return;
+          assignObjectToArtboard(draggedObj, obj);
+          canvas.requestRenderAll();
+          refreshLayers();
+          snapshot();
+          return;
+        }
+      }
+
+      if (dragType === 'object' &amp;&amp; !isArtboardRow) {
+        const draggedObj = rows.find(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid===dragId))?.ref;
+        if(!draggedObj || draggedObj===obj) return;
+        const to = findRowIndexByUid(obj.__uid);
+        if (to &gt;= 0) moveLayerByDisplayIndex(draggedObj, to);
+        refreshLayers();
+      }
     });
 
     list.appendChild(div);
@@ -5236,15 +5760,33 @@ canvas.on('object:moving', opt =&gt; {
     const dy = (obj.top || 0) - (last.top || 0);
     ab.__lastPos = { left:obj.left, top:obj.top };
     if (dx || dy) {
-      (ab.children || []).forEach(id =&gt; {
-        const child = canvas.getObjects().find(o =&gt; o.id === id);
-        if (!child) return;
-        child.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
-        child.setCoords();
+      const subtree = [];
+      const walk = parent =&gt; {
+        artboards.forEach(candidate =&gt; {
+          if (candidate.id === parent.id) return;
+          if (getParentArtboardId(candidate) !== parent.id) return;
+          subtree.push(candidate);
+          walk(candidate);
+        });
+      };
+      walk(ab);
+      subtree.forEach(childAb =&gt; {
+        childAb.board.set({ left:(childAb.board.left || 0) + dx, top:(childAb.board.top || 0) + dy });
+        childAb.__lastPos = { left:childAb.board.left, top:childAb.board.top };
+        syncArtboardAuxGeometry(childAb);
+      });
+      [ab, ...subtree].forEach(scopeAb =&gt; {
+        (scopeAb.children || []).forEach(id =&gt; {
+          const child = canvas.getObjects().find(o =&gt; o.id === id);
+          if (!child || child.isArtboardBoard) return;
+          child.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
+          child.setCoords();
+        });
+        refreshArtboardChildrenClipping(scopeAb);
       });
     }
     syncArtboardAuxGeometry(ab);
-    refreshArtboardChildrenClipping(ab);
+    orderArtboard();
     updateArtboardPlusUI();
     canvas.requestRenderAll();
     return;
@@ -5272,10 +5814,12 @@ canvas.on('object:modified', e =&gt; {
     const ab = getArtboardByBoard(obj);
     if (!ab) return;
     syncArtboardAuxGeometry(ab);
+    orderArtboard();
     refreshArtboardChildrenClipping(ab);
     ab.__lastPos = { left:obj.left, top:obj.top };
     syncActiveArtboardRefs();
     updateArtboardPlusUI();
+    refreshLayers();
     return;
   }
   if (!isGuide(obj)) syncObjectArtboardMembership(obj);
@@ -5330,7 +5874,7 @@ const menuCatalog = {
     {id:'selection.lasso', label:'Seleção por laço'}
   ],
   create: [
-    {id:'create.rect', label:'Retângulo'},
+    {id:'create.rect', label:'Quadrado'},
     {id:'create.ellipse', label:'Elipse'},
     {id:'create.polygon', label:'Polígono'},
     {id:'create.star', label:'Estrela'},
@@ -5342,7 +5886,7 @@ const menuCatalog = {
     {id:'create.textBox', label:'Texto em área'},
     {id:'create.textOnPath', label:'Texto em caminho'},
     {id:'create.eyedropper', label:'Conta-gotas'},
-    {id:'create.artboard', label:'Novo artboard'}
+    {id:'create.artboard', label:'Frame (arrasto)'}
   ],
   transform: [
     {id:'transform.move', label:'Mover'},
@@ -5405,7 +5949,10 @@ const menuCatalog = {
     {id:'view.guides', label:'Mostrar/ocultar guias'},
     {id:'view.nodes', label:'Mostrar nós'},
     {id:'view.outline', label:'Modo outline'},
-    {id:'view.preview', label:'Modo preview'}
+    {id:'view.preview', label:'Modo preview'},
+    {sep:true},
+    {id:'view.rulers', label:'Mostrar/ocultar régua'},
+    {id:'view.rulerUnit', label:'Alternar unidade da régua (px/cm/pt)'}
   ],
   advanced: [
     {id:'advanced.components', label:'Componentes / Símbolos'},
@@ -5550,7 +6097,7 @@ function executeMenuCommand(cmdId){
     'create.star': () =&gt; notifyTodo('Estrela'),
     'create.line': addLine,
     'create.pen': addBezier,
-    'create.artboard': () =&gt; $('btnNewArtboard')?.click(),
+    'create.artboard': () =&gt; $('btnRect')?.click(),
     'create.pencil': () =&gt; notifyTodo('Lápis'),
     'create.brush': () =&gt; notifyTodo('Pincel vetorial'),
     'create.artText': () =&gt; setActiveTool('text'),
@@ -5614,6 +6161,8 @@ function executeMenuCommand(cmdId){
     'view.nodes': () =&gt; notifyTodo('Mostrar nós'),
     'view.outline': () =&gt; notifyTodo('Modo outline'),
     'view.preview': () =&gt; notifyTodo('Modo preview'),
+    'view.rulers': toggleRulers,
+    'view.rulerUnit': cycleRulerUnit,
 
     'advanced.components': () =&gt; notifyTodo('Componentes / Símbolos'),
     'advanced.autoLayout': () =&gt; notifyTodo('Auto Layout'),
@@ -5833,9 +6382,9 @@ $('btnSelectNormal')?.addEventListener('click', () =&gt; setActiveTool('select')
 $('btnSelectDirect')?.addEventListener('click', () =&gt; setActiveTool('direct-select'));
 document.addEventListener('click', e =&gt; {
   const sub = $('selectToolSubmenu');
-  if (!sub) return;
-  if (sub.contains(e.target) || $('btnSelect')?.contains(e.target)) return;
-  sub.classList.remove('open');
+  if (sub && !(sub.contains(e.target) || $('btnSelect')?.contains(e.target))) sub.classList.remove('open');
+  const shapeSub = $('shapeToolSubmenu');
+  if (shapeSub && !(shapeSub.contains(e.target) || $('btnShape')?.contains(e.target))) shapeSub.classList.remove('open');
 });
 $('btnToolVector')?.addEventListener('click', () =&gt; {
   if (activeTool === 'bezier' || activeTool === 'bezier-v2' || vectorToolState.mode === 'creating') return startBezierCreation({ modelKey:getActiveBezierModelKey() });
@@ -5843,21 +6392,33 @@ $('btnToolVector')?.addEventListener('click', () =&gt; {
 });
 $('btnToolMove')?.addEventListener('click', () =&gt; setActiveTool('move'));
 $('btnTextTool')?.addEventListener('click', () =&gt; setActiveTool('text'));
-$('btnRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addRect(); });
-$('btnCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); });
+$('btnRect')?.addEventListener('click', () =&gt; {
+  setArtboardDrawMode(!artboardMode, {
+    oneShot:true,
+    statusOn:'Frame ativo: clique e arraste para criar.',
+    statusOff:'Frame desativado.'
+  });
+});
+$('btnShape')?.addEventListener('click', (e) =&gt; { e.stopPropagation(); $('shapeToolSubmenu')?.classList.toggle('open'); });
+$('btnShapeRect')?.addEventListener('click', () =&gt; { setActiveTool('select'); addRect(); $('shapeToolSubmenu')?.classList.remove('open'); });
+$('btnShapeCircle')?.addEventListener('click', () =&gt; { setActiveTool('select'); addCircle(); $('shapeToolSubmenu')?.classList.remove('open'); });
 $('btnCreateLayer')?.addEventListener('click', addLayer);
 $('btnLine')?.addEventListener('click', () =&gt; { if (ENABLE_BEZIER_V2) addBezierV2(); else { setActiveTool('select'); addLine(); } });
 $('btnBezier')?.addEventListener('click', () =&gt; addBezier());
 $('btnArtboardTool')?.addEventListener('click', () =&gt; {
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
-  setStatus('Ferramenta Artboard legada desativada. Use o novo sistema de Frames.');
+  setArtboardDrawMode(!artboardMode, { oneShot:false });
 });
 $('btnImportFile')?.addEventListener('click', () =&gt; $('fileInput')?.click());
 $('btnNewArtboard')?.addEventListener('click', () =&gt; {
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
-  setStatus('Novo sistema de Frames aberto em nova aba.');
+  const current = getActiveArtboard();
+  if (!current) {
+    createArtboard();
+    fitToArtboard();
+    setStatus('Artboard criado.');
+    return;
+  }
+  addAdjacentArtboard('right');
+  setStatus('Novo artboard criado à direita.');
 });
 $('btnToolLasso')?.addEventListener('click', () =&gt; setStatus('Laço: em breve.'));
 $('btnToolPaint')?.addEventListener('click', () =&gt; setStatus('Pintar: em breve.'));
@@ -5868,6 +6429,7 @@ $('btnNodeMirrored')?.addEventListener('click', () =&gt; applySelectedNodeType('
 $('btnNodeBreak')?.addEventListener('click', () =&gt; toggleSelectedNodeBreak());
 $('btnToolCut')?.addEventListener('click', () =&gt; applyClipMask());
 $('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
+$('btnRulerToggle')?.addEventListener('click', toggleRulers);
 $('btnFit')?.addEventListener('click', fitToArtboard);
 $('btnZoomReset')?.addEventListener('click', fitToArtboard);
 $('btnZoomIn')?.addEventListener('click', () =&gt; {
@@ -5875,12 +6437,14 @@ $('btnZoomIn')?.addEventListener('click', () =&gt; {
   canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
   zoom = newZoom; updateZoomLabel();
   updateArtboardPlusUI();
+  renderRulers();
 });
 $('btnZoomOut')?.addEventListener('click', () =&gt; {
   const newZoom = clamp(zoom/1.15, 0.05, 10);
   canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), newZoom);
   zoom = newZoom; updateZoomLabel();
   updateArtboardPlusUI();
+  renderRulers();
 });
 $('btnDelete')?.addEventListener('click', del);
 $('btnDuplicate')?.addEventListener('click', duplicate);
@@ -5898,18 +6462,12 @@ $('btnApplyDoc')?.addEventListener('click', () =&gt; {
   setDeskTheme($('deskTheme')?.value || 'nebula');
 });
 $('btnArtboardMode')?.addEventListener('click', () =&gt; {
-  artboardMode = false;
-  $('btnArtboardMode').classList.remove('accent');
-  setStatus('Modo Artboard antigo desativado. Abra o novo sistema de Frames.');
-  const url = 'docs/frame-engine-demo.html';
-  window.open(url, '_blank', 'noopener');
-  updateArtboardPlusUI();
-  canvas.requestRenderAll();
+  setArtboardDrawMode(!artboardMode, { oneShot:false });
 });
-$('btnAddArtTop')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
-$('btnAddArtRight')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
-$('btnAddArtBottom')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
-$('btnAddArtLeft')?.addEventListener('click', () =&gt; $('btnNewArtboard')?.click());
+$('btnAddArtTop')?.addEventListener('click', () =&gt; addAdjacentArtboard('top'));
+$('btnAddArtRight')?.addEventListener('click', () =&gt; addAdjacentArtboard('right'));
+$('btnAddArtBottom')?.addEventListener('click', () =&gt; addAdjacentArtboard('bottom'));
+$('btnAddArtLeft')?.addEventListener('click', () =&gt; addAdjacentArtboard('left'));
 
 const applyArtboardInspectorChanges = () =&gt; {
   const ab = getActiveArtboard();
@@ -5919,7 +6477,7 @@ const applyArtboardInspectorChanges = () =&gt; {
   ab.background.enabled = !!$('abBgEnabled')?.checked;
   ab.background.locked = !!$('abBgLock')?.checked;
   ab.background.includeInExport = !!$('abBgExport')?.checked;
-  if (!ab.background.locked &amp;&amp; $('abBgColor')?.value) ab.background.color = $('abBgColor').value;
+  if ($('abBgColor')?.value) ab.background.color = $('abBgColor').value;
   applyArtboardVisualState(ab);
   canvas.requestRenderAll();
 };
