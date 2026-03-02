@@ -2216,11 +2216,12 @@ function isArtboardGuideTarget(target){
   return !!(target &amp;&amp; (target.isArtboardBoard || target.isArtboardShadow || target.isArtboardBleed || target.isArtboardSafe || target.isArtboardLabel));
 }
 
-function setArtboardsEditable(enabled){
+function setArtboardsEditable(_enabled){
   artboards.forEach(ab => {
     if (!ab?.board) return;
-    ab.board.set({ selectable:!!enabled, evented:!!enabled });
-    ab.board.hoverCursor = enabled ? 'move' : 'default';
+    // Papel/artboard não deve mover por drag direto; só mantém click/evento.
+    ab.board.set({ selectable:false, evented:true, lockMovementX:true, lockMovementY:true });
+    ab.board.hoverCursor = 'default';
     ab.board.setCoords();
   });
 }
@@ -2240,8 +2241,8 @@ function setArtboardDrawMode(next, {oneShot=false, statusOn='Modo Artboard ativo
 function enableArtboardDrag(ab){
   if (!ab?.board) return;
   setArtboardsEditable(false);
-  ab.board.set({ selectable:true, evented:true });
-  ab.board.hoverCursor = 'move';
+  ab.board.set({ selectable:false, evented:true, lockMovementX:true, lockMovementY:true });
+  ab.board.hoverCursor = 'default';
   ab.board.setCoords();
 }
 
@@ -2363,11 +2364,13 @@ function applyArtboardVisualState(ab){
     fill,
     stroke:'rgba(0,0,0,.18)',
     strokeWidth:1,
-    selectable:!!artboardMode,
-    evented:!!artboardMode,
+    selectable:false,
+    evented:true,
+    lockMovementX:true,
+    lockMovementY:true,
     lockRotation:true,
-    hasControls:true,
-    hasBorders:true,
+    hasControls:false,
+    hasBorders:false,
     excludeFromExport: !ab.exportEnabled,
     opacity:1
   });
@@ -3077,13 +3080,7 @@ canvas.on('mouse:down', opt =&gt; {
   canvas.setActiveObject(ab.board);
 
   if (target === ab.labelText || target === ab.labelBg) {
-    artboardLabelDrag = {
-      active:true,
-      abId:ab.id,
-      offsetX:pointer.x - (ab.board.left || 0),
-      offsetY:pointer.y - (ab.board.top || 0),
-      moved:false
-    };
+    artboardLabelDrag = { active:false, abId:null, offsetX:0, offsetY:0, moved:false };
   }
 
   canvas.requestRenderAll();
@@ -3158,7 +3155,7 @@ canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
   if (opt.e?.button !== 0) return;
 
-  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
+  if ((activeTool === 'select' || activeTool === 'direct-select') &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
     opt.e.preventDefault?.();
     toggleShiftSelection(opt.target);
     return;
@@ -3472,26 +3469,49 @@ function setStatus(txt) {
 }
 
 // ─── Add objects ─────────────────────────────────────────
+function resolveArtboardForPoint(x, y){
+  ensureArtboard();
+  const p = { x:Number(x)||0, y:Number(y)||0 };
+  const ab = pickArtboardForPoint(p) || getActiveArtboard() || artboards[0] || null;
+  if (ab) {
+    activeArtboardId = ab.id;
+    focusedArtboardId = ab.id;
+    syncActiveArtboardRefs();
+    updateArtboardLabelVisibility();
+  }
+  return ab;
+}
+
 function addArtTextAt(left, top) {
+  const ab = resolveArtboardForPoint(left, top);
   const t = new fabric.IText('Texto artístico', {
     left, top,
     fontFamily: 'Outfit', fontSize: 42,
-    fill: '#111', editable: true
+    fill: '#111', editable: true,
+    dataArtboardId: ab?.id || null
   });
-  canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
+  canvas.add(t); canvas.setActiveObject(t);
+  syncObjectArtboardMembership(t);
+  orderArtboard();
+  canvas.requestRenderAll();
   setStatus('Texto artístico adicionado');
 }
 
 function addTextBoxAt(left, top, width=360, height=120) {
+  const ab = resolveArtboardForPoint(left, top);
   const t = new fabric.Textbox('Caixa de texto', {
     left, top,
     width: Math.max(120, width),
     height: Math.max(48, height),
     fontFamily: 'Outfit', fontSize: 32,
     fill: '#111', editable: true,
-    textAlign: 'left'
+    textAlign: 'left',
+    dataArtboardId: ab?.id || null
   });
-  canvas.add(t); canvas.setActiveObject(t); canvas.requestRenderAll();
+  canvas.add(t); canvas.setActiveObject(t);
+  syncObjectArtboardMembership(t);
+  orderArtboard();
+  canvas.requestRenderAll();
   setStatus('Caixa de texto adicionada');
 }
 
