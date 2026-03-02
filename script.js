@@ -400,7 +400,7 @@ function createProject(){
 
 function openProject(pid){
   S.pid=pid;S.styleKey=null;
-  nav("board");
+  nav("editor");
 }
 
 /* ============================================================
@@ -2711,6 +2711,10 @@ document.addEventListener("keydown",e=>{
 fillFontSelects();
 loadGoogleFontsCatalog();
 renderHome();
+if(S.projects.length){
+  S.pid = S.projects[0].id;
+  nav("editor");
+}
 
 
 function renameCurrentApplication(){
