@@ -5842,16 +5842,26 @@ function loadSVGFromParent(svgText) {
     const vbX = (vb.length === 4 &amp;&amp; Number.isFinite(vb[0])) ? vb[0] : 0;
     const vbY = (vb.length === 4 &amp;&amp; Number.isFinite(vb[1])) ? vb[1] : 0;
 
+    // Coordenadas do arquivo (SVG) ficam no espaço do viewBox.
+    // Convertendo para o espaço de mundo do editor, ancoramos no artboard ativo,
+    // evitando deslocamento por mistura de referência global/local no load.
+    const currentAb = getActiveArtboard();
+    const anchorX = currentAb?.board?.left || 0;
+    const anchorY = currentAb?.board?.top || 0;
+
     objects.forEach(o =&gt; {
+      const localX = (o.left||0) - vbX;
+      const localY = (o.top||0) - vbY;
       o.set({
-        left: (o.left||0) - vbX,
-        top: (o.top||0) - vbY,
+        left: anchorX + localX,
+        top: anchorY + localY,
         selectable:true,
         evented:true,
         excludeFromExport:false
       });
       o.setCoords();
       canvas.add(o);
+      syncObjectArtboardMembership(o);
     });
 
     canvas.requestRenderAll();
