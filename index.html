@@ -2016,6 +2016,7 @@ let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
 const artboards = [];
 let activeArtboardId = null;
 let focusedArtboardId = null;
+let artboardLabelDrag = { active:false, abId:null, offsetX:0, offsetY:0, moved:false };
 const ART_GAP = 120;
 const GUIDES = { bleed: 0, safe: 24 };
 
@@ -2173,18 +2174,26 @@ function pointInArtboard(ab, point){
   return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
 }
 
-function artboardContainsArtboard(outer, inner){
-  if (!outer || !inner || outer.id === inner.id) return false;
-  const pad = 0.5;
-  const L = outer.board.left;
-  const T = outer.board.top;
-  const R = L + outer.w;
-  const B = T + outer.h;
+function artboardOverlapRatio(outer, inner){
+  if (!outer || !inner) return 0;
+  const oL = outer.board.left;
+  const oT = outer.board.top;
+  const oR = oL + outer.w;
+  const oB = oT + outer.h;
   const iL = inner.board.left;
   const iT = inner.board.top;
   const iR = iL + inner.w;
   const iB = iT + inner.h;
-  return iL &gt;= L + pad &amp;&amp; iT &gt;= T + pad &amp;&amp; iR &lt;= R - pad &amp;&amp; iB &lt;= B - pad;
+  const overlapW = Math.max(0, Math.min(oR, iR) - Math.max(oL, iL));
+  const overlapH = Math.max(0, Math.min(oB, iB) - Math.max(oT, iT));
+  const overlapArea = overlapW * overlapH;
+  const innerArea = Math.max(1, inner.w * inner.h);
+  return overlapArea / innerArea;
+}
+
+function artboardContainsArtboard(outer, inner){
+  if (!outer || !inner || outer.id === inner.id) return false;
+  return artboardOverlapRatio(outer, inner) &gt;= 0.5;
 }
 
 function updateArtboardLabelVisibility(){
@@ -2299,9 +2308,27 @@ function assignObjectToArtboard(obj, nextArtboard){
 function syncObjectArtboardMembership(obj){
   if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
   const b = obj.getBoundingRect(true, true);
+  const objArea = Math.max(1, b.width * b.height);
+  let best = null;
+
+  artboards.forEach(ab =&gt; {
+    const L = ab.board.left, T = ab.board.top, R = L + ab.w, B = T + ab.h;
+    const oL = b.left, oT = b.top, oR = b.left + b.width, oB = b.top + b.height;
+    const overlapW = Math.max(0, Math.min(R, oR) - Math.max(L, oL));
+    const overlapH = Math.max(0, Math.min(B, oB) - Math.max(T, oT));
+    const ratio = (overlapW * overlapH) / objArea;
+    if (!best || ratio &gt; best.ratio || (Math.abs(ratio - best.ratio) &lt; 0.001 &amp;&amp; (ab.w*ab.h) &lt; (best.ab.w*best.ab.h))) {
+      best = { ab, ratio };
+    }
+  });
+
+  if (best &amp;&amp; best.ratio &gt;= 0.5) {
+    assignObjectToArtboard(obj, best.ab);
+    return;
+  }
+
   const center = { x:b.left + b.width/2, y:b.top + b.height/2 };
-  const target = pickArtboardForPoint(center);
-  assignObjectToArtboard(obj, target);
+  assignObjectToArtboard(obj, pickArtboardForPoint(center));
 }
 
 function syncArtboardAuxGeometry(ab){
@@ -2460,10 +2487,13 @@ function addAdjacentArtboard(dir) {
 
 function getParentArtboardId(inner){
   if (!inner) return null;
-  const parents = artboards.filter(outer =&gt; artboardContainsArtboard(outer, inner));
+  const parents = artboards
+    .filter(outer =&gt; outer.id !== inner.id)
+    .map(outer =&gt; ({ outer, ratio:artboardOverlapRatio(outer, inner) }))
+    .filter(entry =&gt; entry.ratio &gt;= 0.5);
   if (!parents.length) return null;
-  parents.sort((a,b) =&gt; (a.w*a.h) - (b.w*b.h));
-  return parents[0].id;
+  parents.sort((a,b) =&gt; (a.outer.w*a.outer.h) - (b.outer.w*b.outer.h));
+  return parents[0].outer.id;
 }
 
 function duplicateArtboardBundle(source, dx = 28, dy = 28){
@@ -3030,7 +3060,7 @@ canvas.on('mouse:down', opt =&gt; {
   const pointer = canvas.getPointer(opt.e);
   if (!artboardMode && target && !isGuide(target)) return;
 
-  let ab = target ? artboards.find(a =&gt; a.labelText === target) : null;
+  let ab = target ? artboards.find(a =&gt; a.labelText === target || a.labelBg === target) : null;
   if (!ab && !artboardMode) {
     const pointed = pickArtboardForPoint(pointer);
     if (pointed && getParentArtboardId(pointed)) ab = pointed;
@@ -3044,6 +3074,17 @@ canvas.on('mouse:down', opt =&gt; {
   updateArtboardPlusUI();
   enableArtboardDrag(ab);
   canvas.setActiveObject(ab.board);
+
+  if (target === ab.labelText || target === ab.labelBg) {
+    artboardLabelDrag = {
+      active:true,
+      abId:ab.id,
+      offsetX:pointer.x - (ab.board.left || 0),
+      offsetY:pointer.y - (ab.board.top || 0),
+      moved:false
+    };
+  }
+
   canvas.requestRenderAll();
   setStatus(getParentArtboardId(ab) ? 'Frame filho selecionado.' : 'Frame pai selecionado pelo rótulo.');
 });
@@ -3054,6 +3095,61 @@ canvas.on('mouse:dblclick', opt =&gt; {
   const ab = artboards.find(a =&gt; a.labelBg === target || a.labelText === target);
   if (!ab) return;
   startCanvasArtboardRename(ab);
+});
+
+
+canvas.on('mouse:move', opt =&gt; {
+  if (!artboardLabelDrag.active) return;
+  const ab = getArtboardById(artboardLabelDrag.abId);
+  if (!ab?.board) return;
+  const pointer = canvas.getPointer(opt.e);
+  const nextLeft = pointer.x - artboardLabelDrag.offsetX;
+  const nextTop = pointer.y - artboardLabelDrag.offsetY;
+  const dx = nextLeft - (ab.board.left || 0);
+  const dy = nextTop - (ab.board.top || 0);
+  if (!dx && !dy) return;
+  ab.board.set({ left:nextLeft, top:nextTop });
+  ab.__lastPos = { left:nextLeft, top:nextTop };
+  syncArtboardAuxGeometry(ab);
+
+  const subtree = [];
+  const walk = parent =&gt; {
+    artboards.forEach(candidate =&gt; {
+      if (candidate.id === parent.id) return;
+      if (getParentArtboardId(candidate) !== parent.id) return;
+      subtree.push(candidate);
+      walk(candidate);
+    });
+  };
+  walk(ab);
+
+  subtree.forEach(childAb =&gt; {
+    childAb.board.set({ left:(childAb.board.left || 0) + dx, top:(childAb.board.top || 0) + dy });
+    childAb.__lastPos = { left:childAb.board.left, top:childAb.board.top };
+    syncArtboardAuxGeometry(childAb);
+  });
+
+  [ab, ...subtree].forEach(scopeAb =&gt; {
+    (scopeAb.children || []).forEach(id =&gt; {
+      const child = canvas.getObjects().find(o =&gt; o.id === id);
+      if (!child || child.isArtboardBoard) return;
+      child.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
+      child.setCoords();
+    });
+    refreshArtboardChildrenClipping(scopeAb);
+  });
+
+  orderArtboard();
+  updateArtboardPlusUI();
+  artboardLabelDrag.moved = true;
+  canvas.requestRenderAll();
+});
+
+canvas.on('mouse:up', () =&gt; {
+  if (!artboardLabelDrag.active) return;
+  const moved = artboardLabelDrag.moved;
+  artboardLabelDrag = { active:false, abId:null, offsetX:0, offsetY:0, moved:false };
+  if (moved) snapshot();
 });
 
 
