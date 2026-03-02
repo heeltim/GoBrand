@@ -3157,6 +3157,13 @@ canvas.on('mouse:up', () =&gt; {
 canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
   if (opt.e?.button !== 0) return;
+
+  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
+    opt.e.preventDefault?.();
+    toggleShiftSelection(opt.target);
+    return;
+  }
+
   const pointer = canvas.getPointer(opt.e);
   vectorToolState.clickProbe = {
     target: opt.target || null,
@@ -4836,6 +4843,34 @@ function pasteAppClipboard({inPlace=false}={}){
     setStatus(inPlace ? 'Colado no lugar' : 'Colado');
   });
   return true;
+}
+
+function toggleShiftSelection(target){
+  if (!target || isGuide(target) || target.isArtboardBoard) return;
+  const active = canvas.getActiveObject();
+  let next = [];
+
+  if (!active) {
+    next = [target];
+  } else if (active.type === 'activeSelection') {
+    const cur = active.getObjects().slice();
+    if (cur.includes(target)) next = cur.filter(o => o !== target);
+    else next = [...cur, target];
+  } else if (active === target) {
+    next = [target];
+  } else {
+    next = [active, target];
+  }
+
+  canvas.discardActiveObject();
+  if (next.length === 1) {
+    canvas.setActiveObject(next[0]);
+  } else if (next.length > 1) {
+    canvas.setActiveObject(new fabric.ActiveSelection(next, { canvas }));
+  }
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
 }
 
 function duplicate() {
