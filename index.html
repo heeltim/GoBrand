@@ -1474,7 +1474,9 @@ textarea.modal-textarea{
 
 
 &lt;div class="ctx-pop" id="canvasCtx"&gt;
+  &lt;div class="ctx-pop-item" data-act="copy"&gt;&lt;span&gt;Copiar&lt;/span&gt;&lt;span&gt;Ctrl+C&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-item" data-act="paste"&gt;&lt;span&gt;Colar&lt;/span&gt;&lt;span&gt;Ctrl+V&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="pasteInPlace"&gt;&lt;span&gt;Colar no lugar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+V&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-item" data-act="group"&gt;&lt;span&gt;Agrupar&lt;/span&gt;&lt;span&gt;Ctrl+G&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-item" data-act="ungroup"&gt;&lt;span&gt;Desagrupar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+G&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-sep"&gt;&lt;/div&gt;
@@ -2016,6 +2018,7 @@ let artboard = null, artboardShadow = null, bleedRect = null, safeRect = null;
 const artboards = [];
 let activeArtboardId = null;
 let focusedArtboardId = null;
+let artboardLabelDrag = { active:false, abId:null, offsetX:0, offsetY:0, moved:false };
 const ART_GAP = 120;
 const GUIDES = { bleed: 0, safe: 24 };
 
@@ -2173,25 +2176,32 @@ function pointInArtboard(ab, point){
   return point.x &gt;= L &amp;&amp; point.x &lt;= R &amp;&amp; point.y &gt;= T &amp;&amp; point.y &lt;= B;
 }
 
-function artboardContainsArtboard(outer, inner){
-  if (!outer || !inner || outer.id === inner.id) return false;
-  const pad = 0.5;
-  const L = outer.board.left;
-  const T = outer.board.top;
-  const R = L + outer.w;
-  const B = T + outer.h;
+function artboardOverlapRatio(outer, inner){
+  if (!outer || !inner) return 0;
+  const oL = outer.board.left;
+  const oT = outer.board.top;
+  const oR = oL + outer.w;
+  const oB = oT + outer.h;
   const iL = inner.board.left;
   const iT = inner.board.top;
   const iR = iL + inner.w;
   const iB = iT + inner.h;
-  return iL &gt;= L + pad &amp;&amp; iT &gt;= T + pad &amp;&amp; iR &lt;= R - pad &amp;&amp; iB &lt;= B - pad;
+  const overlapW = Math.max(0, Math.min(oR, iR) - Math.max(oL, iL));
+  const overlapH = Math.max(0, Math.min(oB, iB) - Math.max(oT, iT));
+  const overlapArea = overlapW * overlapH;
+  const innerArea = Math.max(1, inner.w * inner.h);
+  return overlapArea / innerArea;
+}
+
+function artboardContainsArtboard(outer, inner){
+  if (!outer || !inner || outer.id === inner.id) return false;
+  return artboardOverlapRatio(outer, inner) &gt;= 0.5;
 }
 
 function updateArtboardLabelVisibility(){
   artboards.forEach(inner =&gt; {
     const hiddenByParent = artboards.some(outer =&gt; artboardContainsArtboard(outer, inner));
-    const forceVisible = inner.id === activeArtboardId || inner.id === focusedArtboardId;
-    const visible = forceVisible || !hiddenByParent;
+    const visible = !hiddenByParent;
     inner.labelBg?.set({ visible: false });
     inner.labelText?.set({ visible });
   });
@@ -2299,9 +2309,27 @@ function assignObjectToArtboard(obj, nextArtboard){
 function syncObjectArtboardMembership(obj){
   if (!obj || isGuide(obj) || obj.isBezierEditorControl || obj.isBezierOverlay || obj.isArtboardBoard) return;
   const b = obj.getBoundingRect(true, true);
+  const objArea = Math.max(1, b.width * b.height);
+  let best = null;
+
+  artboards.forEach(ab =&gt; {
+    const L = ab.board.left, T = ab.board.top, R = L + ab.w, B = T + ab.h;
+    const oL = b.left, oT = b.top, oR = b.left + b.width, oB = b.top + b.height;
+    const overlapW = Math.max(0, Math.min(R, oR) - Math.max(L, oL));
+    const overlapH = Math.max(0, Math.min(B, oB) - Math.max(T, oT));
+    const ratio = (overlapW * overlapH) / objArea;
+    if (!best || ratio &gt; best.ratio || (Math.abs(ratio - best.ratio) &lt; 0.001 &amp;&amp; (ab.w*ab.h) &lt; (best.ab.w*best.ab.h))) {
+      best = { ab, ratio };
+    }
+  });
+
+  if (best &amp;&amp; best.ratio &gt;= 0.5) {
+    assignObjectToArtboard(obj, best.ab);
+    return;
+  }
+
   const center = { x:b.left + b.width/2, y:b.top + b.height/2 };
-  const target = pickArtboardForPoint(center);
-  assignObjectToArtboard(obj, target);
+  assignObjectToArtboard(obj, pickArtboardForPoint(center));
 }
 
 function syncArtboardAuxGeometry(ab){
@@ -2460,10 +2488,13 @@ function addAdjacentArtboard(dir) {
 
 function getParentArtboardId(inner){
   if (!inner) return null;
-  const parents = artboards.filter(outer =&gt; artboardContainsArtboard(outer, inner));
+  const parents = artboards
+    .filter(outer =&gt; outer.id !== inner.id)
+    .map(outer =&gt; ({ outer, ratio:artboardOverlapRatio(outer, inner) }))
+    .filter(entry =&gt; entry.ratio &gt;= 0.5);
   if (!parents.length) return null;
-  parents.sort((a,b) =&gt; (a.w*a.h) - (b.w*b.h));
-  return parents[0].id;
+  parents.sort((a,b) =&gt; (a.outer.w*a.outer.h) - (b.outer.w*b.outer.h));
+  return parents[0].outer.id;
 }
 
 function duplicateArtboardBundle(source, dx = 28, dy = 28){
@@ -3030,7 +3061,7 @@ canvas.on('mouse:down', opt =&gt; {
   const pointer = canvas.getPointer(opt.e);
   if (!artboardMode && target && !isGuide(target)) return;
 
-  let ab = target ? artboards.find(a =&gt; a.labelText === target) : null;
+  let ab = target ? artboards.find(a =&gt; a.labelText === target || a.labelBg === target) : null;
   if (!ab && !artboardMode) {
     const pointed = pickArtboardForPoint(pointer);
     if (pointed && getParentArtboardId(pointed)) ab = pointed;
@@ -3044,6 +3075,17 @@ canvas.on('mouse:down', opt =&gt; {
   updateArtboardPlusUI();
   enableArtboardDrag(ab);
   canvas.setActiveObject(ab.board);
+
+  if (target === ab.labelText || target === ab.labelBg) {
+    artboardLabelDrag = {
+      active:true,
+      abId:ab.id,
+      offsetX:pointer.x - (ab.board.left || 0),
+      offsetY:pointer.y - (ab.board.top || 0),
+      moved:false
+    };
+  }
+
   canvas.requestRenderAll();
   setStatus(getParentArtboardId(ab) ? 'Frame filho selecionado.' : 'Frame pai selecionado pelo rótulo.');
 });
@@ -3057,9 +3099,71 @@ canvas.on('mouse:dblclick', opt =&gt; {
 });
 
 
+canvas.on('mouse:move', opt =&gt; {
+  if (!artboardLabelDrag.active) return;
+  const ab = getArtboardById(artboardLabelDrag.abId);
+  if (!ab?.board) return;
+  const pointer = canvas.getPointer(opt.e);
+  const nextLeft = pointer.x - artboardLabelDrag.offsetX;
+  const nextTop = pointer.y - artboardLabelDrag.offsetY;
+  const dx = nextLeft - (ab.board.left || 0);
+  const dy = nextTop - (ab.board.top || 0);
+  if (!dx && !dy) return;
+  ab.board.set({ left:nextLeft, top:nextTop });
+  ab.__lastPos = { left:nextLeft, top:nextTop };
+  syncArtboardAuxGeometry(ab);
+
+  const subtree = [];
+  const walk = parent =&gt; {
+    artboards.forEach(candidate =&gt; {
+      if (candidate.id === parent.id) return;
+      if (getParentArtboardId(candidate) !== parent.id) return;
+      subtree.push(candidate);
+      walk(candidate);
+    });
+  };
+  walk(ab);
+
+  subtree.forEach(childAb =&gt; {
+    childAb.board.set({ left:(childAb.board.left || 0) + dx, top:(childAb.board.top || 0) + dy });
+    childAb.__lastPos = { left:childAb.board.left, top:childAb.board.top };
+    syncArtboardAuxGeometry(childAb);
+  });
+
+  [ab, ...subtree].forEach(scopeAb =&gt; {
+    (scopeAb.children || []).forEach(id =&gt; {
+      const child = canvas.getObjects().find(o =&gt; o.id === id);
+      if (!child || child.isArtboardBoard) return;
+      child.set({ left:(child.left || 0) + dx, top:(child.top || 0) + dy });
+      child.setCoords();
+    });
+    refreshArtboardChildrenClipping(scopeAb);
+  });
+
+  orderArtboard();
+  updateArtboardPlusUI();
+  artboardLabelDrag.moved = true;
+  canvas.requestRenderAll();
+});
+
+canvas.on('mouse:up', () =&gt; {
+  if (!artboardLabelDrag.active) return;
+  const moved = artboardLabelDrag.moved;
+  artboardLabelDrag = { active:false, abId:null, offsetX:0, offsetY:0, moved:false };
+  if (moved) snapshot();
+});
+
+
 canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
   if (opt.e?.button !== 0) return;
+
+  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
+    opt.e.preventDefault?.();
+    toggleShiftSelection(opt.target);
+    return;
+  }
+
   const pointer = canvas.getPointer(opt.e);
   vectorToolState.clickProbe = {
     target: opt.target || null,
@@ -3299,20 +3403,39 @@ window.addEventListener('keydown', e =&gt; {
   }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; (e.key === '+' || e.key === '=')) { e.preventDefault(); $('btnZoomIn')?.click(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '-') { e.preventDefault(); $('btnZoomOut')?.click(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '0') { e.preventDefault(); fitToArtboard(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '1') { e.preventDefault(); canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 1); zoom = 1; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '2') { e.preventDefault(); canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 2); zoom = 2; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'c') {
     const ao = activeObj();
     if (ao?.isArtboardBoard) {
       const ab = getArtboardByBoard(ao);
       if (ab) { artboardClipboard = { id:ab.id }; setStatus('Artboard copiado'); e.preventDefault(); }
+    } else if (copySelectionToAppClipboard()) {
+      e.preventDefault();
     }
   }
-  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'v' &amp;&amp; artboardClipboard?.id) {
-    const src = getArtboardById(artboardClipboard.id);
-    if (src) {
-      duplicateArtboardBundle(src, 42, 42);
-      snapshot();
-      setStatus('Artboard colado');
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase() === 'v') {
+    const ao = activeObj();
+    if (ao?.isArtboardBoard &amp;&amp; artboardClipboard?.id) {
+      const src = getArtboardById(artboardClipboard.id);
+      if (src) { duplicateArtboardBundle(src, 0, 0); snapshot(); setStatus('Artboard colado no lugar'); e.preventDefault(); }
+    } else if (pasteAppClipboard({inPlace:true})) {
+      e.preventDefault();
+    }
+  } else if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'v') {
+    if (artboardClipboard?.id &amp;&amp; activeObj()?.isArtboardBoard) {
+      const src = getArtboardById(artboardClipboard.id);
+      if (src) {
+        duplicateArtboardBundle(src, 42, 42);
+        snapshot();
+        setStatus('Artboard colado');
+        e.preventDefault();
+      }
+    } else if (pasteAppClipboard({inPlace:false})) {
       e.preventDefault();
     }
   }
@@ -4674,6 +4797,82 @@ function del() {
   refreshProps();
   refreshLayers();
 }
+let appClipboard = { objects:[], mode:'offset' };
+
+function getClipboardEligibleSelection(){
+  const active = canvas.getActiveObject();
+  if (!active) return [];
+  const list = active.type === 'activeSelection' ? active.getObjects() : [active];
+  return list.filter(o =&gt; o &amp;&amp; !isGuide(o) &amp;&amp; !o.isArtboardBoard);
+}
+
+function copySelectionToAppClipboard(){
+  const objs = getClipboardEligibleSelection();
+  if (!objs.length) { setStatus('Nada para copiar.'); return false; }
+  appClipboard.objects = objs.map(o =&gt; o.toObject(['dataName','dataFolder','dataArtboardId']));
+  setStatus(objs.length &gt; 1 ? `${objs.length} itens copiados` : 'Item copiado');
+  return true;
+}
+
+function pasteAppClipboard({inPlace=false}={}){
+  if (!appClipboard.objects?.length) {
+    setStatus('Área de transferência vazia.');
+    return false;
+  }
+  fabric.util.enlivenObjects(appClipboard.objects, (items) =&gt; {
+    const added = [];
+    items.forEach(obj =&gt; {
+      obj.id = null;
+      if (!inPlace) obj.set({ left:(obj.left||0)+24, top:(obj.top||0)+24 });
+      canvas.add(obj);
+      syncObjectArtboardMembership(obj);
+      added.push(obj);
+    });
+    if (!added.length) return;
+    if (added.length === 1) {
+      canvas.setActiveObject(added[0]);
+    } else {
+      const sel = new fabric.ActiveSelection(added, { canvas });
+      canvas.setActiveObject(sel);
+    }
+    orderArtboard();
+    canvas.requestRenderAll();
+    refreshLayers();
+    refreshProps();
+    snapshot();
+    setStatus(inPlace ? 'Colado no lugar' : 'Colado');
+  });
+  return true;
+}
+
+function toggleShiftSelection(target){
+  if (!target || isGuide(target) || target.isArtboardBoard) return;
+  const active = canvas.getActiveObject();
+  let next = [];
+
+  if (!active) {
+    next = [target];
+  } else if (active.type === 'activeSelection') {
+    const cur = active.getObjects().slice();
+    if (cur.includes(target)) next = cur.filter(o => o !== target);
+    else next = [...cur, target];
+  } else if (active === target) {
+    next = [target];
+  } else {
+    next = [active, target];
+  }
+
+  canvas.discardActiveObject();
+  if (next.length === 1) {
+    canvas.setActiveObject(next[0]);
+  } else if (next.length > 1) {
+    canvas.setActiveObject(new fabric.ActiveSelection(next, { canvas }));
+  }
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
+}
+
 function duplicate() {
   const o = activeObj(); if(!o) return;
   clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
@@ -5520,7 +5719,9 @@ stageEl?.addEventListener('drop', e =&gt; {
   menu.addEventListener('click', e =&gt; {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if(!act) return;
-    if(act==='paste') pasteFromClipboard();
+    if(act==='copy') copySelectionToAppClipboard();
+    if(act==='paste') pasteAppClipboard({inPlace:false}) || pasteFromClipboard();
+    if(act==='pasteInPlace') pasteAppClipboard({inPlace:true}) || pasteFromClipboard();
     if(act==='group') groupSelection();
     if(act==='ungroup') ungroupSelection();
     if(act==='front') bringForwardSelection();
@@ -5641,16 +5842,26 @@ function loadSVGFromParent(svgText) {
     const vbX = (vb.length === 4 &amp;&amp; Number.isFinite(vb[0])) ? vb[0] : 0;
     const vbY = (vb.length === 4 &amp;&amp; Number.isFinite(vb[1])) ? vb[1] : 0;
 
+    // Coordenadas do arquivo (SVG) ficam no espaço do viewBox.
+    // Convertendo para o espaço de mundo do editor, ancoramos no artboard ativo,
+    // evitando deslocamento por mistura de referência global/local no load.
+    const currentAb = getActiveArtboard();
+    const anchorX = currentAb?.board?.left || 0;
+    const anchorY = currentAb?.board?.top || 0;
+
     objects.forEach(o =&gt; {
+      const localX = (o.left||0) - vbX;
+      const localY = (o.top||0) - vbY;
       o.set({
-        left: (o.left||0) - vbX,
-        top: (o.top||0) - vbY,
+        left: anchorX + localX,
+        top: anchorY + localY,
         selectable:true,
         evented:true,
         excludeFromExport:false
       });
       o.setCoords();
       canvas.add(o);
+      syncObjectArtboardMembership(o);
     });
 
     canvas.requestRenderAll();
@@ -5851,7 +6062,7 @@ const menuCatalog = {
     {sep:true},
     {id:'edit.copy', label:'Copiar', key:'Ctrl+C'},
     {id:'edit.paste', label:'Colar', key:'Ctrl+V'},
-    {id:'edit.pasteInPlace', label:'Colar no lugar'},
+    {id:'edit.pasteInPlace', label:'Colar no lugar', key:'Ctrl+Shift+V'},
     {id:'edit.cut', label:'Recortar', key:'Ctrl+X'},
     {id:'edit.duplicate', label:'Duplicar', key:'Ctrl+D'},
     {id:'edit.delete', label:'Apagar', key:'Del'},
@@ -5944,7 +6155,9 @@ const menuCatalog = {
   view: [
     {id:'view.zoomIn', label:'Zoom in', key:'Ctrl++'},
     {id:'view.zoomOut', label:'Zoom out', key:'Ctrl+-'},
-    {id:'view.fit', label:'Ajustar à tela'},
+    {id:'view.zoom100', label:'Zoom 100%', key:'Ctrl+1'},
+    {id:'view.zoom200', label:'Zoom 200%', key:'Ctrl+2'},
+    {id:'view.fit', label:'Ajustar à tela', key:'Ctrl+0'},
     {id:'view.fitSelection', label:'Ajustar à seleção'},
     {id:'view.grid', label:'Mostrar/ocultar grade'},
     {id:'view.guides', label:'Mostrar/ocultar guias'},
@@ -6070,8 +6283,8 @@ function executeMenuCommand(cmdId){
     'edit.undo': undo,
     'edit.redo': redo,
     'edit.copy': () =&gt; document.execCommand?.('copy') || setStatus('Use Ctrl+C para copiar.'),
-    'edit.paste': pasteFromClipboard,
-    'edit.pasteInPlace': pasteFromClipboard,
+    'edit.paste': () =&gt; pasteAppClipboard({inPlace:false}) || pasteFromClipboard(),
+    'edit.pasteInPlace': () =&gt; pasteAppClipboard({inPlace:true}) || pasteFromClipboard(),
     'edit.cut': () =&gt; { document.execCommand?.('copy'); del(); },
     'edit.duplicate': duplicate,
     'edit.delete': del,
@@ -6155,6 +6368,8 @@ function executeMenuCommand(cmdId){
 
     'view.zoomIn': () =&gt; $('btnZoomIn')?.click(),
     'view.zoomOut': () =&gt; $('btnZoomOut')?.click(),
+    'view.zoom100': () =&gt; { canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 1); zoom = 1; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); },
+    'view.zoom200': () =&gt; { canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 2); zoom = 2; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); },
     'view.fit': fitToArtboard,
     'view.fitSelection': () =&gt; notifyTodo('Ajustar à seleção'),
     'view.grid': () =&gt; notifyTodo('Grade'),

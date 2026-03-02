@@ -400,7 +400,18 @@ function createProject(){
 
 function openProject(pid){
   S.pid=pid;S.styleKey=null;
-  nav("board");
+  const proj=P();
+  ensureApps(proj);
+  if(!proj.applications.length){
+    const cfg={type:"web",unit:"px",w:1920,h:1080,dpi:72,bleed:0,safe:0,name:`${proj.name||"Projeto"} — Nova aplicação`};
+    const app={ id:uid("a"), createdAt:Date.now(), svg:"",
+      name:cfg.name, type:cfg.type, unit:cfg.unit, w:cfg.w, h:cfg.h, dpi:cfg.dpi, bleed:cfg.bleed, safe:cfg.safe
+    };
+    proj.applications.unshift(app);
+    proj.updatedAt=Date.now();
+    save(S.projects);
+  }
+  openAppEditor(proj.applications[0].id);
 }
 
 /* ============================================================
@@ -2711,6 +2722,21 @@ document.addEventListener("keydown",e=>{
 fillFontSelects();
 loadGoogleFontsCatalog();
 renderHome();
+if(S.projects.length){
+  S.pid = S.projects[0].id;
+  const p=P();
+  ensureApps(p);
+  if(!p.applications.length){
+    const cfg={type:"web",unit:"px",w:1920,h:1080,dpi:72,bleed:0,safe:0,name:`${p.name||"Projeto"} — Nova aplicação`};
+    const app={ id:uid("a"), createdAt:Date.now(), svg:"",
+      name:cfg.name, type:cfg.type, unit:cfg.unit, w:cfg.w, h:cfg.h, dpi:cfg.dpi, bleed:cfg.bleed, safe:cfg.safe
+    };
+    p.applications.unshift(app);
+    p.updatedAt=Date.now();
+    save(S.projects);
+  }
+  openAppEditor(p.applications[0].id);
+}
 
 
 function renameCurrentApplication(){
