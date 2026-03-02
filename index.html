@@ -1474,7 +1474,9 @@ textarea.modal-textarea{
 
 
 &lt;div class="ctx-pop" id="canvasCtx"&gt;
+  &lt;div class="ctx-pop-item" data-act="copy"&gt;&lt;span&gt;Copiar&lt;/span&gt;&lt;span&gt;Ctrl+C&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-item" data-act="paste"&gt;&lt;span&gt;Colar&lt;/span&gt;&lt;span&gt;Ctrl+V&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="ctx-pop-item" data-act="pasteInPlace"&gt;&lt;span&gt;Colar no lugar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+V&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-item" data-act="group"&gt;&lt;span&gt;Agrupar&lt;/span&gt;&lt;span&gt;Ctrl+G&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-item" data-act="ungroup"&gt;&lt;span&gt;Desagrupar&lt;/span&gt;&lt;span&gt;Ctrl+Shift+G&lt;/span&gt;&lt;/div&gt;
   &lt;div class="ctx-pop-sep"&gt;&lt;/div&gt;
@@ -2199,8 +2201,7 @@ function artboardContainsArtboard(outer, inner){
 function updateArtboardLabelVisibility(){
   artboards.forEach(inner =&gt; {
     const hiddenByParent = artboards.some(outer =&gt; artboardContainsArtboard(outer, inner));
-    const forceVisible = inner.id === activeArtboardId || inner.id === focusedArtboardId;
-    const visible = forceVisible || !hiddenByParent;
+    const visible = !hiddenByParent;
     inner.labelBg?.set({ visible: false });
     inner.labelText?.set({ visible });
   });
@@ -3395,20 +3396,39 @@ window.addEventListener('keydown', e =&gt; {
   }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; (e.key === '+' || e.key === '=')) { e.preventDefault(); $('btnZoomIn')?.click(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '-') { e.preventDefault(); $('btnZoomOut')?.click(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '0') { e.preventDefault(); fitToArtboard(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '1') { e.preventDefault(); canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 1); zoom = 1; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '2') { e.preventDefault(); canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 2); zoom = 2; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'd') { e.preventDefault(); duplicate(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'c') {
     const ao = activeObj();
     if (ao?.isArtboardBoard) {
       const ab = getArtboardByBoard(ao);
       if (ab) { artboardClipboard = { id:ab.id }; setStatus('Artboard copiado'); e.preventDefault(); }
+    } else if (copySelectionToAppClipboard()) {
+      e.preventDefault();
     }
   }
-  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'v' &amp;&amp; artboardClipboard?.id) {
-    const src = getArtboardById(artboardClipboard.id);
-    if (src) {
-      duplicateArtboardBundle(src, 42, 42);
-      snapshot();
-      setStatus('Artboard colado');
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase() === 'v') {
+    const ao = activeObj();
+    if (ao?.isArtboardBoard &amp;&amp; artboardClipboard?.id) {
+      const src = getArtboardById(artboardClipboard.id);
+      if (src) { duplicateArtboardBundle(src, 0, 0); snapshot(); setStatus('Artboard colado no lugar'); e.preventDefault(); }
+    } else if (pasteAppClipboard({inPlace:true})) {
+      e.preventDefault();
+    }
+  } else if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'v') {
+    if (artboardClipboard?.id &amp;&amp; activeObj()?.isArtboardBoard) {
+      const src = getArtboardById(artboardClipboard.id);
+      if (src) {
+        duplicateArtboardBundle(src, 42, 42);
+        snapshot();
+        setStatus('Artboard colado');
+        e.preventDefault();
+      }
+    } else if (pasteAppClipboard({inPlace:false})) {
       e.preventDefault();
     }
   }
@@ -4770,6 +4790,54 @@ function del() {
   refreshProps();
   refreshLayers();
 }
+let appClipboard = { objects:[], mode:'offset' };
+
+function getClipboardEligibleSelection(){
+  const active = canvas.getActiveObject();
+  if (!active) return [];
+  const list = active.type === 'activeSelection' ? active.getObjects() : [active];
+  return list.filter(o =&gt; o &amp;&amp; !isGuide(o) &amp;&amp; !o.isArtboardBoard);
+}
+
+function copySelectionToAppClipboard(){
+  const objs = getClipboardEligibleSelection();
+  if (!objs.length) { setStatus('Nada para copiar.'); return false; }
+  appClipboard.objects = objs.map(o =&gt; o.toObject(['dataName','dataFolder','dataArtboardId']));
+  setStatus(objs.length &gt; 1 ? `${objs.length} itens copiados` : 'Item copiado');
+  return true;
+}
+
+function pasteAppClipboard({inPlace=false}={}){
+  if (!appClipboard.objects?.length) {
+    setStatus('Área de transferência vazia.');
+    return false;
+  }
+  fabric.util.enlivenObjects(appClipboard.objects, (items) =&gt; {
+    const added = [];
+    items.forEach(obj =&gt; {
+      obj.id = null;
+      if (!inPlace) obj.set({ left:(obj.left||0)+24, top:(obj.top||0)+24 });
+      canvas.add(obj);
+      syncObjectArtboardMembership(obj);
+      added.push(obj);
+    });
+    if (!added.length) return;
+    if (added.length === 1) {
+      canvas.setActiveObject(added[0]);
+    } else {
+      const sel = new fabric.ActiveSelection(added, { canvas });
+      canvas.setActiveObject(sel);
+    }
+    orderArtboard();
+    canvas.requestRenderAll();
+    refreshLayers();
+    refreshProps();
+    snapshot();
+    setStatus(inPlace ? 'Colado no lugar' : 'Colado');
+  });
+  return true;
+}
+
 function duplicate() {
   const o = activeObj(); if(!o) return;
   clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
@@ -5616,7 +5684,9 @@ stageEl?.addEventListener('drop', e =&gt; {
   menu.addEventListener('click', e =&gt; {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if(!act) return;
-    if(act==='paste') pasteFromClipboard();
+    if(act==='copy') copySelectionToAppClipboard();
+    if(act==='paste') pasteAppClipboard({inPlace:false}) || pasteFromClipboard();
+    if(act==='pasteInPlace') pasteAppClipboard({inPlace:true}) || pasteFromClipboard();
     if(act==='group') groupSelection();
     if(act==='ungroup') ungroupSelection();
     if(act==='front') bringForwardSelection();
@@ -5947,7 +6017,7 @@ const menuCatalog = {
     {sep:true},
     {id:'edit.copy', label:'Copiar', key:'Ctrl+C'},
     {id:'edit.paste', label:'Colar', key:'Ctrl+V'},
-    {id:'edit.pasteInPlace', label:'Colar no lugar'},
+    {id:'edit.pasteInPlace', label:'Colar no lugar', key:'Ctrl+Shift+V'},
     {id:'edit.cut', label:'Recortar', key:'Ctrl+X'},
     {id:'edit.duplicate', label:'Duplicar', key:'Ctrl+D'},
     {id:'edit.delete', label:'Apagar', key:'Del'},
@@ -6040,7 +6110,9 @@ const menuCatalog = {
   view: [
     {id:'view.zoomIn', label:'Zoom in', key:'Ctrl++'},
     {id:'view.zoomOut', label:'Zoom out', key:'Ctrl+-'},
-    {id:'view.fit', label:'Ajustar à tela'},
+    {id:'view.zoom100', label:'Zoom 100%', key:'Ctrl+1'},
+    {id:'view.zoom200', label:'Zoom 200%', key:'Ctrl+2'},
+    {id:'view.fit', label:'Ajustar à tela', key:'Ctrl+0'},
     {id:'view.fitSelection', label:'Ajustar à seleção'},
     {id:'view.grid', label:'Mostrar/ocultar grade'},
     {id:'view.guides', label:'Mostrar/ocultar guias'},
@@ -6166,8 +6238,8 @@ function executeMenuCommand(cmdId){
     'edit.undo': undo,
     'edit.redo': redo,
     'edit.copy': () =&gt; document.execCommand?.('copy') || setStatus('Use Ctrl+C para copiar.'),
-    'edit.paste': pasteFromClipboard,
-    'edit.pasteInPlace': pasteFromClipboard,
+    'edit.paste': () =&gt; pasteAppClipboard({inPlace:false}) || pasteFromClipboard(),
+    'edit.pasteInPlace': () =&gt; pasteAppClipboard({inPlace:true}) || pasteFromClipboard(),
     'edit.cut': () =&gt; { document.execCommand?.('copy'); del(); },
     'edit.duplicate': duplicate,
     'edit.delete': del,
@@ -6251,6 +6323,8 @@ function executeMenuCommand(cmdId){
 
     'view.zoomIn': () =&gt; $('btnZoomIn')?.click(),
     'view.zoomOut': () =&gt; $('btnZoomOut')?.click(),
+    'view.zoom100': () =&gt; { canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 1); zoom = 1; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); },
+    'view.zoom200': () =&gt; { canvas.zoomToPoint(new fabric.Point(canvas.getWidth()/2, canvas.getHeight()/2), 2); zoom = 2; updateZoomLabel(); updateArtboardPlusUI(); renderRulers(); },
     'view.fit': fitToArtboard,
     'view.fitSelection': () =&gt; notifyTodo('Ajustar à seleção'),
     'view.grid': () =&gt; notifyTodo('Grade'),
