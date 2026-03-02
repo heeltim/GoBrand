@@ -2346,7 +2346,7 @@ function applyArtboardVisualState(ab){
   ab.bleed.set({ visible: !!artboardMode });
   ab.safe.set({ visible: !!artboardMode });
   if (ab.labelBg) ab.labelBg.set({ opacity:0, visible:false, evented:false, selectable:false });
-  if (ab.labelText) ab.labelText.set({ opacity:1, visible:true });
+  if (ab.labelText) ab.labelText.set({ opacity:1, visible:true, evented:true, selectable:false, hoverCursor:'pointer' });
   refreshArtboardChildrenClipping(ab);
   updateArtboardLabelVisibility();
 }
@@ -2405,7 +2405,8 @@ function createArtboard(left = -docW/2, top = -docH/2, w = docW, h = docH) {
     originY:'bottom',
     fill:'#ffffff',
     selectable:false,
-    evented:false,
+    evented:true,
+    hoverCursor:'pointer',
     excludeFromExport:true
   });
   labelText.isArtboardLabel = true;
