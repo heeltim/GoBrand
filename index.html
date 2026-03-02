@@ -5864,8 +5864,11 @@ function loadSVGFromParent(svgText) {
 
     let skippedArtboardBg = false;
     objects.forEach(o =&gt; {
-      const localX = (o.left||0) - vbX;
-      const localY = (o.top||0) - vbY;
+      const isTextObj = o.type === 'text' || o.type === 'i-text' || o.type === 'textbox';
+      // Em alguns SVGs o Fabric já traz texto compensado pelo viewBox.
+      // Se subtrairmos vbX/vbY novamente, o texto "anda" ao reabrir.
+      const localX = (o.left||0) - (isTextObj ? 0 : vbX);
+      const localY = (o.top||0) - (isTextObj ? 0 : vbY);
 
       // Evita duplicar o papel/artboard ao reabrir SVG exportado do editor.
       if (!skippedArtboardBg &amp;&amp; isLikelyArtboardBg(o, localX, localY)) {
