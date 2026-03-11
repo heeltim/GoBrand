@@ -1652,63 +1652,14 @@ function generateApplicationSVG(p,cfg,{preview=false}={}){
       ${safePx>0 ? `<rect x="${bleedPx+safePx+0.5}" y="${bleedPx+safePx+0.5}" width="${W-2*(bleedPx+safePx)-1}" height="${H-2*(bleedPx+safePx)-1}" stroke-dasharray="3 5" opacity="0.8"/>` : ``}
     </g>`;
 
-  // swatches as named objects (helpful in Illustrator)
-  const swatches = colors.length ? `
-    <g id="swatches" data-guide="1" font-family="${famSec}" font-size="12" fill="#111">
-      ${colors.map((c,i)=>{
-        const y = H - margin - (colors.length-i)*(18+8) + 18;
-        const nm = (c.name||`Cor ${i+1}`).replace(/</g,"&lt;");
-        return `<g>
-          <rect x="${margin}" y="${y}" width="18" height="18" rx="4" fill="${c.hex}" stroke="rgba(0,0,0,.15)"/>
-          <text x="${margin+28}" y="${y+13}" fill="rgba(0,0,0,.70)">${nm} • ${c.hex}</text>
-        </g>`;
-      }).join("")}
-    </g>` : ``;
-
-  // editable placeholders (NO random styling)
-  const placeholders = `
-    <g id="content" data-layer="content">
-      <!-- Background block -->
-      <rect id="bg" data-editable="1" data-name="Fundo" x="${bleedPx}" y="${bleedPx}" width="${W-bleedPx*2}" height="${H-bleedPx*2}" rx="0" fill="${bg}"/>
-
-      <!-- Art layer (shapes/images) -->
-      <g id="art">
-        <!-- Image slot -->
-        <rect id="img_slot" data-editable="1" data-name="Imagem (slot)" x="${margin}" y="${margin+190}" width="${Math.min(520, W-margin*2)}" height="${Math.min(300, H-margin*2-260)}" rx="18" fill="rgba(0,0,0,.03)" stroke="rgba(0,0,0,.10)"/>
-        <text id="img_hint" data-editable="1" data-name="Legenda imagem" x="${margin+18}" y="${margin+220}" font-family="${famSec}" font-size="12" fill="rgba(0,0,0,.45)">Área de imagem (cole/importe depois no Illustrator)</text>
-
-        <!-- Accent shape -->
-        <rect id="accent" data-editable="1" data-name="Bloco / Acento" x="${margin}" y="${H-margin-120}" width="${Math.min(420, W-margin*2)}" height="72" rx="18" fill="rgba(127,90,240,.18)"/>
-
-        <!-- Button -->
-        <rect id="btn_shape" data-editable="1" data-name="Botão (forma)" x="${margin}" y="${H-margin-200}" width="220" height="52" rx="14" fill="rgba(0,0,0,.06)" stroke="rgba(0,0,0,.12)"/>
-      </g>
-
-      <!-- Logo layer -->
-      <g id="logo" data-layer="logo">
-        <rect id="logo_slot" data-editable="1" data-name="Logo (slot)" x="${W-margin-220}" y="${margin}" width="220" height="90" rx="12" fill="rgba(0,0,0,.03)" stroke="rgba(0,0,0,.10)"/>
-        ${logoHref ? `<image id="logo_img" data-editable="1" data-name="Logo" href="${logoHref}" x="${W-margin-220+14}" y="${margin+14}" width="192" height="62" preserveAspectRatio="xMidYMid meet" />`
-                  : `<text id="logo_txt" data-editable="1" data-name="Texto do Logo" x="${W-margin-220+18}" y="${margin+44}" font-family="${famSec}" font-size="12" fill="rgba(0,0,0,.55)">Envie um SVG e aplique aqui</text>`}
-      </g>
-
-      <!-- Type layer (texts) -->
-      <g id="type">
-        <text id="title" data-editable="1" data-type="text" data-name="Título" x="${margin}" y="${margin+64}" font-family="${famPri}" font-size="52" font-weight="700" fill="rgba(0,0,0,.85)">${esc(cfg.name)}</text>
-        <text id="subtitle" data-editable="1" data-type="text" data-name="Subtítulo" x="${margin}" y="${margin+104}" font-family="${famSec}" font-size="18" font-weight="400" fill="rgba(0,0,0,.60)">${esc(p.name)} • ${esc(cfg.type==="print"?"Impressão":"Web")}</text>
-
-        <text id="body" data-editable="1" data-type="text" data-name="Texto" x="${margin}" y="${margin+150}" font-family="${famSec}" font-size="16" font-weight="400" fill="rgba(0,0,0,.55)">
-          Clique e escreva. Depois aplique um estilo (H1/Body/Caption…)
-        </text>
-
-        <text id="caption" data-editable="1" data-type="text" data-name="Caption" x="${margin}" y="${H-margin-18}" font-family="${famSec}" font-size="12" font-weight="400" fill="rgba(0,0,0,.45)">Caption / informação de rodapé</text>
-
-        <text id="btn_text" data-editable="1" data-type="text" data-name="Texto do Botão" x="${margin+110}" y="${H-margin-200+33}" text-anchor="middle" dominant-baseline="middle" font-family="${famPri}" font-size="14" font-weight="600" fill="rgba(0,0,0,.75)">Botão</text>
-      </g>
+  const footer = `
+    <g id="notes" data-guide="1" font-family="${famSec}" font-size="11" fill="rgba(0,0,0,.45)">
+      <text x="${margin}" y="${H-margin}">${Math.round(w)}×${Math.round(h)}${unit} • ${cfg.type==="print"?"Impressão":"Web"} • ${dpi}dpi</text>
     </g>`;
 
-  const notes = `
-    <g id="notes" data-guide="1" font-family="${famSec}" font-size="11" fill="rgba(0,0,0,.45)">
-      <text x="${margin}" y="${H-margin}">Camadas: guides, content, swatches • Sangria: ${bleed}${unit==="mm"?"mm":""} • Safe: ${safe}${unit==="mm"?"mm":""}</text>
+  const baseLayer = `
+    <g id="content" data-layer="content">
+      <rect id="bg" data-editable="1" data-name="Fundo" x="${bleedPx}" y="${bleedPx}" width="${W-bleedPx*2}" height="${H-bleedPx*2}" rx="0" fill="${bg}"/>
     </g>`;
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1716,9 +1667,8 @@ function generateApplicationSVG(p,cfg,{preview=false}={}){
   <title>${esc(cfg.name)}</title>
   <desc>Gerado pelo Goblins Faz Brand Studio. Ajuste estilos no App Editor antes de exportar.</desc>
   ${guides}
-  ${placeholders}
-  ${swatches}
-  ${notes}
+  ${baseLayer}
+  ${footer}
 </svg>`;
 
   return svg;
