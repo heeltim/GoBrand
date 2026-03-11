@@ -1185,6 +1185,7 @@ textarea.modal-textarea{
         &lt;button class="float-tool-btn" id="btnToolPaint"&gt;Pintar&lt;/button&gt;
         &lt;button class="float-tool-btn" id="btnToolCurve"&gt;Curvar&lt;/button&gt;
         &lt;button class="float-tool-btn" id="btnToolCut"&gt;Cortar&lt;/button&gt;
+        &lt;button class="float-tool-btn" id="btnToolAutoLayout" title="Auto Layout"&gt;Auto Layout&lt;/button&gt;
         &lt;button class="float-tool-btn" id="btnToolMore"&gt;Mais ▾&lt;/button&gt;
         &lt;button class="float-tool-btn" id="btnRulerToggle"&gt;Régua&lt;/button&gt;
       &lt;/div&gt;
@@ -1322,6 +1323,30 @@ textarea.modal-textarea{
       &lt;/div&gt;
 
       &lt;div class="sep"&gt;&lt;/div&gt;
+
+      &lt;div class="panel-section" id="autoLayoutPanel" style="display:none"&gt;
+        &lt;div class="panel-section-label" style="display:flex;justify-content:space-between;align-items:center"&gt;
+          &lt;span&gt;🧩 Auto Layout&lt;/span&gt;
+          &lt;label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink3)"&gt;&lt;input id="alEnabled" type="checkbox"&gt; Ativo&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Direção&lt;/div&gt;&lt;select class="field-input" id="alDirection"&gt;&lt;option value="horizontal"&gt;Horizontal&lt;/option&gt;&lt;option value="vertical"&gt;Vertical&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Alinhar&lt;/div&gt;&lt;select class="field-input" id="alAlign"&gt;&lt;option value="start"&gt;Início&lt;/option&gt;&lt;option value="center"&gt;Centro&lt;/option&gt;&lt;option value="end"&gt;Fim&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;
+        &lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row"&gt;
+          &lt;label class="field-item"&gt;&lt;div class="field-label"&gt;Gap&lt;/div&gt;&lt;input class="field-input" id="alGap" type="number" min="0" step="1" value="12"&gt;&lt;/label&gt;
+          &lt;button class="tbtn" id="alApply" style="height:32px;align-self:end;justify-content:center"&gt;Aplicar layout&lt;/button&gt;
+        &lt;/div&gt;
+        &lt;div class="field-label" style="margin:2px 0 6px"&gt;Padding (T R B L)&lt;/div&gt;
+        &lt;div class="prop-grid2 prop-row" style="grid-template-columns:repeat(4,minmax(0,1fr))"&gt;
+          &lt;input class="field-input" id="alPadTop" type="number" min="0" step="1" value="16"&gt;
+          &lt;input class="field-input" id="alPadRight" type="number" min="0" step="1" value="16"&gt;
+          &lt;input class="field-input" id="alPadBottom" type="number" min="0" step="1" value="16"&gt;
+          &lt;input class="field-input" id="alPadLeft" type="number" min="0" step="1" value="16"&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class="sep" id="autoLayoutSep" style="display:none"&gt;&lt;/div&gt;
 
       &lt;!-- Transform --&gt;
       &lt;div class="panel-section" id="propTransform"&gt;
@@ -1577,6 +1602,7 @@ const canvas = new fabric.Canvas('c', {
   fireRightClick: true,
   stopContextMenu: true
 });
+canvas.selectionKey = 'shiftKey';
 
 canvas.selectionColor = 'rgba(47,155,255,.08)';
 canvas.selectionBorderColor = '#2f9bff';
@@ -3203,7 +3229,7 @@ canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
   if (opt.e?.button !== 0) return;
 
-  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; !opt.target) {
+  if ((activeTool === 'select' || activeTool === 'move') &amp;&amp; opt.e?.shiftKey &amp;&amp; !opt.target) {
     const active = canvas.getActiveObject();
     marqueeAddState.active = true;
     marqueeAddState.base = active
@@ -3214,7 +3240,7 @@ canvas.on('mouse:down', opt =&gt; {
     marqueeAddState.base = [];
   }
 
-  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
+  if ((activeTool === 'select' || activeTool === 'move') &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
     opt.e.preventDefault?.();
     toggleShiftSelection(opt.target);
     return;
@@ -4724,7 +4750,7 @@ function importExternalFile(file){
 
 
 // ─── Serialization helpers ───────────────────────────────
-const SERIALIZE_PROPS = ['excludeFromExport','dataName','vectorModel','vectorModelV2'];
+const SERIALIZE_PROPS = ['excludeFromExport','dataName','vectorModel','vectorModelV2','autoLayout'];
 
 function refreshObjectCoords(){
   canvas.getObjects().forEach(o =&gt; o.setCoords());
@@ -4825,9 +4851,15 @@ canvas.on('object:added', e =&gt; {
 });
 canvas.on('object:modified', e =&gt; {
   const obj = e.target;
-  if (!obj || !pathIsBezierEditable(obj)) return;
-  syncPathVectorModelByDelta(obj);
-  trackPathPosition(obj);
+  if (!obj) return;
+  if (pathIsBezierEditable(obj)) {
+    syncPathVectorModelByDelta(obj);
+    trackPathPosition(obj);
+  }
+  if (obj.type === 'group') {
+    const cfg = ensureAutoLayoutConfig(obj);
+    if (cfg.enabled) recalculateAutoLayout(obj);
+  }
 });
 
 canvas.on('object:moving', e =&gt; {
@@ -4882,6 +4914,14 @@ function del() {
 let appClipboard = { objects:[], mode:'offset' };
 let marqueeAddState = { active:false, base:[] };
 let groupEditState = { active:false };
+let altDragDuplicateState = {
+  active:false,
+  source:null,
+  clone:null,
+  startPointer:null,
+  startLeft:0,
+  startTop:0
+};
 
 function getClipboardEligibleSelection(){
   const active = canvas.getActiveObject();
@@ -4976,6 +5016,68 @@ function duplicate() {
   });
 }
 
+
+
+canvas.on('mouse:down', opt =&gt; {
+  const e = opt.e;
+  const target = opt.target;
+  if (!e || e.button !== 0 || !e.altKey) return;
+  if (!(activeTool === 'select' || activeTool === 'move')) return;
+  if (!target || isGuide(target) || target.isArtboardBoard || target.isBezierEditorControl || target.isBezierOverlay) return;
+  if (target.type === 'activeSelection') return;
+  if (altDragDuplicateState.active) return;
+
+  target.clone(cl =&gt; {
+    if (!cl) return;
+    cl.id = null;
+    cl.set({ left: target.left || 0, top: target.top || 0 });
+    canvas.add(cl);
+    canvas.setActiveObject(cl);
+    cl.setCoords();
+
+    const pointer = canvas.getPointer(e);
+    altDragDuplicateState.active = true;
+    altDragDuplicateState.source = target;
+    altDragDuplicateState.clone = cl;
+    altDragDuplicateState.startPointer = { x:pointer.x, y:pointer.y };
+    altDragDuplicateState.startLeft = cl.left || 0;
+    altDragDuplicateState.startTop = cl.top || 0;
+
+    canvas.requestRenderAll();
+    refreshProps();
+    refreshLayers();
+    setStatus('Duplicando: arraste para posicionar a cópia.');
+  });
+});
+
+canvas.on('mouse:move', opt =&gt; {
+  if (!altDragDuplicateState.active || !altDragDuplicateState.clone || !altDragDuplicateState.startPointer) return;
+  const pointer = canvas.getPointer(opt.e);
+  const dx = pointer.x - altDragDuplicateState.startPointer.x;
+  const dy = pointer.y - altDragDuplicateState.startPointer.y;
+  const cl = altDragDuplicateState.clone;
+  cl.set({
+    left: altDragDuplicateState.startLeft + dx,
+    top: altDragDuplicateState.startTop + dy
+  });
+  cl.setCoords();
+  canvas.requestRenderAll();
+});
+
+canvas.on('mouse:up', () =&gt; {
+  if (!altDragDuplicateState.active) return;
+  const hasClone = !!altDragDuplicateState.clone;
+  altDragDuplicateState.active = false;
+  altDragDuplicateState.source = null;
+  altDragDuplicateState.clone = null;
+  altDragDuplicateState.startPointer = null;
+  if (hasClone) {
+    refreshProps();
+    refreshLayers();
+    snapshot();
+    setStatus('Item duplicado com Alt + arrastar.');
+  }
+});
 
 function selectedObjects() {
   const active = canvas.getActiveObject();
@@ -5167,6 +5269,182 @@ function ungroupSelection() {
   }
 }
 
+// ─── Auto Layout ─────────────────────────────────────────
+const AUTO_LAYOUT_DEFAULT = {
+  enabled: false,
+  direction: 'horizontal',
+  align: 'start',
+  gap: 12,
+  padding: { top:16, right:16, bottom:16, left:16 }
+};
+
+function clampAutoLayoutNumber(v, min=0, max=1000){
+  const n = Number(v);
+  if(!Number.isFinite(n)) return min;
+  return clamp(Math.round(n), min, max);
+}
+
+function ensureAutoLayoutConfig(obj){
+  if(!obj) return null;
+  const base = obj.autoLayout &amp;&amp; typeof obj.autoLayout === 'object' ? obj.autoLayout : {};
+  const pad = base.padding &amp;&amp; typeof base.padding === 'object' ? base.padding : {};
+  obj.autoLayout = {
+    enabled: !!base.enabled,
+    direction: base.direction === 'vertical' ? 'vertical' : 'horizontal',
+    align: ['start','center','end'].includes(base.align) ? base.align : 'start',
+    gap: clampAutoLayoutNumber(base.gap ?? AUTO_LAYOUT_DEFAULT.gap, 0, 400),
+    padding: {
+      top: clampAutoLayoutNumber(pad.top ?? AUTO_LAYOUT_DEFAULT.padding.top, 0, 600),
+      right: clampAutoLayoutNumber(pad.right ?? AUTO_LAYOUT_DEFAULT.padding.right, 0, 600),
+      bottom: clampAutoLayoutNumber(pad.bottom ?? AUTO_LAYOUT_DEFAULT.padding.bottom, 0, 600),
+      left: clampAutoLayoutNumber(pad.left ?? AUTO_LAYOUT_DEFAULT.padding.left, 0, 600)
+    }
+  };
+  return obj.autoLayout;
+}
+
+function getAutoLayoutItems(container){
+  if(!container || container.type !== 'group' || !Array.isArray(container._objects)) return [];
+  return container._objects.filter(ch =&gt; ch &amp;&amp; !isGuide(ch) &amp;&amp; !ch.excludeFromExport);
+}
+
+function recalculateAutoLayout(container){
+  if(!container || container.type !== 'group') return false;
+  const cfg = ensureAutoLayoutConfig(container);
+  if(!cfg.enabled) return false;
+  const items = getAutoLayoutItems(container);
+  if(!items.length) return false;
+
+  const axis = cfg.direction === 'vertical' ? 'y' : 'x';
+  const cross = axis === 'x' ? 'y' : 'x';
+  const sizeAxis = axis === 'x' ? 'width' : 'height';
+  const sizeCross = cross === 'x' ? 'width' : 'height';
+
+  const bounds = items.map(obj =&gt; ({ obj, box: obj.getBoundingRect(true, true) }));
+  const sumAxis = bounds.reduce((acc, it) =&gt; acc + it.box[sizeAxis], 0);
+  const maxCross = bounds.reduce((acc, it) =&gt; Math.max(acc, it.box[sizeCross]), 0);
+  const totalGap = cfg.gap * Math.max(0, items.length - 1);
+
+  const targetW = axis === 'x'
+    ? cfg.padding.left + sumAxis + totalGap + cfg.padding.right
+    : cfg.padding.left + maxCross + cfg.padding.right;
+  const targetH = axis === 'y'
+    ? cfg.padding.top + sumAxis + totalGap + cfg.padding.bottom
+    : cfg.padding.top + maxCross + cfg.padding.bottom;
+
+  container._calcBounds();
+  const c = container.getCenterPoint();
+  const left = c.x - targetW / 2;
+  const top = c.y - targetH / 2;
+
+  let cursor = axis === 'x' ? left + cfg.padding.left : top + cfg.padding.top;
+
+  bounds.forEach(({obj, box}) =&gt; {
+    let nextLeft = obj.left || 0;
+    let nextTop = obj.top || 0;
+
+    if(axis === 'x'){
+      nextLeft = cursor + (box.width / 2);
+      cursor += box.width + cfg.gap;
+      if(cfg.align === 'center') nextTop = top + cfg.padding.top + ((maxCross - box.height) / 2) + (box.height / 2);
+      else if(cfg.align === 'end') nextTop = top + targetH - cfg.padding.bottom - (box.height / 2);
+      else nextTop = top + cfg.padding.top + (box.height / 2);
+    } else {
+      nextTop = cursor + (box.height / 2);
+      cursor += box.height + cfg.gap;
+      if(cfg.align === 'center') nextLeft = left + cfg.padding.left + ((maxCross - box.width) / 2) + (box.width / 2);
+      else if(cfg.align === 'end') nextLeft = left + targetW - cfg.padding.right - (box.width / 2);
+      else nextLeft = left + cfg.padding.left + (box.width / 2);
+    }
+
+    obj.set({ left: nextLeft, top: nextTop });
+    obj.setCoords();
+  });
+
+  container._calcBounds();
+  container.set({ left: left + targetW/2, top: top + targetH/2 });
+  container.setCoords();
+  return true;
+}
+
+function applyAutoLayout(container, {silent=false} = {}){
+  if(!container || container.type !== 'group') return false;
+  const ok = recalculateAutoLayout(container);
+  if(!ok){
+    if(!silent) setStatus('Auto Layout requer um grupo com itens.');
+    return false;
+  }
+  canvas.requestRenderAll();
+  refreshProps();
+  refreshLayers();
+  if(!silent){
+    snapshot();
+    setStatus('Auto Layout aplicado.');
+  }
+  return true;
+}
+
+function toggleAutoLayout(){
+  const active = activeObj();
+  if(!active){
+    setStatus('Selecione um grupo para ativar Auto Layout.');
+    return;
+  }
+  if(active.type === 'activeSelection'){
+    setStatus('Agrupe os itens (Ctrl+G) antes de aplicar Auto Layout.');
+    return;
+  }
+  if(active.type !== 'group'){
+    setStatus('Auto Layout funciona em grupos. Selecione um grupo.');
+    return;
+  }
+  const cfg = ensureAutoLayoutConfig(active);
+  cfg.enabled = !cfg.enabled;
+  if(cfg.enabled) applyAutoLayout(active, {silent:true});
+  canvas.requestRenderAll();
+  refreshProps();
+  snapshot();
+  setStatus(cfg.enabled ? 'Auto Layout ativado.' : 'Auto Layout desativado.');
+}
+
+function onAutoLayoutControlInput(){
+  const obj = activeObj();
+  if(!obj || obj.type !== 'group') return;
+  const cfg = ensureAutoLayoutConfig(obj);
+  cfg.enabled = !!$('alEnabled')?.checked;
+  cfg.direction = $('alDirection')?.value === 'vertical' ? 'vertical' : 'horizontal';
+  cfg.align = ['start','center','end'].includes($('alAlign')?.value) ? $('alAlign').value : 'start';
+  cfg.gap = clampAutoLayoutNumber($('alGap')?.value, 0, 400);
+  cfg.padding.top = clampAutoLayoutNumber($('alPadTop')?.value, 0, 600);
+  cfg.padding.right = clampAutoLayoutNumber($('alPadRight')?.value, 0, 600);
+  cfg.padding.bottom = clampAutoLayoutNumber($('alPadBottom')?.value, 0, 600);
+  cfg.padding.left = clampAutoLayoutNumber($('alPadLeft')?.value, 0, 600);
+  if(cfg.enabled) applyAutoLayout(obj, {silent:true});
+}
+
+function bindAutoLayoutControls(){
+  const ids = ['alEnabled','alDirection','alAlign','alGap','alPadTop','alPadRight','alPadBottom','alPadLeft'];
+  ids.forEach(id =&gt; {
+    const el = $(id);
+    if(!el) return;
+    el.addEventListener('input', onAutoLayoutControlInput);
+    el.addEventListener('change', onAutoLayoutControlInput);
+  });
+  $('alApply')?.addEventListener('click', () =&gt; {
+    const obj = activeObj();
+    if(!obj || obj.type !== 'group') {
+      setStatus('Selecione um grupo para aplicar Auto Layout.');
+      return;
+    }
+    onAutoLayoutControlInput();
+    const cfg = ensureAutoLayoutConfig(obj);
+    if(!cfg.enabled) cfg.enabled = true;
+    applyAutoLayout(obj);
+  });
+}
+
+bindAutoLayoutControls();
+
 // ─── Properties panel ────────────────────────────────────
 const UI = {
   x:$('pX'), y:$('pY'), w:$('pW'), h:$('pH'),
@@ -5303,6 +5581,10 @@ function refreshProps() {
     if (info) info.textContent = 'Nada selecionado';
     const c1=$('ctxSelectionState'); if(c1) c1.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
     const c2=$('canvasSelectionState'); if(c2) c2.innerHTML='&lt;strong&gt;Nenhuma seleção&lt;/strong&gt;';
+    const alPanel = $('autoLayoutPanel');
+    const alSep = $('autoLayoutSep');
+    if (alPanel) alPanel.style.display = 'none';
+    if (alSep) alSep.style.display = 'none';
     syncFloatingTextPanel();
     return;
   }
@@ -5347,6 +5629,23 @@ function refreshProps() {
       s.classList.toggle('on', s.dataset.val === align);
     });
   }
+  const alPanel = $('autoLayoutPanel');
+  const alSep = $('autoLayoutSep');
+  const isGroup = obj &amp;&amp; obj.type === 'group';
+  if (alPanel) alPanel.style.display = isGroup ? '' : 'none';
+  if (alSep) alSep.style.display = isGroup ? '' : 'none';
+  if (isGroup) {
+    const cfg = ensureAutoLayoutConfig(obj);
+    if ($('alEnabled')) $('alEnabled').checked = !!cfg.enabled;
+    if ($('alDirection')) $('alDirection').value = cfg.direction;
+    if ($('alAlign')) $('alAlign').value = cfg.align;
+    if ($('alGap')) $('alGap').value = cfg.gap;
+    if ($('alPadTop')) $('alPadTop').value = cfg.padding.top;
+    if ($('alPadRight')) $('alPadRight').value = cfg.padding.right;
+    if ($('alPadBottom')) $('alPadBottom').value = cfg.padding.bottom;
+    if ($('alPadLeft')) $('alPadLeft').value = cfg.padding.left;
+  }
+
   syncFloatingTextPanel();
 }
 
@@ -6310,7 +6609,7 @@ const menuCatalog = {
   ],
   advanced: [
     {id:'advanced.components', label:'Componentes / Símbolos'},
-    {id:'advanced.autoLayout', label:'Auto Layout'},
+    {id:'advanced.autoLayout', label:'Auto Layout', key:'Ctrl+L'},
     {id:'advanced.constraints', label:'Constraints'},
     {id:'advanced.vectorize', label:'Vetorização de imagem'},
     {id:'advanced.expandStroke', label:'Expandir traço'},
@@ -6521,7 +6820,7 @@ function executeMenuCommand(cmdId){
     'view.rulerUnit': cycleRulerUnit,
 
     'advanced.components': () =&gt; notifyTodo('Componentes / Símbolos'),
-    'advanced.autoLayout': () =&gt; notifyTodo('Auto Layout'),
+    'advanced.autoLayout': toggleAutoLayout,
     'advanced.constraints': () =&gt; notifyTodo('Constraints'),
     'advanced.vectorize': () =&gt; notifyTodo('Vetorização de imagem'),
     'advanced.expandStroke': () =&gt; notifyTodo('Expandir traço'),
@@ -6784,6 +7083,7 @@ $('btnNodeSmooth')?.addEventListener('click', () =&gt; applySelectedNodeType('sm
 $('btnNodeMirrored')?.addEventListener('click', () =&gt; applySelectedNodeType('mirrored'));
 $('btnNodeBreak')?.addEventListener('click', () =&gt; toggleSelectedNodeBreak());
 $('btnToolCut')?.addEventListener('click', () =&gt; applyClipMask());
+$('btnToolAutoLayout')?.addEventListener('click', () =&gt; toggleAutoLayout());
 $('btnToolMore')?.addEventListener('click', () =&gt; setStatus('Mais ferramentas em breve.'));
 $('btnRulerToggle')?.addEventListener('click', toggleRulers);
 $('btnFit')?.addEventListener('click', fitToArtboard);
