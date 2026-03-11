@@ -873,6 +873,8 @@ function closeColorModal(){ $("modalBackdrop").classList.remove("open"); }
 $("btnCloseModal").onclick=closeColorModal;
 $("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeColorModal();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeColorModal();});
+$("btnCloseBriefing")?.addEventListener("click", closeBriefingModal);
+$("briefingBackdrop")?.addEventListener("click",e=>{if(e.target===$("briefingBackdrop")) closeBriefingModal();});
 
 function syncPicker(){
   const {h,s,v}=S.hsv;
@@ -1671,6 +1673,170 @@ function generateApplicationSVG(p,cfg,{preview=false}={}){
 </svg>`;
 
   return svg;
+}
+
+
+const BRIEFING_DEFAULT_TEXT = `projeto: Feira Gastronômica
+pasta: feira-gastronomica-2026
+
+---
+arquivo: faixa-comidas
+formato: faixa impressa
+tamanho: 3000x500mm
+titulo: COMIDAS
+subtitulo: sabores do evento
+
+---
+arquivo: post-comidas
+formato: instagram post
+titulo: COMIDAS
+subtitulo: venha conhecer`;
+
+let _briefingInterpretation = [];
+
+const BRIEFING_PRESETS = {
+  "instagram post": { type:"web", unit:"px", w:1080, h:1080, dpi:72, bleed:0, safe:0 },
+  "story": { type:"web", unit:"px", w:1080, h:1920, dpi:72, bleed:0, safe:0 },
+  "faixa impressa": { type:"print", unit:"mm", w:3000, h:500, dpi:300, bleed:3, safe:15 },
+  "cartaz a3": { type:"print", unit:"mm", w:297, h:420, dpi:300, bleed:3, safe:10 },
+  "a4 impresso": { type:"print", unit:"mm", w:210, h:297, dpi:300, bleed:3, safe:10 }
+};
+
+function openBriefingModal(){
+  const p=P(); if(!p){ toast("Abra um projeto primeiro","error"); return; }
+  if($("briefingBatchName")) $("briefingBatchName").value = `${p.name||"Projeto"} — Lote`;
+  if($("briefingText") && !$("briefingText").value.trim()) $("briefingText").value = BRIEFING_DEFAULT_TEXT;
+  _briefingInterpretation = [];
+  renderBriefingPreview([]);
+  $("briefingBackdrop")?.classList.add("open");
+}
+
+function closeBriefingModal(){
+  $("briefingBackdrop")?.classList.remove("open");
+}
+
+function parseBriefingStructuredText(raw){
+  const text=String(raw||"").replace(/\r/g,"");
+  const chunks=text.split(/\n\s*---\s*\n/g).map(part=>part.trim()).filter(Boolean);
+  if(!chunks.length) return {meta:{}, items:[]};
+
+  const parseChunk=(chunk)=>{
+    const obj={};
+    chunk.split("\n").forEach(line=>{
+      const row=line.trim();
+      if(!row || row.startsWith("#")) return;
+      const idx=row.indexOf(":");
+      if(idx===-1) return;
+      const key=row.slice(0,idx).trim().toLowerCase();
+      const value=row.slice(idx+1).trim();
+      if(key) obj[key]=value;
+    });
+    return obj;
+  };
+
+  const parsed=chunks.map(parseChunk).filter(x=>Object.keys(x).length>0);
+  if(!parsed.length) return {meta:{}, items:[]};
+
+  const first=parsed[0];
+  const hasFileLike=(o)=>o.arquivo || o.formato || o.tamanho || o.titulo || o.subtitulo || o.tipo;
+  const meta = hasFileLike(first) ? {} : first;
+  const items = hasFileLike(first) ? parsed : parsed.slice(1);
+  return {meta, items};
+}
+
+function parseSizeValue(sizeRaw){
+  const txt=String(sizeRaw||"").trim().toLowerCase();
+  const m=txt.match(/^(\d+(?:[\.,]\d+)?)\s*x\s*(\d+(?:[\.,]\d+)?)(mm|px)?$/i);
+  if(!m) return null;
+  const w=Number(m[1].replace(',','.'));
+  const h=Number(m[2].replace(',','.'));
+  const unit=(m[3]||"px").toLowerCase();
+  if(!Number.isFinite(w)||!Number.isFinite(h)) return null;
+  return {w,h,unit:unit==="mm"?"mm":"px"};
+}
+
+function normalizeBriefingItem(item, fallbackPreset=""){
+  const format=(item.formato||fallbackPreset||"").toLowerCase().trim();
+  const preset=BRIEFING_PRESETS[format] || { type:"web", unit:"px", w:1920, h:1080, dpi:72, bleed:0, safe:0 };
+  const cfg={...preset};
+
+  const explicitType=(item.tipo||"").toLowerCase().trim();
+  if(explicitType==="impresso" || explicitType==="print") cfg.type="print";
+  else if(explicitType==="digital" || explicitType==="web") cfg.type="web";
+
+  const parsedSize=parseSizeValue(item.tamanho);
+  if(parsedSize){
+    cfg.w=parsedSize.w;
+    cfg.h=parsedSize.h;
+    cfg.unit=parsedSize.unit;
+  }
+
+  if(item.sangria && Number.isFinite(Number(item.sangria.replace(/[^\d.,-]/g,"").replace(',','.')))){
+    cfg.bleed=Number(item.sangria.replace(/[^\d.,-]/g,"").replace(',','.'));
+  }
+  if(item.seguranca && Number.isFinite(Number(item.seguranca.replace(/[^\d.,-]/g,"").replace(',','.')))){
+    cfg.safe=Number(item.seguranca.replace(/[^\d.,-]/g,"").replace(',','.'));
+  }
+
+  cfg.name=(item.arquivo||item.nome||"Nova aplicação").trim();
+  cfg.title=(item.titulo||cfg.name||"").trim();
+  cfg.subtitle=(item.subtitulo||"").trim();
+  cfg.format = format;
+  return cfg;
+}
+
+function renderBriefingPreview(items){
+  const host=$("briefingPreview");
+  if(!host) return;
+  if(!items.length){
+    host.innerHTML='<div class="briefing-preview-empty">Clique em <b>Interpretar</b> para visualizar os arquivos que serão criados.</div>';
+    return;
+  }
+  host.innerHTML=items.map(it=>`<div class="briefing-preview-item"><div><div class="briefing-preview-name">${esc(it.name)}</div><div class="briefing-preview-meta">${esc(it.format||"custom")} • ${esc(it.w)}×${esc(it.h)} ${esc(it.unit)}</div></div><div class="briefing-preview-meta">${esc(it.type==="print"?"impresso":"digital")}</div></div>`).join('');
+}
+
+function interpretBriefing(){
+  const raw=$("briefingText")?.value||"";
+  const parsed=parseBriefingStructuredText(raw);
+  const fallbackPreset=(($("briefingTemplateBase")?.value)||"").toLowerCase();
+  const normalized=(parsed.items||[]).map(item=>normalizeBriefingItem(item,fallbackPreset)).filter(it=>it.name);
+  _briefingInterpretation = normalized;
+  renderBriefingPreview(normalized);
+  if(!normalized.length){
+    toast("Nenhum bloco de arquivo reconhecido","info");
+    return;
+  }
+  toast(`${normalized.length} aplicação(ões) interpretada(s)`,"success");
+}
+
+function generateApplicationsFromBriefing(){
+  const p=P(); if(!p){ toast("Abra um projeto primeiro","error"); return; }
+  ensureApps(p);
+  if(!_briefingInterpretation.length){
+    interpretBriefing();
+    if(!_briefingInterpretation.length) return;
+  }
+
+  _briefingInterpretation.forEach(item=>{
+    const app={
+      id:uid("a"), createdAt:Date.now(), svg:"",
+      name:item.name, type:item.type, unit:item.unit, w:item.w, h:item.h, dpi:item.dpi, bleed:item.bleed||0, safe:item.safe||0
+    };
+    const svg=generateApplicationSVG(p,{...item,name:item.name});
+    if(svg){
+      let xml=svg;
+      if(item.title) xml = xml.replace(/(<text id="title"[^>]*>)([^<]*)(<\/text>)/, `$1${esc(item.title)}$3`);
+      if(item.subtitle) xml = xml.replace(/(<text id="subtitle"[^>]*>)([^<]*)(<\/text>)/, `$1${esc(item.subtitle)}$3`);
+      app.svg=xml;
+    }
+    p.applications.unshift(app);
+  });
+
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderApps();
+  closeBriefingModal();
+  toast(`${_briefingInterpretation.length} aplicação(ões) gerada(s)`,"success");
 }
 
 function createApplication(){
