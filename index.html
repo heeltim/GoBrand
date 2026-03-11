@@ -3203,6 +3203,17 @@ canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
   if (opt.e?.button !== 0) return;
 
+  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; !opt.target) {
+    const active = canvas.getActiveObject();
+    marqueeAddState.active = true;
+    marqueeAddState.base = active
+      ? (active.type === 'activeSelection' ? active.getObjects().slice() : [active]).filter(o =&gt; !isGuide(o) &amp;&amp; !o?.isArtboardBoard)
+      : [];
+  } else {
+    marqueeAddState.active = false;
+    marqueeAddState.base = [];
+  }
+
   if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
     opt.e.preventDefault?.();
     toggleShiftSelection(opt.target);
@@ -3411,6 +3422,18 @@ canvas.on('mouse:dblclick', opt =&gt; {
   }
 });
 
+canvas.on('mouse:dblclick', opt =&gt; {
+  if (activeTool !== 'select') return;
+  const target = opt?.target;
+  if (!target || target.type !== 'group') return;
+  target.toActiveSelection();
+  groupEditState.active = true;
+  canvas.requestRenderAll();
+  refreshLayers();
+  refreshProps();
+  setStatus('Edição interna do grupo ativa (ESC para sair).');
+});
+
 window.addEventListener('keydown', e =&gt; {
   if ((activeTool === 'bezier' || activeTool === 'bezier-v2') &amp;&amp; vectorToolState.mode === 'creating') {
     if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key.toLowerCase() === 'z') {
@@ -3438,10 +3461,24 @@ window.addEventListener('keydown', e =&gt; {
     setActiveTool('select');
     return;
   }
-  if (e.key === 'Escape' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; focusedArtboardId) {
-    focusedArtboardId = null;
-    updateArtboardLabelVisibility();
-    canvas.requestRenderAll();
+  if (e.key === 'Escape' &amp;&amp; !e.target.matches('input,textarea,select')) {
+    const active = canvas.getActiveObject();
+    if (groupEditState.active &amp;&amp; active &amp;&amp; active.type === 'activeSelection') {
+      const grp = active.toGroup();
+      if (grp) canvas.setActiveObject(grp);
+      groupEditState.active = false;
+      canvas.requestRenderAll();
+      refreshLayers();
+      refreshProps();
+      snapshot();
+      setStatus('Saída da edição interna do grupo.');
+      return;
+    }
+    if (focusedArtboardId) {
+      focusedArtboardId = null;
+      updateArtboardLabelVisibility();
+      canvas.requestRenderAll();
+    }
   }
   if (e.code === 'Space' &amp;&amp; !e.target.matches('input,textarea,select') &amp;&amp; !isSpaceDown) {
     isSpaceDown = true; canvas.setCursor('grab'); e.preventDefault();
@@ -4843,6 +4880,8 @@ function del() {
   refreshLayers();
 }
 let appClipboard = { objects:[], mode:'offset' };
+let marqueeAddState = { active:false, base:[] };
+let groupEditState = { active:false };
 
 function getClipboardEligibleSelection(){
   const active = canvas.getActiveObject();
@@ -5101,10 +5140,14 @@ function distributeSelection(axis='x') {
 
 function groupSelection() {
   const active = canvas.getActiveObject();
-  if(active &amp;&amp; active.type === 'activeSelection') {
-    active.toGroup();
+  if(active &amp;&amp; active.type === 'activeSelection' &amp;&amp; active.getObjects().length &gt;= 2) {
+    const grp = active.toGroup();
+    groupEditState.active = false;
+    if (grp) canvas.setActiveObject(grp);
     canvas.requestRenderAll();
     refreshLayers();
+    refreshProps();
+    snapshot();
     setStatus('Grupo criado');
     return;
   }
@@ -5115,8 +5158,11 @@ function ungroupSelection() {
   const active = canvas.getActiveObject();
   if(active &amp;&amp; active.type === 'group') {
     active.toActiveSelection();
+    groupEditState.active = false;
     canvas.requestRenderAll();
     refreshLayers();
+    refreshProps();
+    snapshot();
     setStatus('Grupo desfeito');
   }
 }
@@ -5376,6 +5422,24 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
 });
 
 ['selection:created','selection:updated','selection:cleared'].forEach(ev =&gt; canvas.on(ev, () =&gt; {
+  if ((ev === 'selection:created' || ev === 'selection:updated') &amp;&amp; marqueeAddState.active &amp;&amp; marqueeAddState.base.length) {
+    const active = canvas.getActiveObject();
+    const current = active ? (active.type === 'activeSelection' ? active.getObjects().slice() : [active]) : [];
+    const merged = [...marqueeAddState.base];
+    current.forEach(obj =&gt; {
+      if (!obj || isGuide(obj) || obj.isArtboardBoard || merged.includes(obj)) return;
+      merged.push(obj);
+    });
+    canvas.discardActiveObject();
+    if (merged.length === 1) canvas.setActiveObject(merged[0]);
+    else if (merged.length &gt; 1) canvas.setActiveObject(new fabric.ActiveSelection(merged, { canvas }));
+    marqueeAddState.active = false;
+    marqueeAddState.base = [];
+  }
+  if (ev === 'selection:cleared') {
+    marqueeAddState.active = false;
+    marqueeAddState.base = [];
+  }
   if (ev === 'selection:cleared') clearSmartOverlayState();
   else clearSmartOverlayState({ keepMeasurements:isAltMeasureDown });
   const active = canvas.getActiveObject();
@@ -5886,6 +5950,14 @@ function loadSVGFromParent(svgText) {
     const vb = (root?.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
     const vbX = (vb.length === 4 &amp;&amp; Number.isFinite(vb[0])) ? vb[0] : 0;
     const vbY = (vb.length === 4 &amp;&amp; Number.isFinite(vb[1])) ? vb[1] : 0;
+    const sourceTextPos = new Map();
+    parsed.querySelectorAll('text[id]').forEach(node =&gt; {
+      const id = node.getAttribute('id');
+      const x = Number(node.getAttribute('x'));
+      const y = Number(node.getAttribute('y'));
+      if (!id || !Number.isFinite(x) || !Number.isFinite(y)) return;
+      sourceTextPos.set(id, { x, y });
+    });
 
     // Coordenadas do arquivo (SVG) ficam no espaço do viewBox.
     // Convertendo para o espaço de mundo do editor, ancoramos no artboard ativo,
@@ -5910,10 +5982,9 @@ function loadSVGFromParent(svgText) {
     let skippedArtboardBg = false;
     objects.forEach(o =&gt; {
       const isTextObj = o.type === 'text' || o.type === 'i-text' || o.type === 'textbox';
-      // Em alguns SVGs o Fabric já traz texto compensado pelo viewBox.
-      // Se subtrairmos vbX/vbY novamente, o texto "anda" ao reabrir.
-      const localX = (o.left||0) - (isTextObj ? 0 : vbX);
-      const localY = (o.top||0) - (isTextObj ? 0 : vbY);
+      const sourcePos = isTextObj ? sourceTextPos.get(o.id || '') : null;
+      const localX = sourcePos ? (sourcePos.x - vbX) : ((o.left||0) - vbX);
+      const localY = sourcePos ? (sourcePos.y - vbY) : ((o.top||0) - vbY);
 
       // Evita duplicar o papel/artboard ao reabrir SVG exportado do editor.
       if (!skippedArtboardBg &amp;&amp; isLikelyArtboardBg(o, localX, localY)) {
