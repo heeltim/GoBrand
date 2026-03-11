@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a href="#main-content" class="skip-link">Pular para conteúdo principal</a>
 
 <!-- CONTEXT MENU -->
 <div id="ctxMenu" class="ctx-menu">
@@ -184,7 +185,7 @@
   </aside>
 
   <!-- MAIN -->
-  <div class="main">
+  <div class="main" id="main-content" tabindex="-1">
 
     <!-- TOPBAR -->
     <div class="topbar">
@@ -6971,6 +6972,10 @@ boot();
   .ge-iframeWrap iframe{ flex:1; min-height:0; width:100%; border:0; display:block; }
 </style>
 
+<script src="core/security.js"></script>
+<script src="core/storage.js"></script>
+<script src="core/error-handler.js"></script>
+<script src="utils/debounce.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

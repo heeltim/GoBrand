@@ -1,7 +1,6 @@
 /* ============================================================
    CONFIG
 ============================================================ */
-const LS = "goblins_v3";
 
 let FONTS = [
   "Outfit","Sora","DM Sans","Nunito","Work Sans","Poppins","Montserrat",
@@ -108,8 +107,27 @@ function formatDate(ts){
 /* ============================================================
    STORAGE
 ============================================================ */
-function load(){ try{ return JSON.parse(localStorage.getItem(LS)||"[]"); }catch{ return []; } }
-function save(arr){ localStorage.setItem(LS,JSON.stringify(arr)); }
+const persistProjects = debounce((arr)=>{
+  const ok = window.Storage ? window.Storage.save(arr) : false;
+  if(ok) showSavedIndicator();
+}, 1000);
+
+function showSavedIndicator(){
+  let indicator = document.getElementById('save-status');
+  if(!indicator){
+    indicator=document.createElement('div');
+    indicator.id='save-status';
+    indicator.className='save-status';
+    indicator.textContent='Salvo';
+    document.body.appendChild(indicator);
+  }
+  indicator.classList.add('visible');
+  clearTimeout(showSavedIndicator._timer);
+  showSavedIndicator._timer=setTimeout(()=>indicator.classList.remove('visible'),1100);
+}
+
+function load(){ return window.Storage ? window.Storage.load() : []; }
+function save(arr){ persistProjects(arr); }
 
 function mkProject(name=""){
   return {
@@ -424,7 +442,7 @@ function loadEditor(){
   $("inpName").value=p.name||"";
   $("inpAbout").value=p.about||"";
 
-  fillFontSelects();
+fillFontSelects();
   $("selPrimary").value=p.fontPri||"Outfit";
   $("selSecondary").value=p.fontSec||"Sora";
 
@@ -2893,6 +2911,14 @@ document.addEventListener("keydown",e=>{
 /* ============================================================
    BOOT
 ============================================================ */
+if(window.ErrorHandler){
+  window.ErrorHandler.init({
+    onError: (error) => {
+      if(typeof toast === 'function') toast(`Erro: ${error?.message || 'falha inesperada'}`,'error');
+    }
+  });
+}
+
 fillFontSelects();
 loadGoogleFontsCatalog();
 renderHome();
@@ -2943,7 +2969,7 @@ function geEnsureIframeLoaded(){
   }
   function gePost(msg){
     const frame = document.getElementById('geEditorFrame');
-    if(frame && frame.contentWindow) frame.contentWindow.postMessage(msg, '*');
+    if(frame && frame.contentWindow) frame.contentWindow.postMessage(msg, window.Security?.getParentOrigin?.() || '*');
   }
   function geFit(){ gePost({type:'fit'}); }
   function geExportPNG(){ gePost({type:'exportPNG'}); }
@@ -2959,6 +2985,8 @@ function geEnsureIframeLoaded(){
   }
 
   window.addEventListener('message',(ev)=>{
+    const frame = document.getElementById('geEditorFrame');
+    if(window.Security && !window.Security.isTrustedMessageEvent(ev, { allowedSource: frame?.contentWindow })) return;
     const msg=ev.data||{};
 
     if(msg.type==="geCloseEditor"){
@@ -2990,7 +3018,7 @@ function geEnsureIframeLoaded(){
       return;
     }
 
-    const raw=String(msg.svg||'').trim();
+    const raw=window.Security ? window.Security.sanitizeSVG(String(msg.svg||'').trim()) : String(msg.svg||'').trim();
     if(!raw){
       toast('Não foi possível salvar: SVG vazio','error');
       return;
