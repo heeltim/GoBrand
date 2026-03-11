@@ -3511,6 +3511,7 @@ window.addEventListener('keydown', e =&gt; {
   }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'z') { e.preventDefault(); undo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === 'y') { e.preventDefault(); redo(); }
+  if ((e.metaKey||e.ctrlKey) &amp;&amp; e.shiftKey &amp;&amp; e.key.toLowerCase() === 'z') { e.preventDefault(); redo(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; (e.key === '+' || e.key === '=')) { e.preventDefault(); $('btnZoomIn')?.click(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '-') { e.preventDefault(); $('btnZoomOut')?.click(); }
   if ((e.metaKey||e.ctrlKey) &amp;&amp; e.key === '0') { e.preventDefault(); fitToArtboard(); }
@@ -3556,6 +3557,33 @@ window.addEventListener('keydown', e =&gt; {
 
 window.addEventListener('keyup', e =&gt; {
   if (e.code === 'Space') { isSpaceDown = false; canvas.setCursor('default'); }
+});
+
+let arrowNudgeDirty = false;
+window.addEventListener('keydown', e =&gt; {
+  if (e.target.matches('input,textarea,select,[contenteditable="true"]')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const arrows = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
+  if (!arrows.includes(e.key)) return;
+  const objs = selectedObjects().filter(o =&gt; !isGuide(o) &amp;&amp; !o.isArtboardBoard);
+  if (!objs.length) return;
+  e.preventDefault();
+  const step = e.shiftKey ? 10 : 1;
+  const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+  const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+  objs.forEach(obj =&gt; nudgeBy(obj, dx, dy));
+  arrowNudgeDirty = true;
+  canvas.requestRenderAll();
+  refreshAlignmentAssist();
+  refreshProps();
+  refreshLayers();
+});
+
+window.addEventListener('keyup', e =&gt; {
+  if (!arrowNudgeDirty) return;
+  if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
+  arrowNudgeDirty = false;
+  snapshot();
 });
 
 window.addEventListener('keydown', e =&gt; {
@@ -4700,12 +4728,20 @@ function addLayer() {
 }
 
 function bringForwardSelection(){
-  const obj = activeObj(); if(!obj) return;
-  canvas.bringForward(obj); canvas.requestRenderAll(); refreshLayers();
+  const objs = selectedObjects();
+  if(!objs.length) return;
+  objs.forEach(obj => canvas.bringForward(obj));
+  canvas.requestRenderAll();
+  refreshLayers();
+  snapshot();
 }
 function sendBackwardSelection(){
-  const obj = activeObj(); if(!obj) return;
-  canvas.sendBackwards(obj); canvas.requestRenderAll(); refreshLayers();
+  const objs = selectedObjects();
+  if(!objs.length) return;
+  objs.slice().reverse().forEach(obj => canvas.sendBackwards(obj));
+  canvas.requestRenderAll();
+  refreshLayers();
+  snapshot();
 }
 
 function importExternalFile(file){
@@ -5008,11 +5044,30 @@ function duplicate() {
     setStatus('Artboard duplicado');
     return;
   }
-  o.clone(cl =&gt; {
-    cl.id = null;
-    cl.set({ left:(o.left||0)+18, top:(o.top||0)+18 });
-    canvas.add(cl); canvas.setActiveObject(cl);
-    canvas.requestRenderAll(); refreshProps(); refreshLayers();
+
+  const selected = selectedObjects().filter(obj =&gt; !isGuide(obj) &amp;&amp; !obj.isArtboardBoard);
+  if (!selected.length) return;
+
+  const serialized = selected.map(obj =&gt; obj.toObject(SERIALIZE_PROPS));
+  fabric.util.enlivenObjects(serialized, clones =&gt; {
+    const added = [];
+    clones.forEach(cl =&gt; {
+      if (!cl) return;
+      cl.id = null;
+      cl.set({ left:(cl.left||0)+18, top:(cl.top||0)+18 });
+      canvas.add(cl);
+      syncObjectArtboardMembership(cl);
+      added.push(cl);
+    });
+    if (!added.length) return;
+    if (added.length === 1) canvas.setActiveObject(added[0]);
+    else canvas.setActiveObject(new fabric.ActiveSelection(added, { canvas }));
+    orderArtboard();
+    canvas.requestRenderAll();
+    refreshProps();
+    refreshLayers();
+    snapshot();
+    setStatus(added.length &gt; 1 ? `${added.length} itens duplicados` : 'Item duplicado');
   });
 }
 
@@ -5259,8 +5314,9 @@ function groupSelection() {
 function ungroupSelection() {
   const active = canvas.getActiveObject();
   if(active &amp;&amp; active.type === 'group') {
-    active.toActiveSelection();
+    const selection = active.toActiveSelection();
     groupEditState.active = false;
+    if (selection) canvas.setActiveObject(selection);
     canvas.requestRenderAll();
     refreshLayers();
     refreshProps();
@@ -5735,6 +5791,14 @@ document.querySelectorAll('#alignSeg .seg-opt').forEach(btn =&gt; {
     marqueeAddState.active = false;
     marqueeAddState.base = [];
   }
+  if (ev === 'selection:cleared' &amp;&amp; marqueeAddState.active &amp;&amp; marqueeAddState.base.length) {
+    const restored = marqueeAddState.base.filter(o =&gt; o &amp;&amp; canvas.getObjects().includes(o));
+    canvas.discardActiveObject();
+    if (restored.length === 1) canvas.setActiveObject(restored[0]);
+    else if (restored.length &gt; 1) canvas.setActiveObject(new fabric.ActiveSelection(restored, { canvas }));
+    marqueeAddState.active = false;
+    marqueeAddState.base = [];
+  }
   if (ev === 'selection:cleared') {
     marqueeAddState.active = false;
     marqueeAddState.base = [];
@@ -5867,6 +5931,7 @@ function refreshLayers() {
   if (!list) return;
 
   const active = canvas.getActiveObject();
+  const selectedSet = new Set(active?.type === 'activeSelection' ? active.getObjects() : active ? [active] : []);
   const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isArtboardBoard &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay);
   ensureFoldersForObjects(objs);
   renderFolderChips();
@@ -5891,13 +5956,23 @@ function refreshLayers() {
   });
 
   const rows = [];
+  const pushObjectRows = (obj, depth) =&gt; {
+    rows.push({ type:'object', ref:obj, depth });
+    if (obj?.type === 'group' &amp;&amp; Array.isArray(obj._objects) &amp;&amp; obj._objects.length) {
+      obj._objects.forEach(child =&gt; {
+        if (!child || isGuide(child) || child.isArtboardBoard) return;
+        pushObjectRows(child, depth + 1);
+      });
+    }
+  };
+
   const walkArtboard = (ab, depth = 0) =&gt; {
     rows.push({ type:'artboard', ref:ab, depth });
-    (objectsByArtboard.get(ab.id) || []).forEach(o =&gt; rows.push({ type:'object', ref:o, depth:depth+1 }));
+    (objectsByArtboard.get(ab.id) || []).forEach(o =&gt; pushObjectRows(o, depth+1));
     (artChildren.get(ab.id) || []).forEach(child =&gt; walkArtboard(child, depth+1));
   };
   rootArtboards.forEach(ab =&gt; walkArtboard(ab, 0));
-  rootObjects.forEach(o =&gt; rows.push({ type:'object', ref:o, depth:0 }));
+  rootObjects.forEach(o =&gt; pushObjectRows(o, 0));
 
   if (cnt) cnt.textContent = rows.length;
   list.innerHTML = '';
@@ -5911,7 +5986,7 @@ function refreshLayers() {
   rows.forEach((row, i) =&gt; {
     const obj = row.ref;
     const isArtboardRow = row.type === 'artboard';
-    const isAct = (isArtboardRow &amp;&amp; active === obj.board) || (!isArtboardRow &amp;&amp; active === obj);
+    const isAct = (isArtboardRow &amp;&amp; active === obj.board) || (!isArtboardRow &amp;&amp; (active === obj || selectedSet.has(obj)));
     const isVisible = isArtboardRow ? true : obj.visible !== false;
     const name = isArtboardRow
       ? String(obj.board?.dataName || 'Artboard')
