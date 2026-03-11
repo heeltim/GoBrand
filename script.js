@@ -167,15 +167,46 @@ function ensureBrandImportState(p){
   p.brandImport.safeMargin=clamp(+p.brandImport.safeMargin||12,0,40);
 }
 function ensureExportLibrary(p){
-  if(p.exportLibrary) return;
-  p.exportLibrary={
-    folders:[
-      {id:'root-brand',name:'Marca',parent:null},
-      {id:'root-apps',name:'Aplicações',parent:null},
-    ],
-    files:[],
-    activeFolderId:'root-brand'
+  if(!p.exportLibrary){
+    p.exportLibrary={folders:[],files:[],activeFolderId:null,expanded:{}};
+  }
+  if(!Array.isArray(p.exportLibrary.folders)) p.exportLibrary.folders=[];
+  if(!Array.isArray(p.exportLibrary.files)) p.exportLibrary.files=[];
+  if(!p.exportLibrary.expanded || typeof p.exportLibrary.expanded!=='object') p.exportLibrary.expanded={};
+  ensureDefaultExportFolders(p);
+}
+
+function ensureDefaultExportFolders(p){
+  const lib=p.exportLibrary;
+  const ensureFolder=(id,name,parent)=>{
+    let folder=lib.folders.find(f=>f.id===id);
+    if(!folder){
+      folder={id,name,parent};
+      lib.folders.push(folder);
+    }
+    if(parent!==undefined) folder.parent=parent;
+    if(id==='root-project'){
+      if(folder.autoName!==false) folder.name=p.name||'Projeto';
+      folder.autoName=true;
+    }
+    if(lib.expanded[id]===undefined) lib.expanded[id]=true;
+    return folder;
   };
+
+  ensureFolder('root-project',p.name||'Projeto',null);
+  ensureFolder('root-brand','Marca','root-project');
+  ensureFolder('root-apps','Aplicações','root-project');
+  ensureFolder('root-library','Biblioteca','root-project');
+  ensureFolder('root-brand-svg','SVG','root-brand');
+  ensureFolder('root-brand-png','PNG','root-brand');
+  ensureFolder('root-brand-pdf','PDF','root-brand');
+  ensureFolder('root-brand-variants','Variações','root-brand');
+  ensureFolder('root-library-tokens','Design Tokens','root-library');
+  ensureFolder('root-library-css','CSS','root-library');
+  ensureFolder('root-library-tailwind','Tailwind','root-library');
+  ensureFolder('root-library-typography','Tipografia','root-library');
+
+  if(!lib.activeFolderId || !lib.folders.some(f=>f.id===lib.activeFolderId)) lib.activeFolderId='root-brand';
 }
 
 function icon(name, size=16, cls=""){
@@ -1132,7 +1163,7 @@ function openStyleEditor(p,s){
 
   // base style
   const baseOpts=buildBaseStyleOptions(p,s.key);
-  $("edBaseStyle").innerHTML=[`<option value="__none__">Selecione…</option>`,...baseOpts.map(o=>`<option value="${esc(o.v)}">${esc(o.l)}</option>`)].join("");
+  $("edBaseStyle").innerHTML=[`<option value="__none__">Selecione…</option>`,...baseOpts.map(o=>`<option value="${esc(o.v)}">${esc(o.l)}</option>`)].join("\n");
   $("edBaseStyle").value="__none__";
 
   // family
@@ -1924,8 +1955,25 @@ function deleteApp(id){
 
 function buildGeneratedFiles(p){
   const out=[];
-  if(p.logoSq) out.push({id:'brand-logo-sq',name:`logo-quadrado.${p.logoSq.type==='svg'?'svg':'png'}`,source:'brand',kind:'logo',folderId:'root-brand'});
-  if(p.logoWd) out.push({id:'brand-logo-wd',name:`logo-horizontal.${p.logoWd.type==='svg'?'svg':'png'}`,source:'brand',kind:'logo',folderId:'root-brand'});
+  const inferBrandFolder=(asset)=>{
+    if(asset?.type==='svg') return 'root-brand-svg';
+    if(asset?.type==='img') return 'root-brand-png';
+    return 'root-brand-variants';
+  };
+  if(p.logoSq){
+    const ext=p.logoSq.type==='svg'?'svg':'png';
+    out.push({id:'brand-logo-sq',name:`logo-quadrado.${ext}`,source:'brand',kind:'logo',folderId:inferBrandFolder(p.logoSq)});
+  }
+  if(p.logoWd){
+    const ext=p.logoWd.type==='svg'?'svg':'png';
+    out.push({id:'brand-logo-wd',name:`logo-horizontal.${ext}`,source:'brand',kind:'logo',folderId:inferBrandFolder(p.logoWd)});
+  }
+  (p.brandImport?.extras||[]).forEach((item,idx)=>{
+    if(!item?.asset) return;
+    const ext=item.asset.type==='svg'?'svg':'png';
+    const name=(item.name||`logo-extra-${idx+1}`).toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'')||`logo-extra-${idx+1}`;
+    out.push({id:`brand-extra-${item.id}`,name:`${name}.${ext}`,source:'brand',kind:'logo',folderId:'root-brand-variants'});
+  });
   (p.applications||[]).forEach(a=>{
     if(a.svg) out.push({id:`app-${a.id}`,name:`${(a.name||'aplicacao').replace(/[^\w-]+/g,'_')}.svg`,source:'application',kind:'application',folderId:'root-apps',appId:a.id});
   });
@@ -1944,9 +1992,11 @@ function syncExportLibraryFiles(p){
 function createExportFolder(parentId=null){
   const p=P();if(!p)return;
   ensureExportLibrary(p);
+  const parent=parentId || p.exportLibrary.activeFolderId || 'root-project';
   const name=prompt('Nome da pasta:','Nova pasta');
   if(!name||!name.trim()) return;
-  p.exportLibrary.folders.push({id:uid('fld'),name:name.trim(),parent:parentId});
+  p.exportLibrary.folders.push({id:uid('fld'),name:name.trim(),parent,autoName:false});
+  if(p.exportLibrary.expanded[parent]===undefined) p.exportLibrary.expanded[parent]=true;
   p.updatedAt=Date.now();
   save(S.projects);
   renderExport();
@@ -1958,6 +2008,19 @@ function renameExportFolder(folderId){
   const name=prompt('Renomear pasta:',fld.name);
   if(!name||!name.trim()) return;
   fld.name=name.trim();
+  fld.autoName=false;
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderExport();
+}
+function renameExportFolderInline(folderId,rawName){
+  const p=P();if(!p)return;
+  ensureExportLibrary(p);
+  const fld=p.exportLibrary.folders.find(f=>f.id===folderId);if(!fld)return;
+  const name=(rawName||'').trim();
+  if(!name){ renderExport(); return; }
+  fld.name=name;
+  fld.autoName=false;
   p.updatedAt=Date.now();
   save(S.projects);
   renderExport();
@@ -1968,6 +2031,111 @@ function setActiveExportFolder(folderId){
   p.exportLibrary.activeFolderId=folderId;
   save(S.projects);
   renderExport();
+}
+function toggleExportFolder(folderId,ev){
+  if(ev){ ev.stopPropagation(); }
+  const p=P();if(!p)return;
+  ensureExportLibrary(p);
+  p.exportLibrary.expanded[folderId]=!p.exportLibrary.expanded[folderId];
+  save(S.projects);
+  renderExport();
+}
+function getExportFolderDescendants(folderId){
+  const p=P(); if(!p) return [];
+  ensureExportLibrary(p);
+  const byParent=new Map();
+  (p.exportLibrary.folders||[]).forEach(f=>{
+    const key=f.parent||'__root__';
+    if(!byParent.has(key)) byParent.set(key,[]);
+    byParent.get(key).push(f.id);
+  });
+  const out=[];
+  const walk=(id)=>{
+    const kids=byParent.get(id)||[];
+    kids.forEach(k=>{ out.push(k); walk(k); });
+  };
+  walk(folderId);
+  return out;
+}
+function countExportFolderFiles(folderId){
+  const p=P(); if(!p) return 0;
+  const ids=new Set([folderId,...getExportFolderDescendants(folderId)]);
+  return (p.exportLibrary.files||[]).filter(x=>ids.has(x.folderId||'root-brand')).length;
+}
+function getExportFolderPath(folderId){
+  const p=P(); if(!p) return [];
+  const folders=p.exportLibrary.folders||[];
+  const map=new Map(folders.map(f=>[f.id,f]));
+  const path=[];
+  let cur=map.get(folderId);
+  while(cur){
+    path.unshift(cur);
+    cur=cur.parent?map.get(cur.parent):null;
+  }
+  return path;
+}
+function buildFolderChildrenMap(folders){
+  const m=new Map();
+  folders.forEach(f=>{
+    const key=f.parent||'__root__';
+    if(!m.has(key)) m.set(key,[]);
+    m.get(key).push(f);
+  });
+  return m;
+}
+function exportMoveFolder(folderId,targetId,mode){
+  const p=P();if(!p)return;
+  ensureExportLibrary(p);
+  const folders=p.exportLibrary.folders||[];
+  const folder=folders.find(f=>f.id===folderId);
+  const target=folders.find(f=>f.id===targetId);
+  if(!folder||!target||folder.id==='root-project') return;
+  const descendants=new Set(getExportFolderDescendants(folder.id));
+  if(descendants.has(targetId)) return;
+
+  if(mode==='inside'){
+    folder.parent=target.id;
+    p.exportLibrary.expanded[target.id]=true;
+  }else{
+    folder.parent=target.parent||'root-project';
+    const siblings=folders.filter(f=>(f.parent||'root-project')===(folder.parent||'root-project') && f.id!==folder.id);
+    const newSibs=[];
+    siblings.forEach(sib=>{
+      if(mode==='before' && sib.id===target.id) newSibs.push(folder);
+      newSibs.push(sib);
+      if(mode==='after' && sib.id===target.id) newSibs.push(folder);
+    });
+    if(!newSibs.find(x=>x.id===folder.id)) newSibs.push(folder);
+    const others=folders.filter(f=>(f.parent||'root-project')!==(folder.parent||'root-project') && f.id!==folder.id);
+    p.exportLibrary.folders=[...others,...newSibs];
+  }
+
+  p.updatedAt=Date.now();
+  save(S.projects);
+  renderExport();
+}
+function onExportTreeDragStart(ev,folderId){
+  ev.stopPropagation();
+  ev.dataTransfer.setData('text/export-folder',folderId);
+  ev.dataTransfer.effectAllowed='move';
+}
+function onExportTreeDragOver(ev){
+  ev.preventDefault();
+}
+function onExportTreeDrop(ev,targetId){
+  ev.preventDefault();
+  const sourceFolderId=ev.dataTransfer.getData('text/export-folder');
+  const sourceFileId=ev.dataTransfer.getData('text/plain');
+  if(sourceFolderId){
+    const rect=ev.currentTarget.getBoundingClientRect();
+    const y=ev.clientY-rect.top;
+    const mode=y<rect.height*0.3?'before':(y>rect.height*0.7?'after':'inside');
+    exportMoveFolder(sourceFolderId,targetId,mode);
+    return;
+  }
+  if(sourceFileId){
+    onExportFolderDrop(ev,targetId);
+  }
 }
 function onExportFileDragStart(ev,fileId){
   ev.dataTransfer.setData('text/plain',fileId);
@@ -2003,6 +2171,20 @@ function addManualExportFile(){
   save(S.projects);
   renderExport();
 }
+function renderExportTreeNodes(folderChildren,parentId,activeFolderId,depth){
+  const p=P();
+  const folders=folderChildren.get(parentId)||[];
+  return folders.map(f=>{
+    const isActive=f.id===activeFolderId;
+    const children=folderChildren.get(f.id)||[];
+    const expanded=p.exportLibrary.expanded[f.id]!==false;
+    const count=countExportFolderFiles(f.id);
+    const indent=depth*14;
+    const chevron=children.length ? icon(expanded?'chevron-down':'chevron-right',12) : '<span class="tree-spacer"></span>';
+    const kids=(children.length&&expanded)?renderExportTreeNodes(folderChildren,f.id,activeFolderId,depth+1):'';
+    return `<div class="tree-node-wrap">      <div class="tree-item ${isActive?'active':''}" style="padding-left:${8+indent}px" onclick="setActiveExportFolder('${f.id}')" draggable="${f.id==='root-project'?'false':'true'}" ondragstart="onExportTreeDragStart(event,'${f.id}')" ondragover="onExportTreeDragOver(event)" ondrop="onExportTreeDrop(event,'${f.id}')">        <button class="tree-toggle" onclick="toggleExportFolder('${f.id}',event)">${chevron}</button>        ${icon('folder',12)}        <span class="name" ondblclick="event.stopPropagation();this.style.display='none';this.nextElementSibling.style.display='block';this.nextElementSibling.focus();this.nextElementSibling.select();">${esc(f.name)}</span>        <input class="tree-inline-edit" style="display:none" value="${esc(f.name)}" onblur="renameExportFolderInline('${f.id}',this.value)" onkeydown="if(event.key==='Enter'){renameExportFolderInline('${f.id}',this.value)} if(event.key==='Escape'){renderExport()}" />        <span class="count">${count}</span>        <button class="btn-icon" style="width:24px;height:24px" onclick="event.stopPropagation();renameExportFolder('${f.id}')">${icon('pencil',11)}</button>      </div>      ${kids}    </div>`;
+  }).join('');
+}
 
 function renderExport(){
   const p=P();if(!p){$("exportGrid").innerHTML=`<div class="empty-state"><p>Nenhum projeto aberto.</p></div>`; const em=$("exportManager"); if(em) em.innerHTML=''; return;}
@@ -2011,56 +2193,53 @@ function renderExport(){
 
   const activeFolderId=p.exportLibrary.activeFolderId||'root-brand';
   const folders=p.exportLibrary.folders||[];
-  const files=(p.exportLibrary.files||[]).filter(f=>(f.folderId||'root-brand')===activeFolderId);
+  const folderChildren=buildFolderChildrenMap(folders);
+  const directFiles=(p.exportLibrary.files||[]).filter(f=>(f.folderId||'root-brand')===activeFolderId);
   const manager=$("exportManager");
   if(manager){
+    const path=getExportFolderPath(activeFolderId);
     manager.innerHTML=`
       <div class="export-manager anim-in">
         <div class="export-manager-head">
           <div>
             <div class="export-manager-title">Pastas e arquivos exportados</div>
-            <div class="export-manager-sub">Arraste os arquivos para uma pasta, crie subpastas e renomeie itens.</div>
+            <div class="export-manager-sub">Arraste pastas e arquivos para organizar a estrutura final antes de exportar.</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-ghost" onclick="createExportFolder(null)">${icon('folder-plus',12)} Nova pasta</button>
+            <button class="btn btn-ghost" onclick="createExportFolder('root-project')">${icon('folder-plus',12)} Nova pasta</button>
             <button class="btn btn-ghost" onclick="createExportFolder('${activeFolderId}')">${icon('folder-tree',12)} Nova subpasta</button>
             <button class="btn btn-ghost" onclick="addManualExportFile()">${icon('file-plus-2',12)} Novo arquivo</button>
+            <button class="btn btn-primary" onclick="exportLibraryAsZip()">${icon('archive',12)} Exportar .zip</button>
           </div>
         </div>
         <div class="export-manager-body">
-          <div class="folder-tree">
-            ${folders.map(f=>{
-              const count=(p.exportLibrary.files||[]).filter(x=>(x.folderId||'root-brand')===f.id).length;
-              return `<div class="tree-item ${f.id===activeFolderId?'active':''}" onclick="setActiveExportFolder('${f.id}')" ondrop="onExportFolderDrop(event,'${f.id}')" ondragover="onExportFolderDragOver(event)">
-                ${icon('folder',12)}
-                <span class="name">${esc(f.name)}</span>
-                <span class="count">${count}</span>
-                <button class="btn-icon" style="width:24px;height:24px" onclick="event.stopPropagation();renameExportFolder('${f.id}')">${icon('pencil',11)}</button>
-              </div>`;
-            }).join('')}
+          <div class="folder-tree" ondragover="onExportTreeDragOver(event)" ondrop="onExportTreeDrop(event,'root-project')">
+            ${renderExportTreeNodes(folderChildren,'__root__',activeFolderId,0)}
           </div>
-          <div class="file-pane">
-            ${files.length?files.map(file=>`<div class="file-item" draggable="true" ondragstart="onExportFileDragStart(event,'${file.id}')">
+          <div class="file-pane" ondragover="onExportFolderDragOver(event)" ondrop="onExportFolderDrop(event,'${activeFolderId}')">
+            <div class="file-breadcrumb">${path.map((f,i)=>`<button class="crumb ${i===path.length-1?'active':''}" onclick="setActiveExportFolder('${f.id}')">${esc(f.name)}</button>`).join('<span>/</span>')}</div>
+            ${directFiles.length?directFiles.map(file=>`<div class="file-item" draggable="true" ondragstart="onExportFileDragStart(event,'${file.id}')">
               ${icon(file.source==='application'?'file-code-2':(file.source==='brand'?'image':'file'),13)}
               <div style="flex:1">
                 <div>${esc(file.name)}</div>
                 <div class="file-meta">${file.source==='brand'?'Gerado da marca':file.source==='application'?'Gerado da aplicação':'Manual'}</div>
               </div>
               <button class="btn-icon" onclick="renameExportFile('${file.id}')">${icon('pencil',11)}</button>
-            </div>`).join(''):`<div class="empty-state" style="padding:18px 8px"><p>Sem arquivos nesta pasta.</p></div>`}
+            </div>`).join(''):`<div class="empty-state" style="padding:18px 8px"><p>Esta pasta ainda está vazia.</p><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-ghost" onclick="addManualExportFile()">${icon('file-plus-2',12)} Adicionar arquivo</button><button class="btn btn-ghost" onclick="createExportFolder('${activeFolderId}')">${icon('folder-tree',12)} Criar subpasta</button></div></div>`}
           </div>
         </div>
       </div>`;
   }
 
-  // CSS Variables
   const cssVars=[
     "/* === CORES === */",
     ...p.colors.map((c,i)=>{
       const name=(c.name||`cor-${i+1}`).toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
       const rgb=hexToRgb(c.hex)||{r:0,g:0,b:0};
       const hsl=rgbToHsl(rgb.r,rgb.g,rgb.b);
-      return `--color-${name}: ${c.hex};\n--color-${name}-rgb: ${rgb.r}, ${rgb.g}, ${rgb.b};\n--color-${name}-hsl: ${hsl.h}, ${hsl.s}%, ${hsl.l}%;`;
+      return `--color-${name}: ${c.hex};
+--color-${name}-rgb: ${rgb.r}, ${rgb.g}, ${rgb.b};
+--color-${name}-hsl: ${hsl.h}, ${hsl.s}%, ${hsl.l}%;`;
     }),
     "",
     "/* === TIPOGRAFIA === */",
@@ -2068,7 +2247,10 @@ function renderExport(){
     `--font-secondary: "${p.fontSec}";`,
     ...(p.typo||[]).map(st=>{
       const key=st.key.toLowerCase();
-      return `--type-${key}-size: ${st.sz}px;\n--type-${key}-weight: ${st.wt};\n--type-${key}-line: ${st.lh};\n--type-${key}-spacing: ${st.ls}px;`;
+      return `--type-${key}-size: ${st.sz}px;
+--type-${key}-weight: ${st.wt};
+--type-${key}-line: ${st.lh};
+--type-${key}-spacing: ${st.ls}px;`;
     }),
   ].join("\n");
 
@@ -2116,6 +2298,70 @@ ${p.colors.map((c,i)=>{const name=(c.name||`color${i+1}`).toLowerCase().replace(
   refreshIcons();
 }
 
+
+
+
+function getGeneratedFileContent(p,file){
+  if(file.source==='brand'){
+    if(file.id==='brand-logo-sq' && p.logoSq){
+      return p.logoSq.type==='svg'?{content:p.logoSq.data,type:'image/svg+xml'}:{content:p.logoSq.data.split(',')[1]||'',type:'image/png',base64:true};
+    }
+    if(file.id==='brand-logo-wd' && p.logoWd){
+      return p.logoWd.type==='svg'?{content:p.logoWd.data,type:'image/svg+xml'}:{content:p.logoWd.data.split(',')[1]||'',type:'image/png',base64:true};
+    }
+    if(file.id.startsWith('brand-extra-')){
+      const extraId=file.id.replace('brand-extra-','');
+      const extra=(p.brandImport?.extras||[]).find(x=>x.id===extraId);
+      if(extra?.asset){
+        return extra.asset.type==='svg'?{content:extra.asset.data,type:'image/svg+xml'}:{content:extra.asset.data.split(',')[1]||'',type:'image/png',base64:true};
+      }
+    }
+  }
+  if(file.source==='application' && file.appId){
+    const app=(p.applications||[]).find(a=>a.id===file.appId);
+    if(app?.svg) return {content:app.svg,type:'image/svg+xml'};
+  }
+  if(file.source==='manual') return {content:`Arquivo manual: ${file.name}
+`,type:'text/plain'};
+  return {content:'',type:'text/plain'};
+}
+
+async function exportLibraryAsZip(){
+  const p=P(); if(!p){ toast('Abra um projeto primeiro','error'); return; }
+  ensureExportLibrary(p);
+  syncExportLibraryFiles(p);
+  if(typeof window.JSZip==='undefined'){
+    toast('Exportação ZIP indisponível (JSZip não carregado)','error');
+    return;
+  }
+  const zip=new window.JSZip();
+  const folders=p.exportLibrary.folders||[];
+  const folderMap=new Map(folders.map(f=>[f.id,f]));
+  const pathFor=(folderId)=>{
+    const parts=[];
+    let cur=folderMap.get(folderId);
+    while(cur){
+      parts.unshift(cur.name);
+      cur=cur.parent?folderMap.get(cur.parent):null;
+    }
+    return parts.join('/');
+  };
+  (p.exportLibrary.files||[]).forEach(file=>{
+    const folderPath=pathFor(file.folderId||'root-brand');
+    const payload=getGeneratedFileContent(p,file);
+    const target=folderPath ? `${folderPath}/${file.name}` : file.name;
+    if(payload.base64) zip.file(target,payload.content,{base64:true});
+    else zip.file(target,payload.content);
+  });
+  const blob=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const safe=(p.name||'projeto').replace(/[^\w-]+/g,'_');
+  a.download=`${safe}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1200);
+  toast('ZIP exportado com sucesso','success');
+}
 
 async function copyExport(i){
   const card=window._exportData?.[i];if(!card)return;
