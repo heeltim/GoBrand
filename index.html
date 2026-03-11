@@ -95,6 +95,47 @@
   </div>
 </div>
 
+<!-- BRIEFING MODAL -->
+<div id="briefingBackdrop" class="briefing-backdrop">
+  <div class="briefing-modal">
+    <div class="briefing-head">
+      <div>
+        <div class="briefing-title">Gerar aplicações por briefing</div>
+        <p>Use blocos <code>chave: valor</code> separados por <code>---</code>.</p>
+      </div>
+      <button class="btn-icon" id="btnCloseBriefing" aria-label="Fechar briefing">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="briefing-body">
+      <div class="field">
+        <label class="field-label">Nome do lote</label>
+        <input class="inp" id="briefingBatchName" placeholder="Ex.: Feira Gastronômica - março" />
+      </div>
+      <div class="field">
+        <label class="field-label">Template base (opcional)</label>
+        <select class="inp" id="briefingTemplateBase">
+          <option value="">Sem template base</option>
+          <option value="instagram post">Instagram post</option>
+          <option value="story">Story</option>
+          <option value="faixa impressa">Faixa impressa</option>
+          <option value="cartaz a3">Cartaz A3</option>
+          <option value="a4 impresso">A4 impresso</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Briefing estruturado</label>
+        <textarea class="tex inp" id="briefingText" style="min-height:220px" placeholder="projeto: Feira Gastronômica&#10;pasta: feira-gastronomica-2026&#10;&#10;---&#10;arquivo: faixa-comidas&#10;formato: faixa impressa&#10;tamanho: 3000x500mm&#10;titulo: COMIDAS&#10;subtitulo: sabores do evento&#10;&#10;---&#10;arquivo: post-comidas&#10;formato: instagram post&#10;titulo: COMIDAS&#10;subtitulo: venha conhecer"></textarea>
+      </div>
+      <div class="briefing-actions">
+        <button class="btn btn-ghost" type="button" onclick="interpretBriefing()">Interpretar</button>
+        <button class="btn btn-primary" type="button" onclick="generateApplicationsFromBriefing()">Gerar</button>
+      </div>
+      <div id="briefingPreview" class="briefing-preview"></div>
+    </div>
+  </div>
+</div>
+
 <!-- SHELL -->
 <div class="shell">
 
@@ -191,6 +232,9 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nova Aplicação Rápida
           </button>
+          <button class="btn btn-ghost" onclick="openBriefingModal()">
+            Gerar por briefing
+          </button>
         </div>
       </div>
 
@@ -218,6 +262,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nova Aplicação Rápida
           </button>
+          <button class="btn btn-ghost" onclick="openBriefingModal()">Gerar por briefing</button>
         </div>
       </div>
 
