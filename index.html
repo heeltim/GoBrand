@@ -3226,7 +3226,7 @@ canvas.on('mouse:up', () =&gt; {
 
 
 canvas.on('mouse:down', opt =&gt; {
-  if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
+  if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select' &amp;&amp; activeTool !== 'move') return;
   if (opt.e?.button !== 0) return;
 
   if ((activeTool === 'select' || activeTool === 'move') &amp;&amp; opt.e?.shiftKey &amp;&amp; !opt.target) {
@@ -5867,7 +5867,7 @@ function refreshLayers() {
   if (!list) return;
 
   const active = canvas.getActiveObject();
-  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay);
+  const objs = canvas.getObjects().filter(o=&gt;!isGuide(o) &amp;&amp; !o.isArtboardBoard &amp;&amp; !o.isBezierEditorControl &amp;&amp; !o.isBezierOverlay);
   ensureFoldersForObjects(objs);
   renderFolderChips();
 
@@ -6212,11 +6212,22 @@ function exportSVGToParent() {
 
 function loadSVGFromParent(svgText) {
   const raw = String(svgText||'').trim();
-  const keep = canvas.getObjects().filter(o =&gt; isGuide(o));
+
+  canvas.discardActiveObject();
   canvas.getObjects().forEach(o =&gt; canvas.remove(o));
-  keep.forEach(o =&gt; canvas.add(o));
+  artboards.length = 0;
+  activeArtboardId = null;
+  artboard = null;
+  artboardShadow = null;
+  bleedRect = null;
+  safeRect = null;
 
   if (!raw) {
+    ensureArtboard();
+    fitToArtboard();
+    refreshArtboardList();
+    refreshArtboardInspector();
+    refreshLayers();
     canvas.requestRenderAll();
     setStatus('Arquivo novo pronto para edição');
     return;
@@ -6237,6 +6248,8 @@ function loadSVGFromParent(svgText) {
     }
   } catch(_err) {}
 
+  ensureArtboard();
+
   fabric.loadSVGFromString(raw, (objects) =&gt; {
     if (!objects || !objects.length) {
       canvas.requestRenderAll();
@@ -6249,15 +6262,6 @@ function loadSVGFromParent(svgText) {
     const vb = (root?.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
     const vbX = (vb.length === 4 &amp;&amp; Number.isFinite(vb[0])) ? vb[0] : 0;
     const vbY = (vb.length === 4 &amp;&amp; Number.isFinite(vb[1])) ? vb[1] : 0;
-    const sourceTextPos = new Map();
-    parsed.querySelectorAll('text[id]').forEach(node =&gt; {
-      const id = node.getAttribute('id');
-      const x = Number(node.getAttribute('x'));
-      const y = Number(node.getAttribute('y'));
-      if (!id || !Number.isFinite(x) || !Number.isFinite(y)) return;
-      sourceTextPos.set(id, { x, y });
-    });
-
     // Coordenadas do arquivo (SVG) ficam no espaço do viewBox.
     // Convertendo para o espaço de mundo do editor, ancoramos no artboard ativo,
     // evitando deslocamento por mistura de referência global/local no load.
@@ -6271,40 +6275,71 @@ function loadSVGFromParent(svgText) {
       if (!obj || obj.type !== 'rect') return false;
       const w = Math.abs((obj.width || 0) * (obj.scaleX || 1));
       const h = Math.abs((obj.height || 0) * (obj.scaleY || 1));
-      const near = (a,b,t=1.5) =&gt; Math.abs((a||0) - (b||0)) &lt;= t;
-      const fill = String(obj.fill || '').toLowerCase().replace(/\s+/g,'');
-      const noStroke = !obj.stroke || obj.strokeWidth === 0;
-      const whiteish = !fill || fill === '#fff' || fill === '#ffffff' || fill === 'white' || fill === 'rgb(255,255,255)';
-      return near(lx, 0) &amp;&amp; near(ly, 0) &amp;&amp; near(w, artW) &amp;&amp; near(h, artH) &amp;&amp; noStroke &amp;&amp; whiteish;
+      const near = (a,b,t=2) =&gt; Math.abs((a||0) - (b||0)) &lt;= t;
+      return near(lx, 0) &amp;&amp; near(ly, 0) &amp;&amp; near(w, artW) &amp;&amp; near(h, artH);
     };
 
-    let skippedArtboardBg = false;
     objects.forEach(o =&gt; {
       const isTextObj = o.type === 'text' || o.type === 'i-text' || o.type === 'textbox';
-      const sourcePos = isTextObj ? sourceTextPos.get(o.id || '') : null;
-      const localX = sourcePos ? (sourcePos.x - vbX) : ((o.left||0) - vbX);
-      const localY = sourcePos ? (sourcePos.y - vbY) : ((o.top||0) - vbY);
+      const localX = (Number.isFinite(o.left) ? o.left : 0) - vbX;
+      const localY = (Number.isFinite(o.top) ? o.top : 0) - vbY;
 
       // Evita duplicar o papel/artboard ao reabrir SVG exportado do editor.
-      if (!skippedArtboardBg &amp;&amp; isLikelyArtboardBg(o, localX, localY)) {
-        skippedArtboardBg = true;
-        return;
+      // Ignora TODOS os retângulos que batem com a geometria+visual do board.
+      if (isLikelyArtboardBg(o, localX, localY)) {
+        const hasBoardStroke = (o.strokeWidth || 0) &gt;= 0.9 &amp;&amp; (o.strokeWidth || 0) &lt;= 1.1;
+        const hasBoardRound = Math.abs((o.rx || 0) - 2) &lt;= 0.6 &amp;&amp; Math.abs((o.ry || 0) - 2) &lt;= 0.6;
+        if (hasBoardStroke || hasBoardRound) return;
       }
 
-      o.set({
+      let targetObj = o;
+      if (isTextObj &amp;&amp; o.type !== 'i-text') {
+        targetObj = new fabric.IText(String(o.text || ''), {
+          originX: o.originX || 'left',
+          originY: o.originY || 'top',
+          fontFamily: o.fontFamily,
+          fontWeight: o.fontWeight,
+          fontStyle: o.fontStyle,
+          fontSize: o.fontSize,
+          lineHeight: o.lineHeight,
+          charSpacing: o.charSpacing,
+          textAlign: o.textAlign,
+          underline: !!o.underline,
+          overline: !!o.overline,
+          linethrough: !!o.linethrough,
+          fill: o.fill,
+          stroke: o.stroke,
+          strokeWidth: o.strokeWidth,
+          opacity: o.opacity,
+          angle: o.angle,
+          scaleX: o.scaleX,
+          scaleY: o.scaleY,
+          skewX: o.skewX,
+          skewY: o.skewY,
+          flipX: !!o.flipX,
+          flipY: !!o.flipY
+        });
+        if (o.styles) targetObj.styles = JSON.parse(JSON.stringify(o.styles));
+      }
+
+      targetObj.set({
         left: anchorX + localX,
         top: anchorY + localY,
         selectable:true,
         evented:true,
+        editable:isTextObj,
         excludeFromExport:false
       });
-      o.setCoords();
-      canvas.add(o);
-      syncObjectArtboardMembership(o);
+      targetObj.setCoords();
+      canvas.add(targetObj);
+      syncObjectArtboardMembership(targetObj);
     });
 
+    syncActiveArtboardRefs();
     canvas.requestRenderAll();
     fitToArtboard();
+    refreshArtboardList();
+    refreshArtboardInspector();
     refreshLayers();
     refreshProps();
     setStatus('Aplicação carregada para edição');
