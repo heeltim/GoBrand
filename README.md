@@ -21,6 +21,10 @@ GoBrand/
 └── styles.css      # Estilos
 ```
 
+## 🗺️ Fluxo de navegação
+
+- Veja o mapeamento atualizado em `docs/fluxo-navegacao-gobrand.md`.
+
 ## 🔒 Segurança
 
 - Validação de origem/source para mensagens entre iframe e app
