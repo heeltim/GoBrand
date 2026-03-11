@@ -1602,6 +1602,7 @@ const canvas = new fabric.Canvas('c', {
   fireRightClick: true,
   stopContextMenu: true
 });
+canvas.selectionKey = 'shiftKey';
 
 canvas.selectionColor = 'rgba(47,155,255,.08)';
 canvas.selectionBorderColor = '#2f9bff';
@@ -3228,7 +3229,7 @@ canvas.on('mouse:down', opt =&gt; {
   if (activeTool !== 'direct-select' &amp;&amp; activeTool !== 'select') return;
   if (opt.e?.button !== 0) return;
 
-  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; !opt.target) {
+  if ((activeTool === 'select' || activeTool === 'move') &amp;&amp; opt.e?.shiftKey &amp;&amp; !opt.target) {
     const active = canvas.getActiveObject();
     marqueeAddState.active = true;
     marqueeAddState.base = active
@@ -3239,7 +3240,7 @@ canvas.on('mouse:down', opt =&gt; {
     marqueeAddState.base = [];
   }
 
-  if (activeTool === 'select' &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
+  if ((activeTool === 'select' || activeTool === 'move') &amp;&amp; opt.e?.shiftKey &amp;&amp; opt.target &amp;&amp; !isGuide(opt.target) &amp;&amp; !opt.target.isArtboardBoard) {
     opt.e.preventDefault?.();
     toggleShiftSelection(opt.target);
     return;
@@ -4913,6 +4914,14 @@ function del() {
 let appClipboard = { objects:[], mode:'offset' };
 let marqueeAddState = { active:false, base:[] };
 let groupEditState = { active:false };
+let altDragDuplicateState = {
+  active:false,
+  source:null,
+  clone:null,
+  startPointer:null,
+  startLeft:0,
+  startTop:0
+};
 
 function getClipboardEligibleSelection(){
   const active = canvas.getActiveObject();
@@ -5007,6 +5016,68 @@ function duplicate() {
   });
 }
 
+
+
+canvas.on('mouse:down', opt =&gt; {
+  const e = opt.e;
+  const target = opt.target;
+  if (!e || e.button !== 0 || !e.altKey) return;
+  if (!(activeTool === 'select' || activeTool === 'move')) return;
+  if (!target || isGuide(target) || target.isArtboardBoard || target.isBezierEditorControl || target.isBezierOverlay) return;
+  if (target.type === 'activeSelection') return;
+  if (altDragDuplicateState.active) return;
+
+  target.clone(cl =&gt; {
+    if (!cl) return;
+    cl.id = null;
+    cl.set({ left: target.left || 0, top: target.top || 0 });
+    canvas.add(cl);
+    canvas.setActiveObject(cl);
+    cl.setCoords();
+
+    const pointer = canvas.getPointer(e);
+    altDragDuplicateState.active = true;
+    altDragDuplicateState.source = target;
+    altDragDuplicateState.clone = cl;
+    altDragDuplicateState.startPointer = { x:pointer.x, y:pointer.y };
+    altDragDuplicateState.startLeft = cl.left || 0;
+    altDragDuplicateState.startTop = cl.top || 0;
+
+    canvas.requestRenderAll();
+    refreshProps();
+    refreshLayers();
+    setStatus('Duplicando: arraste para posicionar a cópia.');
+  });
+});
+
+canvas.on('mouse:move', opt =&gt; {
+  if (!altDragDuplicateState.active || !altDragDuplicateState.clone || !altDragDuplicateState.startPointer) return;
+  const pointer = canvas.getPointer(opt.e);
+  const dx = pointer.x - altDragDuplicateState.startPointer.x;
+  const dy = pointer.y - altDragDuplicateState.startPointer.y;
+  const cl = altDragDuplicateState.clone;
+  cl.set({
+    left: altDragDuplicateState.startLeft + dx,
+    top: altDragDuplicateState.startTop + dy
+  });
+  cl.setCoords();
+  canvas.requestRenderAll();
+});
+
+canvas.on('mouse:up', () =&gt; {
+  if (!altDragDuplicateState.active) return;
+  const hasClone = !!altDragDuplicateState.clone;
+  altDragDuplicateState.active = false;
+  altDragDuplicateState.source = null;
+  altDragDuplicateState.clone = null;
+  altDragDuplicateState.startPointer = null;
+  if (hasClone) {
+    refreshProps();
+    refreshLayers();
+    snapshot();
+    setStatus('Item duplicado com Alt + arrastar.');
+  }
+});
 
 function selectedObjects() {
   const active = canvas.getActiveObject();
