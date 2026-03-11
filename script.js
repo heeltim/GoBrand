@@ -1525,13 +1525,13 @@ function renderApps(){
 
   const appsSorted = p.applications.slice().sort((a,b)=>b.createdAt-a.createdAt);
   list.innerHTML = appsSorted.map((a,i)=>`
-    <div class="export-card anim-in" style="animation-delay:${i*40}ms">
+    <article class="export-card app-grid-card anim-in" style="animation-delay:${i*40}ms" data-app-id="${a.id}">
+      <div class="export-preview export-preview-visual app-card-preview">
+        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Abra no editor para criar</div>`}
+      </div>
       <div>
         <div class="export-card-title">${esc(a.name||"Aplicação")}</div>
         <div class="export-card-desc">${esc(a.type==="print"?"Impressão":"Web")} • ${esc(a.w)}×${esc(a.h)} ${esc(a.unit)} • ${a.dpi}dpi • ${a.bleed||0}${a.unit==="mm"?"mm":""} sangria</div>
-      </div>
-      <div class="export-preview export-preview-visual">
-        ${a.svg ? `<img class="app-svg-thumb" src="${svgToDataUri(a.svg)}" alt="Preview ${esc(a.name||"Aplicação")}" loading="lazy"/>` : `<div class="app-svg-empty">Abra no editor para criar</div>`}
       </div>
       <div class="app-card-actions">
         <details class="app-actions-menu">
@@ -1544,8 +1544,16 @@ function renderApps(){
           </div>
         </details>
       </div>
-    </div>
+    </article>
   `).join("");
+
+  list.querySelectorAll(".app-grid-card").forEach(card=>{
+    card.addEventListener("dblclick",ev=>{
+      if(ev.target.closest('.app-card-actions')) return;
+      const appId = card.dataset.appId;
+      if(appId) openAppEditor(appId);
+    });
+  });
 
   list.querySelectorAll(".app-action-item").forEach(btn=>{
     btn.addEventListener("click",()=>{

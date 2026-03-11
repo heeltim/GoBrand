@@ -1001,6 +1001,17 @@ a { color: var(--accent); text-decoration: none; }
 /* ============================================================
    EXPORT VIEW
 ============================================================ */
+
+.apps-list-shell { margin-top: 6px; }
+.apps-list-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.apps-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
 .export-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px;
 }
@@ -1074,6 +1085,12 @@ a { color: var(--accent); text-decoration: none; }
   border-radius: var(--r-lg); padding: 20px;
   display: flex; flex-direction: column; gap: 12px;
 }
+.app-grid-card {
+  cursor: pointer;
+  transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+.app-grid-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.app-grid-card:active { transform: translateY(0); }
 .export-card-title { font-weight: 700; font-size: 14px; }
 .export-card-desc { font-size: 12px; color: var(--ink2); line-height: 1.6; }
 .export-preview {
@@ -1101,6 +1118,7 @@ a { color: var(--accent); text-decoration: none; }
   border: 1px solid var(--border2);
 }
 .app-svg-empty { font-size: 12px; color: var(--ink3); }
+.app-card-preview { margin-bottom: 2px; }
 
 .app-card-actions { display:flex; justify-content:flex-end; }
 .app-actions-menu { position: relative; }
