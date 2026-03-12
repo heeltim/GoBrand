@@ -2781,6 +2781,7 @@ function refreshArtboardList(){
       canvas.setActiveObject(ab.board);
       canvas.requestRenderAll();
       refreshArtboardList();
+      refreshLayers();
     };
 
     const beginRename = () => {
@@ -4765,7 +4766,9 @@ function importExternalFile(file){
         const maxW = Math.min(docW * 0.8, 600);
         if (img.width &gt; maxW) img.scaleToWidth(maxW);
         img.set({ left: artboard.left + 40, top: artboard.top + 40, dataName:file.name || 'Imagem colada' });
-        canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+        canvas.add(img);
+        syncObjectArtboardMembership(img);
+        canvas.setActiveObject(img); canvas.requestRenderAll();
         refreshLayers();
       });
     };
@@ -5039,7 +5042,7 @@ function duplicate() {
   if (o.isArtboardBoard) {
     const ab = getArtboardByBoard(o);
     if (!ab) return;
-    duplicateArtboardBundle(ab, 28, 28);
+    duplicateArtboardBundle(ab, (ab.w || docW) + ART_GAP, 0);
     snapshot();
     setStatus('Artboard duplicado');
     return;
@@ -5936,28 +5939,11 @@ function refreshLayers() {
   ensureFoldersForObjects(objs);
   renderFolderChips();
 
-  const objectById = new Map(objs.filter(o =&gt; o.id).map(o =&gt; [o.id, o]));
-  const objectsByArtboard = new Map();
-  artboards.forEach(ab =&gt; objectsByArtboard.set(ab.id, []));
-  const rootObjects = [];
-  objs.forEach(obj =&gt; {
-    const abId = obj.dataArtboardId;
-    if (abId &amp;&amp; objectsByArtboard.has(abId)) objectsByArtboard.get(abId).push(obj);
-    else rootObjects.push(obj);
-  });
-
-  const artChildren = new Map();
-  artboards.forEach(ab =&gt; artChildren.set(ab.id, []));
-  const rootArtboards = [];
-  artboards.forEach(ab =&gt; {
-    const p = getParentArtboardId(ab);
-    if (p &amp;&amp; artChildren.has(p)) artChildren.get(p).push(ab);
-    else rootArtboards.push(ab);
-  });
-
   const rows = [];
-  const pushObjectRows = (obj, depth) =&gt; {
-    rows.push({ type:'object', ref:obj, depth });
+  const activeAbId = activeArtboardId;
+
+  const pushObjectRows = (obj, depth = 0) =&gt; {
+    rows.push({ ref:obj, depth });
     if (obj?.type === 'group' &amp;&amp; Array.isArray(obj._objects) &amp;&amp; obj._objects.length) {
       obj._objects.forEach(child =&gt; {
         if (!child || isGuide(child) || child.isArtboardBoard) return;
@@ -5966,33 +5952,32 @@ function refreshLayers() {
     }
   };
 
-  const walkArtboard = (ab, depth = 0) =&gt; {
-    rows.push({ type:'artboard', ref:ab, depth });
-    (objectsByArtboard.get(ab.id) || []).forEach(o =&gt; pushObjectRows(o, depth+1));
-    (artChildren.get(ab.id) || []).forEach(child =&gt; walkArtboard(child, depth+1));
-  };
-  rootArtboards.forEach(ab =&gt; walkArtboard(ab, 0));
-  rootObjects.forEach(o =&gt; pushObjectRows(o, 0));
+  objs.forEach(obj =&gt; {
+    const objAbId = obj.dataArtboardId || null;
+    if (activeAbId) {
+      if (objAbId !== activeAbId) return;
+      pushObjectRows(obj, 0);
+      return;
+    }
+    if (!objAbId) pushObjectRows(obj, 0);
+  });
 
   if (cnt) cnt.textContent = rows.length;
   list.innerHTML = '';
   if (!rows.length) {
-    list.innerHTML = '&lt;div class="layer-empty"&gt;Sem objetos ainda&lt;/div&gt;';
+    list.innerHTML = '&lt;div class="layer-empty"&gt;Sem objetos neste artboard&lt;/div&gt;';
     return;
   }
 
-  const findRowIndexByUid = uid =&gt; rows.findIndex(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid || (r.ref.__uid='ly_'+Math.random().toString(36).slice(2,9)))===uid);
+  const findRowIndexByUid = uid =&gt; rows.findIndex(r =&gt; (r.ref.__uid || (r.ref.__uid='ly_'+Math.random().toString(36).slice(2,9)))===uid);
 
-  rows.forEach((row, i) =&gt; {
+  rows.forEach((row) =&gt; {
     const obj = row.ref;
-    const isArtboardRow = row.type === 'artboard';
-    const isAct = (isArtboardRow &amp;&amp; active === obj.board) || (!isArtboardRow &amp;&amp; (active === obj || selectedSet.has(obj)));
-    const isVisible = isArtboardRow ? true : obj.visible !== false;
-    const name = isArtboardRow
-      ? String(obj.board?.dataName || 'Artboard')
-      : String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
-    const metaL = isArtboardRow ? `${Math.round(obj.w)}×${Math.round(obj.h)}` : `${Math.round((obj.opacity??1)*100)}%`;
-    const metaR = isArtboardRow ? 'Artboard' : String(obj.dataFolder || 'Geral');
+    const isAct = active === obj || selectedSet.has(obj);
+    const isVisible = obj.visible !== false;
+    const name = String(obj.dataName || (obj.text ? obj.text.slice(0,18) : obj.type) || 'layer');
+    const metaL = `${Math.round((obj.opacity??1)*100)}%`;
+    const metaR = String(obj.dataFolder || 'Geral');
     const visIcon = isVisible ? 'eye' : 'eye-off';
     const leftPad = 8 + row.depth * 14;
 
@@ -6000,43 +5985,32 @@ function refreshLayers() {
     div.className = 'layer-item' + (isAct ? ' active' : '') + (isVisible ? '' : ' is-hidden');
     div.style.paddingLeft = `${leftPad}px`;
     div.draggable = true;
-    div.dataset.layerType = row.type;
-    div.dataset.layerId = isArtboardRow ? obj.id : (obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9)));
+    div.dataset.layerType = 'object';
+    div.dataset.layerId = obj.__uid || (obj.__uid = 'ly_' + Math.random().toString(36).slice(2,9));
     div.innerHTML = `
       &lt;span class="layer-marker"&gt;&lt;/span&gt;
       &lt;div class="layer-main"&gt;
-        &lt;div class="layer-name" title="${name}"&gt;${isArtboardRow ? '▣ ' : ''}${name}&lt;/div&gt;
+        &lt;div class="layer-name" title="${name}"&gt;${name}&lt;/div&gt;
       &lt;/div&gt;
       &lt;div class="layer-row-meta"&gt;
         &lt;div class="layer-meta"&gt;${metaL}&lt;/div&gt;
         &lt;div class="layer-meta"&gt;${metaR}&lt;/div&gt;
-        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}" ${isArtboardRow ? 'disabled' : ''}&gt;
+        &lt;button class="layer-vis-btn" type="button" title="${isVisible ? 'Ocultar camada' : 'Mostrar camada'}"&gt;
           &lt;i data-lucide="${visIcon}" data-size="12"&gt;&lt;/i&gt;
         &lt;/button&gt;
       &lt;/div&gt;`;
 
     const visBtn = div.querySelector('.layer-vis-btn');
-    if (!isArtboardRow) {
-      visBtn?.addEventListener('click', e =&gt; {
-        e.stopPropagation();
-        toggleLayerVisibility(obj);
-      });
-    }
+    visBtn?.addEventListener('click', e =&gt; {
+      e.stopPropagation();
+      toggleLayerVisibility(obj);
+    });
 
     div.addEventListener('click', () =&gt; {
-      if (isArtboardRow) {
-        activeArtboardId = obj.id;
-        focusedArtboardId = obj.id;
-        syncActiveArtboardRefs();
-        updateArtboardLabelVisibility();
-        enableArtboardDrag(obj);
-        canvas.setActiveObject(obj.board);
-      } else {
-        if (obj.visible === false) return;
-        focusedArtboardId = obj.dataArtboardId || null;
-        updateArtboardLabelVisibility();
-        canvas.setActiveObject(obj);
-      }
+      if (obj.visible === false) return;
+      focusedArtboardId = obj.dataArtboardId || null;
+      updateArtboardLabelVisibility();
+      canvas.setActiveObject(obj);
       canvas.requestRenderAll();
       refreshProps();
       refreshLayers();
@@ -6045,11 +6019,10 @@ function refreshLayers() {
     div.addEventListener('dblclick', e =&gt; {
       e.preventDefault();
       e.stopPropagation();
-      if (isArtboardRow) startCanvasArtboardRename(obj);
-      else renameLayerObject(obj);
+      renameLayerObject(obj);
     });
 
-    div.addEventListener('dragstart', () =&gt; { draggingLayerId = `${row.type}:${div.dataset.layerId}`; });
+    div.addEventListener('dragstart', () =&gt; { draggingLayerId = `object:${div.dataset.layerId}`; });
     div.addEventListener('dragover', e =&gt; { e.preventDefault(); div.classList.add('drag-over'); });
     div.addEventListener('dragleave', () =&gt; div.classList.remove('drag-over'));
     div.addEventListener('drop', e =&gt; {
@@ -6057,45 +6030,19 @@ function refreshLayers() {
       div.classList.remove('drag-over');
       if(!draggingLayerId) return;
       const [dragType, dragId] = String(draggingLayerId).split(':');
-      if (!dragType || !dragId) return;
-
-      if (isArtboardRow) {
-        if (dragType === 'artboard' &amp;&amp; dragId !== obj.id) {
-          const dragged = getArtboardById(dragId);
-          if (!dragged) return;
-          dragged.board.set({ left:obj.board.left + 24, top:obj.board.top + 24 });
-          syncArtboardAuxGeometry(dragged);
-          updateArtboardLabelVisibility();
-          orderArtboard();
-          canvas.requestRenderAll();
-          refreshLayers();
-          snapshot();
-          return;
-        }
-        if (dragType === 'object') {
-          const draggedObj = rows.find(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid===dragId))?.ref;
-          if (!draggedObj) return;
-          assignObjectToArtboard(draggedObj, obj);
-          canvas.requestRenderAll();
-          refreshLayers();
-          snapshot();
-          return;
-        }
-      }
-
-      if (dragType === 'object' &amp;&amp; !isArtboardRow) {
-        const draggedObj = rows.find(r =&gt; r.type==='object' &amp;&amp; (r.ref.__uid===dragId))?.ref;
-        if(!draggedObj || draggedObj===obj) return;
-        const to = findRowIndexByUid(obj.__uid);
-        if (to &gt;= 0) moveLayerByDisplayIndex(draggedObj, to);
-        refreshLayers();
-      }
+      if (dragType !== 'object' || !dragId) return;
+      const draggedObj = rows.find(r =&gt; (r.ref.__uid===dragId))?.ref;
+      if(!draggedObj || draggedObj===obj) return;
+      const to = findRowIndexByUid(obj.__uid);
+      if (to &gt;= 0) moveLayerByDisplayIndex(draggedObj, to);
+      refreshLayers();
     });
 
     list.appendChild(div);
   });
   if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.9}});
 }
+
 
 let brandLibrary=[];
 let draggedLibraryIndex = null;
@@ -6116,8 +6063,13 @@ function refreshLibrary(){
     const icon = item.kind==='logo' ? 'image' : item.kind==='color' ? 'droplets' : 'type';
     const meta = item.kind==='logo' ? 'Logo' : item.kind==='color' ? (item.color||'Cor') : ((item.font||'Fonte')+' • '+(item.size||16)+'px');
     div.draggable = true;
-    const preview = item.kind==='logo' &amp;&amp; item.src ? `background-image:url('${item.src}')` : item.kind==='color' ? `background:${item.color||'#999'}` : 'background:linear-gradient(135deg, rgba(127,90,240,.35), rgba(44,182,125,.35))';
-    div.innerHTML=`&lt;div class="lib-preview" style="${preview}"&gt;&lt;/div&gt;&lt;div class="lib-icon"&gt;&lt;i data-lucide="${icon}" data-size="13"&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class="layer-name"&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class="lib-meta"&gt;${meta}&lt;/div&gt;`;
+    const logoPreview = item.kind==='logo' &amp;&amp; item.src
+      ? `&lt;img src="${item.src}" alt="${item.name || 'Logo'}" style="width:100%;height:100%;object-fit:contain;display:block"/&gt;`
+      : '';
+    const previewStyle = item.kind==='color'
+      ? `background:${item.color||'#999'}`
+      : 'background:linear-gradient(135deg, rgba(127,90,240,.35), rgba(44,182,125,.35))';
+    div.innerHTML=`&lt;div class="lib-preview" style="${previewStyle}"&gt;${logoPreview}&lt;/div&gt;&lt;div class="lib-icon"&gt;&lt;i data-lucide="${icon}" data-size="13"&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class="layer-name"&gt;${item.name||item.kind}&lt;/div&gt;&lt;div class="lib-meta"&gt;${meta}&lt;/div&gt;`;
     div.addEventListener('click',()=&gt;applyLibraryItem(idx));
     div.addEventListener('dragstart',()=&gt;{ draggedLibraryIndex = idx; });
     list.appendChild(div);
@@ -6142,8 +6094,8 @@ function applyLibraryItem(idx){
   if(item.kind==='text-style'){
     const label = item.uppercase ? String(item.name||'Novo texto').toUpperCase() : (item.name||'Novo texto');
     const text = new fabric.Textbox(label, {
-      left: artboard.left + Math.max(24, docW*0.1),
-      top: artboard.top + Math.max(24, docH*0.1),
+      left: (getActiveArtboard()?.board?.left || artboard.left) + Math.max(24, docW*0.1),
+      top: (getActiveArtboard()?.board?.top || artboard.top) + Math.max(24, docH*0.1),
       width: Math.max(180, docW*0.4),
       fontFamily: item.font || 'Outfit',
       fontWeight: item.weight || 400,
@@ -6154,7 +6106,9 @@ function applyLibraryItem(idx){
       fill: '#ffffff',
       dataName: `Style: ${item.name||'Texto'}`
     });
-    canvas.add(text); canvas.setActiveObject(text); canvas.requestRenderAll();
+    canvas.add(text);
+    syncObjectArtboardMembership(text);
+    canvas.setActiveObject(text); canvas.requestRenderAll();
     refreshLayers(); refreshProps();
     setStatus('Estilo de texto adicionado da biblioteca');
     return;
@@ -6165,12 +6119,14 @@ function applyLibraryItem(idx){
       const maxW=docW*0.5, maxH=docH*0.35;
       const sc=Math.min(maxW/img.width, maxH/img.height, 1);
       img.set({
-        left: artboard.left + docW/2 - (img.width*sc)/2,
-        top: artboard.top + docH/2 - (img.height*sc)/2,
+        left: (getActiveArtboard()?.board?.left || artboard.left) + docW/2 - (img.width*sc)/2,
+        top: (getActiveArtboard()?.board?.top || artboard.top) + docH/2 - (img.height*sc)/2,
         scaleX: sc, scaleY: sc,
         dataName: item.name || 'Logo da biblioteca'
       });
-      canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+      canvas.add(img);
+      syncObjectArtboardMembership(img);
+      canvas.setActiveObject(img); canvas.requestRenderAll();
       refreshLayers(); refreshProps();
       setStatus('Logo inserido da biblioteca');
     }, {crossOrigin:'anonymous'});
@@ -6364,7 +6320,9 @@ function loadSVGFromParent(svgText) {
       if (isLikelyArtboardBg(o, localX, localY)) {
         const hasBoardStroke = (o.strokeWidth || 0) &gt;= 0.9 &amp;&amp; (o.strokeWidth || 0) &lt;= 1.1;
         const hasBoardRound = Math.abs((o.rx || 0) - 2) &lt;= 0.6 &amp;&amp; Math.abs((o.ry || 0) - 2) &lt;= 0.6;
-        if (hasBoardStroke || hasBoardRound) return;
+        const fill = String(o.fill || '').toLowerCase();
+        const hasBoardFill = fill === '#fff' || fill === '#ffffff' || fill === 'white' || fill === 'rgb(255,255,255)';
+        if (hasBoardStroke || hasBoardRound || hasBoardFill) return;
       }
 
       let targetObj = o;
